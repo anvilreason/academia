@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Academia · 产品原型</title>
+<style>
+:root {
+  --bg: #FAFAF6;
+  --surface: #FFFFFF;
+  --surface-2: #F4F2EC;
+  --surface-3: #EFEDE5;
+  --ink: #1A1715;
+  --ink-2: #5C5852;
+  --ink-3: #948F86;
+  --line: #E6E3DA;
+  --line-2: #D8D4C8;
+  --accent: #7B4A0F;
+  --accent-bg: #F4EAD7;
+  --accent-line: #E0CDA3;
+  --lit: #3D3680;
+  --lit-bg: #ECE9F5;
+  --lit-line: #C9C2E5;
+  --green: #166848;
+  --green-bg: #E1F0E8;
+  --shadow: 0 1px 2px rgba(20,15,10,0.04), 0 0 0 0.5px rgba(20,15,10,0.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14110F;
+    --surface: #1C1917;
+    --surface-2: #211E1B;
+    --surface-3: #272320;
+    --ink: #F0EDE5;
+    --ink-2: #B0AAA0;
+    --ink-3: #7A7569;
+    --line: #2D2925;
+    --line-2: #3A3530;
+    --accent: #E0B870;
+    --accent-bg: #2D2010;
+    --accent-line: #4A3520;
+    --lit: #9B92E5;
+    --lit-bg: #1F1B35;
+    --lit-line: #2F2A4D;
+    --green: #6BBD8E;
+    --green-bg: #0F2419;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 0 0 0.5px rgba(255,255,255,0.06);
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'PingFang SC', 'Hiragino Sans GB', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+.serif {
+  font-family: 'Charter', 'Iowan Old Style', 'Source Serif 4', 'Source Serif Pro', Georgia, 'Songti SC', 'Noto Serif SC', serif;
+  font-feature-settings: "kern", "liga";
+}
+.app {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+}
+
+/* Left navigation */
+.shell-nav {
+  background: var(--surface-2);
+  border-right: 0.5px solid var(--line);
+  padding: 28px 18px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+  padding-left: 6px;
+}
+.brand-mark {
+  font-family: 'Charter', 'Iowan Old Style', Georgia, serif;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.brand-sub {
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.shell-meta {
+  font-size: 11px;
+  color: var(--ink-3);
+  margin: 0 0 24px 6px;
+  line-height: 1.5;
+}
+.layer-group { margin-bottom: 18px; }
+.layer-label {
+  font-size: 10px;
+  color: var(--ink-3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 8px 6px;
+  font-weight: 500;
+}
+.page-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  margin-bottom: 1px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink);
+  background: transparent;
+  border: 0.5px solid transparent;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.12s;
+}
+.page-btn:hover { background: var(--surface-3); }
+.page-btn.active {
+  background: var(--surface);
+  border-color: var(--line);
+  box-shadow: var(--shadow);
+}
+.page-btn .pn {
+  font-size: 10px;
+  font-weight: 500;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: var(--surface-3);
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.page-btn.active .pn {
+  background: var(--ink);
+  color: var(--bg);
+}
+.page-btn .star {
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 10px;
+}
+
+/* Right canvas */
+.shell-canvas {
+  background: var(--bg);
+  padding: 24px 28px 60px;
+  min-height: 100vh;
+}
+.canvas-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.canvas-meta .url-pill {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 11px;
+  background: var(--surface-2);
+  padding: 4px 10px;
+  border-radius: 4px;
+  color: var(--ink-2);
+}
+.canvas-meta .layer-tag {
+  padding: 3px 8px;
+  font-size: 10px;
+  border-radius: 4px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.purpose-line {
+  font-size: 12px;
+  color: var(--ink-2);
+  margin: 0 0 18px;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 4px 4px 0;
+  line-height: 1.6;
+}
+.flow-line {
+  display: flex;
+  gap: 14px;
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 0.5px solid var(--line);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+.flow-line b { color: var(--ink-2); font-weight: 500; }
+
+/* Page mockup container */
+.page-mockup {
+  background: var(--surface);
+  border-radius: 8px;
+  border: 0.5px solid var(--line);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.pm-topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 24px;
+  border-bottom: 0.5px solid var(--line);
+  font-size: 13px;
+}
+.pm-logo {
+  font-family: 'Charter', Georgia, serif;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.pm-nav-links {
+  display: flex;
+  gap: 22px;
+  margin-left: 8px;
+  flex: 1;
+}
+.pm-nav-links a {
+  color: var(--ink-2);
+  text-decoration: none;
+  font-size: 13px;
+}
+.pm-nav-links a.active { color: var(--ink); font-weight: 500; }
+.pm-nav-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.pm-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--lit-bg);
+  color: var(--lit);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  font-weight: 500;
+}
+.pm-body {
+  padding: 36px 48px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  border: 0.5px solid transparent;
+  text-decoration: none;
+  font-weight: 500;
+}
+.btn-primary {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+.btn-secondary {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line-2);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-2);
+}
+.btn-block { width: 100%; }
+.btn-lg { padding: 12px 24px; font-size: 14px; }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-amber {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+@media (prefers-color-scheme: dark) {
+  .btn-amber { color: #1A1715; }
+}
+
+/* Form */
+.field {
+  display: block;
+  margin-bottom: 14px;
+}
+.field-label {
+  font-size: 12px;
+  color: var(--ink-2);
+  margin-bottom: 6px;
+  display: block;
+}
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 0.5px solid var(--line-2);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--ink);
+  font-family: inherit;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--ink);
+}
+.divider-or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.divider-or::before, .divider-or::after {
+  content: '';
+  flex: 1;
+  height: 0.5px;
+  background: var(--line);
+}
+
+/* Cards & content blocks */
+.card {
+  background: var(--surface);
+  border: 0.5px solid var(--line);
+  border-radius: 8px;
+  padding: 18px 20px;
+}
+.card-2 {
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 16px 18px;
+}
+.lbl-eyebrow {
+  font-size: 10px;
+  color: var(--ink-3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
+  margin: 0 0 6px;
+}
+.h-display {
+  font-family: 'Charter', 'Iowan Old Style', Georgia, 'Songti SC', serif;
+  font-size: 38px;
+  line-height: 1.18;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  margin: 0;
+  color: var(--ink);
+}
+.h-section {
+  font-family: 'Charter', Georgia, serif;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  margin: 0 0 6px;
+}
+.h-card {
+  font-family: 'Charter', Georgia, serif;
+  font-size: 17px;
+  font-weight: 500;
+  margin: 0 0 4px;
+}
+.lead {
+  font-size: 16px;
+  color: var(--ink-2);
+  line-height: 1.55;
+  margin: 12px 0 0;
+}
+.muted { color: var(--ink-2); }
+.faded { color: var(--ink-3); }
+.tabular { font-variant-numeric: tabular-nums; }
+
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+.tag-undergrad { background: var(--surface-3); color: var(--ink-2); }
+.tag-mba { background: var(--accent-bg); color: var(--accent); }
+.tag-phd { background: var(--lit-bg); color: var(--lit); }
+
+/* Node card variants */
+.node-card {
+  background: var(--surface);
+  border: 0.5px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  transition: border-color 0.12s;
+}
+.node-card:hover { border-color: var(--line-2); }
+.node-card.lit {
+  background: var(--lit-bg);
+  border-color: var(--lit-line);
+}
+.node-card.locked {
+  background: var(--surface-2);
+  opacity: 0.55;
+}
+.node-card.featured {
+  background: var(--accent-bg);
+  border-color: var(--accent-line);
+}
+.node-title {
+  font-family: 'Charter', Georgia, serif;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.node-prof {
+  font-size: 11px;
+  color: var(--ink-3);
+  font-style: italic;
+}
+.lit .node-prof { color: var(--lit); opacity: 0.8; }
+.featured .node-prof { color: var(--accent); opacity: 0.85; }
+.node-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 4px;
+}
+.price {
+  font-family: 'Charter', Georgia, serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.price-faded { color: var(--ink-3); }
+.lit-mark {
+  font-size: 11px;
+  color: var(--lit);
+  font-weight: 500;
+}
+.node-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+/* Conversation bubbles */
+.dlg {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.dlg-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 500;
+}
+.dlg-avatar.ai {
+  background: var(--ink);
+  color: var(--bg);
+  font-family: 'Charter', Georgia, serif;
+}
+.dlg-avatar.user {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.dlg-body {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ink);
+  padding-top: 4px;
+}
+.dlg-body em {
+  font-style: italic;
+  color: var(--ink-2);
+}
+.dlg-meta {
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-bottom: 4px;
+}
+
+/* Progress */
+.progress {
+  height: 3px;
+  background: var(--line);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--ink);
+  border-radius: 2px;
+}
+
+/* Stat numbers */
+.stat-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.stat-num {
+  font-family: 'Charter', Georgia, serif;
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.stat-num small { font-size: 14px; color: var(--ink-3); font-weight: 400; }
+
+/* Misc */
+.row { display: flex; gap: 16px; }
+.row-tight { display: flex; gap: 8px; }
+.col { display: flex; flex-direction: column; gap: 16px; }
+.col-tight { display: flex; flex-direction: column; gap: 8px; }
+.between { justify-content: space-between; }
+.center { align-items: center; }
+.flex-1 { flex: 1; }
+.mt-2 { margin-top: 12px; }
+.mt-3 { margin-top: 18px; }
+.mt-4 { margin-top: 28px; }
+.mt-5 { margin-top: 40px; }
+.mb-2 { margin-bottom: 12px; }
+.mb-3 { margin-bottom: 18px; }
+.mb-4 { margin-bottom: 28px; }
+.divider {
+  height: 0.5px;
+  background: var(--line);
+  margin: 24px 0;
+}
+.divider-soft {
+  height: 0.5px;
+  background: var(--line);
+  margin: 12px 0;
+}
+
+.checkmark {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--lit);
+  color: white;
+  font-size: 9px;
+  text-align: center;
+  line-height: 14px;
+  margin-right: 4px;
+}
+.lockmark {
+  display: inline-block;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+/* Newsletter form */
+.nl-card {
+  background: var(--ink);
+  color: var(--bg);
+  padding: 28px 32px;
+  border-radius: 10px;
+  margin-top: 32px;
+}
+.nl-card .lbl-eyebrow { color: rgba(255,255,255,0.5); }
+.nl-card h3 { color: var(--bg); }
+.nl-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.nl-input {
+  flex: 1;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.08);
+  border: 0.5px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  color: var(--bg);
+  font-size: 13px;
+  font-family: inherit;
+}
+.nl-input::placeholder { color: rgba(255,255,255,0.45); }
+.nl-btn {
+  padding: 10px 18px;
+  background: var(--bg);
+  color: var(--ink);
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* Founder quote */
+.founder-quote {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 20px 0;
+}
+.founder-photo {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--accent-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Charter', Georgia, serif;
+  font-size: 22px;
+  color: var(--accent);
+  flex-shrink: 0;
+  font-weight: 500;
+}
+.founder-text {
+  font-family: 'Charter', Georgia, serif;
+  font-size: 17px;
+  line-height: 1.5;
+  font-style: italic;
+  color: var(--ink-2);
+}
+.founder-name {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-style: normal;
+  margin-top: 6px;
+}
+
+/* Onboarding cards */
+.choice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+.choice {
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 0.5px solid var(--line-2);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.choice:hover { border-color: var(--ink-3); }
+.choice.selected {
+  background: var(--lit-bg);
+  border-color: var(--lit);
+  color: var(--ink);
+}
+.choice-title { font-weight: 500; margin-bottom: 2px; }
+.choice-desc { font-size: 12px; color: var(--ink-3); }
+
+/* Notes archive */
+.note-row {
+  padding: 16px 0;
+  border-bottom: 0.5px solid var(--line);
+  cursor: pointer;
+}
+.note-row:hover { background: var(--surface-2); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 6px; }
+.note-row:last-child { border-bottom: none; }
+.note-row-title { font-family: 'Charter', Georgia, serif; font-size: 16px; font-weight: 500; margin-bottom: 4px; }
+.note-row-meta { font-size: 12px; color: var(--ink-3); }
+.note-row-tags { display: inline-flex; gap: 6px; margin-left: 10px; }
+.note-tag {
+  font-size: 10px;
+  padding: 1px 6px;
+  background: var(--surface-3);
+  color: var(--ink-2);
+  border-radius: 3px;
+}
+
+/* Coming up cards */
+.upnext-card {
+  display: flex;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--surface-2);
+  border-radius: 8px;
+  align-items: center;
+}
+.upnext-mark {
+  width: 36px; height: 36px;
+  background: var(--lit-bg);
+  color: var(--lit);
+  font-family: 'Charter', Georgia, serif;
+  font-weight: 500;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.upnext-title { font-family: 'Charter', Georgia, serif; font-weight: 500; font-size: 15px; }
+.upnext-desc { font-size: 12px; color: var(--ink-3); }
+
+/* Order summary */
+.order-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  font-size: 14px;
+  border-bottom: 0.5px solid var(--line);
+}
+.order-row:last-child { border: none; padding-top: 14px; font-weight: 500; }
+
+.pay-method {
+  display: flex;
+  gap: 8px;
+}
+.pay-method label {
+  flex: 1;
+  padding: 14px;
+  border: 0.5px solid var(--line-2);
+  border-radius: 6px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 13px;
+}
+.pay-method input { display: none; }
+.pay-method input:checked + label {
+  border-color: var(--ink);
+  background: var(--surface-2);
+}
+
+/* Reading prose */
+.prose {
+  font-family: 'Charter', Georgia, serif;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+.prose strong { color: var(--ink); font-weight: 500; }
+.prose .pull {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin: 0 0 8px;
+  font-family: -apple-system, sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Paywall */
+.paywall {
+  background: var(--accent-bg);
+  border: 0.5px solid var(--accent-line);
+  border-radius: 10px;
+  padding: 24px;
+  text-align: center;
+  margin-top: 24px;
+}
+.paywall h3 {
+  font-family: 'Charter', Georgia, serif;
+  font-size: 18px;
+  margin: 0 0 6px;
+  color: var(--accent);
+}
+.paywall p {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin: 0 0 16px;
+}
+
+/* Map / college view */
+.college-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 28px;
+  border-bottom: 0.5px solid var(--line);
+}
+.college-tab {
+  padding: 12px 16px;
+  font-size: 14px;
+  font-family: 'Charter', Georgia, serif;
+  color: var(--ink-3);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -0.5px;
+}
+.college-tab.active {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+.tier-section { margin-bottom: 32px; }
+.tier-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.tier-name {
+  font-family: 'Charter', Georgia, serif;
+  font-size: 17px;
+  font-weight: 500;
+}
+.tier-meta {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+/* Banner */
+.banner {
+  background: linear-gradient(0deg, var(--accent-bg), var(--accent-bg));
+  border: 0.5px solid var(--accent-line);
+  border-radius: 8px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
+}
+.banner-text {
+  font-family: 'Charter', Georgia, serif;
+  font-size: 15px;
+  color: var(--accent);
+}
+.banner-text strong { font-weight: 500; }
+
+/* Founders page */
+.founders-hero {
+  text-align: center;
+  padding: 32px 0 28px;
+}
+.founders-hero .h-display { font-size: 32px; }
+.benefits {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 28px;
+}
+.benefit {
+  padding: 18px;
+  background: var(--surface-2);
+  border-radius: 8px;
+}
+.benefit-icon {
+  width: 28px; height: 28px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Charter', Georgia, serif;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+.benefit-title { font-weight: 500; margin-bottom: 4px; font-size: 14px; }
+.benefit-desc { font-size: 12px; color: var(--ink-2); }
+
+.testimonial {
+  border-left: 2px solid var(--line-2);
+  padding: 0 0 0 16px;
+  margin: 24px 0;
+}
+.testimonial p {
+  font-family: 'Charter', Georgia, serif;
+  font-size: 15px;
+  font-style: italic;
+  margin: 0 0 6px;
+  color: var(--ink-2);
+}
+.testimonial .by {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+/* Settings */
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 0.5px solid var(--line);
+}
+.settings-row:last-child { border: none; }
+.settings-label { font-size: 14px; }
+.settings-meta { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+
+@media (max-width: 1024px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .shell-nav { position: relative; height: auto; }
+  .shell-canvas { min-width: 0; }
+  .pm-body { padding: 24px 20px; }
+}
+
+@media (max-width: 640px) {
+  .shell-canvas { padding: 20px 14px 40px; }
+  .canvas-meta { flex-wrap: wrap; }
+  .canvas-meta > span:last-child { margin-left: 0 !important; }
+  .pm-topbar { flex-wrap: wrap; padding: 12px 16px; }
+  .pm-nav-links { order: 3; flex-basis: 100%; margin-left: 0; overflow-x: auto; }
+  .pm-nav-actions { margin-left: auto; }
+  .row { flex-wrap: wrap; }
+  .node-grid,
+  .choice-grid,
+  .benefits { grid-template-columns: 1fr; }
+  .flow-line { flex-direction: column; gap: 6px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<aside class="shell-nav">
+  <div class="brand">
+    <span class="brand-mark serif">Academia</span>
+    <span class="brand-sub">prototype</span>
+  </div>
+  <p class="shell-meta">13 个核心页面，按用户旅程顺序排列。点击查看每页设计。</p>
+  <div id="nav"></div>
+</aside>
+
+<main class="shell-canvas">
+  <div id="canvas"></div>
+</main>
+
+</div>
+
+<script>
+const PAGES = {
+
+landing: {
+  l: 0, n: 1, t: '着陆页', u: 'academia.app', s: false,
+  p: '创始人 IP 是 95% 的护城河——产品介绍后置，先讲人和叙事。主转化路径是 newsletter，不是注册',
+  f: '通讯·口碑·公开演讲', nx: '试听 → 注册',
+  body: `
+<div class="page-mockup">
+  <div class="pm-topbar">
+    <div class="pm-logo serif">Academia</div>
+    <div class="pm-nav-links">
+      <a href="#">学院</a>
+      <a href="#">通讯</a>
+      <a href="#">关于</a>
+    </div>
+    <div class="pm-nav-actions">
+      <a href="#" class="btn btn-ghost btn-sm">登录</a>
+      <a href="#" class="btn btn-primary btn-sm">免费试听</a>
+    </div>
+  </div>
+  <div class="pm-body" style="padding:48px 56px 40px;">
+    <div style="max-width:560px;">
+      <p class="lbl-eyebrow">个人 AI 研究生院</p>
+      <h1 class="h-display serif">把世界顶尖大学的<br/>智识资产，压缩成一张<br/>可对话的认知地图。</h1>
+      <p class="lead">不是另一个 ChatGPT。不是另一门 MOOC。把 Porter、Kotler、Christensen 的研究脉络拉到你面前——一节一节，按苏格拉底式追问，永久点亮在你的地图上。</p>
+      <div class="row-tight mt-3">
+        <a href="#" class="btn btn-primary btn-lg">免费试听一节 →</a>
+        <a href="#" class="btn btn-secondary btn-lg">查看课程目录</a>
+      </div>
+    </div>
+
+    <div class="divider mt-5"></div>
+
+    <div class="founder-quote">
+      <div class="founder-photo serif">Z</div>
+      <div>
+        <p class="founder-text serif">"这不是 AI 教育产品。这是我读了十年学院派文献之后，希望自己 25 岁就拥有的那种导师陪伴——只是用 LLM 实现的。你买的不是产品，是判断力。"</p>
+        <p class="founder-name">— 张某，创始人，连续创业者，每周通讯订阅 5,400+</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <p class="lbl-eyebrow">免费试听 · 不需注册</p>
+    <h2 class="h-section serif mt-2 mb-3">先尝一节，再决定</h2>
+    <div class="node-grid">
+      <div class="node-card">
+        <span class="tag-pill tag-undergrad">本科 · Kellogg</span>
+        <div class="node-title serif">4P 与 STP 框架</div>
+        <div class="node-prof">Philip Kotler</div>
+        <div class="node-foot">
+          <span class="price-faded faded">免费试听</span>
+          <span class="faded" style="font-size:11px;">90 min →</span>
+        </div>
+      </div>
+      <div class="node-card">
+        <span class="tag-pill tag-mba">MBA · HBS</span>
+        <div class="node-title serif">颠覆式创新理论</div>
+        <div class="node-prof">Clayton Christensen</div>
+        <div class="node-foot">
+          <span class="price-faded faded">免费试听</span>
+          <span class="faded" style="font-size:11px;">2.5h →</span>
+        </div>
+      </div>
+      <div class="node-card">
+        <span class="tag-pill tag-mba">MBA · HBS</span>
+        <div class="node-title serif">Porter 五力分析</div>
+        <div class="node-prof">Michael Porter</div>
+        <div class="node-foot">
+          <span class="price-faded faded">免费试听</span>
+          <span class="faded" style="font-size:11px;">2.5h →</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="nl-card">
+      <p class="lbl-eyebrow">每周一封</p>
+      <h3 class="h-section serif" style="font-size:24px;">一个学院派概念，写给认真思考的人</h3>
+      <p style="font-size:13px;color:rgba(255,255,255,0.65);margin-top:8px;">免费。可一键退订。已订阅 5,400 位创业者、产品、战略从业者。</p>
+      <div class="nl-row">
+        <input class="nl-input" placeholder="your@email.com" type="email" />
+        <button class="nl-btn">订阅</button>
+      </div>
+    </div>
+  </div>
+</div>`
+},
+
+preview: {
+  l: 0, n: 2, t: '公开试听', u: 'academia.app/n/4p-stp', s: false,
+  p: 'pay-per-node 模型最大风险是"用户不知一节值不值"——必须让用户在登录前尝到对话魔力',
+  f: '着陆页 / 通讯链接', nx: '触达上限 → 注册',
+  body: `
+<div class="page-mockup">
+  <div class="pm-topbar">
+    <div class="pm-logo serif">Academia</div>
+    <div class="pm-nav-links"><a href="#" class="muted">← 返回</a></div>
+    <div class="pm-nav-actions">
+      <a href="#" class="btn btn-secondary btn-sm">注册</a>
+    </div>
+  </div>
+  <div class="pm-body" style="max-width:680px;margin:0 auto;padding:40px 48px;">
+    <span class="tag-pill tag-undergrad">本科基础 · Kellogg</span>
+    <h1 class="h-section serif mt-2" style="font-size:28px;">4P 与 STP 框架</h1>
+    <p class="muted" style="font-size:14px;margin-top:6px;">— Philip Kotler · 90 分钟 · 免费试听</p>
+
+    <div class="divider"></div>
+
+    <div class="prose">
+      <p class="pull">开场讲义</p>
+      <p>1960 年，密歇根州立大学的 Jerome McCarthy 在他的教科书 <em>Basic Marketing</em> 里第一次系统提出 4P 框架。这是一次惊人的智识简化——他把当时 marketing 学界几十种"营销变量"压缩成四个英文 P 开头的词：<strong>Product, Price, Place, Promotion</strong>。</p>
+      <p>这套框架之所以经久不衰，不是因为它"对"，是因为它<strong>在结构上稳定</strong>——它给商业决策提供了一个不会塌的脚手架。但它也有它的盲区，这正是我们今天要聊的⋯⋯</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="dlg">
+      <div class="dlg-avatar ai serif">A</div>
+      <div class="dlg-body">
+        <div class="dlg-meta">Academia</div>
+        <p style="margin:0;">在我们进 4P 之前——你说说你最近正在做的项目？哪怕一句话。我想知道你是从什么具体的处境读这一节的。</p>
+      </div>
+    </div>
+
+    <div class="dlg">
+      <div class="dlg-avatar user">你</div>
+      <div class="dlg-body">
+        <div class="dlg-meta">3 分钟前</div>
+        <p style="margin:0;">我在做一个面向独立设计师的 SaaS 工具，年付 $99。最近增长卡住了。</p>
+      </div>
+    </div>
+
+    <div class="dlg">
+      <div class="dlg-avatar ai serif">A</div>
+      <div class="dlg-body">
+        <div class="dlg-meta">Academia · 刚刚</div>
+        <p style="margin:0;">好。那我先不讲 4P 是哪四个——我先问你：当你说"增长卡住了"，你是 4 个 P 中的哪一个失灵？是 Product 不对、Price 不对、Place（渠道）不对，还是 Promotion 不对？凭直觉答。</p>
+      </div>
+    </div>
+
+    <div class="paywall">
+      <h3 class="serif">还想继续这场对话？</h3>
+      <p>免费体验额度已用完。注册后继续，并把这场对话和后续笔记永久保留在你的认知地图上。</p>
+      <a href="#" class="btn btn-amber btn-lg">注册 · 永久保留 →</a>
+    </div>
+  </div>
+</div>`
+},
+
+signup: {
+  l: 1, n: 3, t: '注册 / 登录', u: 'academia.app/auth', s: false,
+  p: '极简——不要重表单，不要 social proof。精品产品的注册页要冷而干净',
+  f: '试听截断 / 着陆页', nx: '引导问答',
+  body: `
+<div class="page-mockup">
+  <div class="pm-topbar"><div class="pm-logo serif">Academia</div></div>
+  <div class="pm-body" style="max-width:380px;margin:0 auto;padding:64px 0;">
+    <h1 class="h-section serif" style="text-align:center;font-size:24px;">创建你的认知档案</h1>
+    <p class="muted" style="text-align:center;font-size:13px;margin-top:6px;margin-bottom:32px;">永久保留你点亮的每一节、每一条笔记</p>
+
+    <button class="btn btn-secondary btn-block btn-lg">
+      <span style="font-family:Charter,serif;font-weight:500;">G</span>
+      <span style="margin-left:6px;">使用 Google 继续</span>
+    </button>
+
+    <div class="divider-or">使用邮箱</div>
+
+    <div class="field">
+      <label class="field-label">邮箱</label>
+      <input class="input" type="email" placeholder="your@email.com" />
+    </div>
+    <div class="field">
+      <label class="field-label">密码</label>
+      <input class="input" type="password" placeholder="至少 8 位" />
+    </div>
+
+    <button class="btn btn-primary btn-block btn-lg" style="margin-top:8px;">注册</button>
+
+    <p class="faded" style="text-align:center;font-size:12px;margin-top:24px;">已有账户？<a href="#" style="color:var(--ink);">登录</a></p>
+  </div>
+</div>`
+},
+
+onboarding: {
+  l: 1, n: 4, t: '引导问答', u: 'academia.app/welcome', s: false,
+  p: '只问 2 个问题——动机和基础。"读过最深的书"是天才设问，比"你的水平"优雅且更准',
+  f: '注册成功', nx: '校园首页',
+  body: `
+<div class="page-mockup">
+  <div class="pm-topbar">
+    <div class="pm-logo serif">Academia</div>
+    <div class="pm-nav-links"></div>
+    <div class="pm-nav-actions"><span class="faded" style="font-size:12px;">Step 1 / 2</span></div>
+  </div>
+  <div class="pm-body" style="max-width:560px;margin:0 auto;padding:64px 0;">
+    <p class="lbl-eyebrow">现在</p>
+    <h1 class="h-section serif" style="font-size:28px;">你最想解决的问题是？</h1>
+    <p class="muted mt-2">这会决定我们先点亮地图的哪个角落。</p>
+
+    <div class="choice-grid">
+      <div class="choice">
+        <div class="choice-title">创业战略</div>
+        <div class="choice-desc">护城河、定位、商业模式</div>
+      </div>
+      <div class="choice selected">
+        <div class="choice-title">营销获客</div>
+        <div class="choice-desc">渠道、增长、用户决策</div>
+      </div>
+      <div class="choice">
+        <div class="choice-title">技术补商业</div>
+        <div class="choice-desc">工程师视角的商业素养</div>
+      </div>
+      <div class="choice">
+        <div class="choice-title">补全 MBA 思维</div>
+        <div class="choice-desc">系统性认知升级</div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:32px;">
+      <button class="btn btn-primary">下一步 →</button>
+    </div>
+  </div>
+</div>`
+},
+
+dashboard: {
+  l: 2, n: 5, t: '校园首页', u: 'academia.app/home', s: false,
+  p: '用户每次回来看到的是"我学了什么"——不是"我还剩多少天"。这就是非订阅模型的人格',
+  f: '登录 / 引导完成', nx: '学院地图 / 续接',
+  body: `
+<div class="page-mockup">
+  <div class="pm-topbar">
+    <div class="pm-logo serif">Academia</div>
+    <div class="pm-nav-links">
+      <a href="#" class="active">校园</a>
+      <a href="#">学院</a>
+      <a href="#">认知档案</a>
+    </div>
+    <div class="pm-nav-actions">
+      <span class="faded" style="font-size:12px;">通讯</span>
+      <div class="pm-avatar serif">Z</div>
+    </div>
+  </div>
+  <div class="pm-body" style="padding:40px 56px;">
+    <p class="lbl-eyebrow">早上好，张</p>
+    <h1 class="h-section serif" style="font-size:26px;">你已经在 Marketing 学院走过一半的路了。</h1>
+
+    <div class="row mt-4" style="gap:16px;">
+      <div class="card flex-1">
+        <p class="lbl-eyebrow">认知档案</p>
+        <div class="row" style="align-items:baseline;gap:24px;margin-top:8px;">
+          <div class="stat-block">
+            <div class="stat-num serif tabular">12<small>/47</small></div>
+            <div class="faded" style="font-size:11px;">已点亮节点</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-num serif tabular">5</div>
+            <div class="faded" style="font-size:11px;">跨学院连线</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-num serif tabular">23</div>
+            <div class="faded" style="font-size:11px;">笔记</div>
+          </div>
+        </div>
+        <div class="progress mt-3"><div class="progress-fill" style="width:25.5%;"></div></div>
+        <p class="faded" style="font-size:11px;margin-top:6px;">Marketing 学院 · 25.5% 完成</p>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <p class="lbl-eyebrow">续接</p>
+      <div class="upnext-card mt-2">
+        <div class="upnext-mark serif">5</div>
+        <div class="flex-1">
+          <div class="upnext-title serif">Porter 五力分析</div>
+          <div class="upnext-desc">已学 60% · 18 分钟前暂停</div>
+        </div>
+        <a href="#" class="btn btn-primary btn-sm">继续 →</a>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <p class="lbl-eyebrow">系统主动建议</p>
+      <div class="card mt-2" style="background:var(--lit-bg);border-color:var(--lit-line);">
+        <p style="font-size:13px;color:var(--lit);margin:0 0 4px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;font-size:10px;">CONNECTION FOUND</p>
+        <p class="serif" style="font-size:15px;margin:0 0 4px;">你点亮了 4P／STP — "竞争定位与差异化" 是它的自然延伸</p>
+        <p class="faded" style="font-size:12px;margin:0 0 12px;">Kellogg · Alexander Chernev · MBA 深度 · 2 小时</p>
+        <div class="row-tight">
+          <a href="#" class="btn btn-primary btn-sm">查看节点 ¥99 →</a>
+          <a href="#" class="btn btn-ghost btn-sm">不感兴趣</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <p class="lbl-eyebrow">本周新上线</p>
+      <div class="col-tight mt-2">
+        <div class="upnext-card" style="background:transparent;border:0.5px solid var(--line);">
+          <div class="upnext-mark" style="background:var(--accent-bg);color:var(--accent);">D</div>
+          <div class="flex-1">
+            <div class="upnext-title serif">Christensen 颠覆理论的张力与反例</div>
+            <div class="upnext-desc">大师档 · 仅本月 ¥299</div>
+          </div>
+        </div>
+        <div class="upnext-card" style="background:transparent;border:0.5px solid var(--line);">
+          <div class="upnext-mark">F</div>
+          <div class="flex-1">
+            <div class="upnext-title serif">CLV 与客户中心化</div>
+            <div class="upnext-desc">Wharton · Peter Fader · ¥99</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`
+},
+
+map: {
+  l: 2, n: 6, t: '学院地图', u: 'academia.app/college/marketing', s: true,
+  p: '★ 整个产品最反常的设计——地图同时是进度页、商品目录、发现引擎。三合一',
+  f: 'Dashboard / 主导航', nx: '节点详情',
+  body: `
+<div class="page-mockup">
+  <div class="pm-topbar">
+    <div class="pm-logo serif">Academia</div>
+    <div class="pm-nav-links">
+      <a href="#">校园</a>
+      <a href="#" class="active">学院</a>
+      <a href="#">认知档案</a>
+    </div>
+    <div class="pm-nav-actions">
+      <div class="pm-avatar serif">Z</div>
+    </div>
+  </div>
+  <div class="pm-body" style="padding:36px 56px 48px;">
+    <p class="lbl-eyebrow">学院</p>
+    <h1 class="h-section serif" style="font-size:28px;">Marketing</h1>
+    <p class="muted" style="font-size:14px;margin-top:6px;max-width:540px;">从 Kotler 的 4P 到 Christensen 的颠覆理论——47 个节点，按本科、MBA、博士三层递进。</p>
+
+    <div class="college-tabs">
+      <div class="college-tab active">Marketing</div>
+      <div class="college-tab">Strategy</div>
+      <div class="college-tab faded">Behavioral Econ <span style="font-size:10px;background:var(--surface-3);padding:1px 6px;border-radius:3px;margin-left:4px;">即将开放</span></div>
+    </div>
+
+    <div class="tier-section">
+      <div class="tier-head">
+        <span class="tag-pill tag-undergrad">本科</span>
+        <span class="tier-name serif">基础框架</span>
+        <span class="tier-meta">已点亮 4 / 8</span>
+      </div>
+      <div class="node-grid">
+        <div class="node-card lit">
+          <span class="tag-pill" style="background:rgba(255,255,255,0.5);color:var(--lit);">已点亮</span>
+          <div class="node-title serif">4P 与 STP 框架</div>
+          <div class="node-prof">Philip Kotler · Kellogg</div>
+          <div class="node-foot">
+            <span class="lit-mark"><span class="checkmark">✓</span> 已学 · 12 月 3 日</span>
+          </div>
+        </div>
+        <div class="node-card lit">
+          <span class="tag-pill" style="background:rgba(255,255,255,0.5);color:var(--lit);">已点亮</span>
+          <div class="node-title serif">CBBE 品牌资产</div>
+          <div class="node-prof">Kevin Keller · Dartmouth</div>
+          <div class="node-foot">
+            <span class="lit-mark"><span class="checkmark">✓</span> 已学 · 12 月 5 日</span>
+          </div>
+        </div>
+        <div class="node-card">
+          <span class="tag-pill tag-undergrad">本科</span>
+          <div class="node-title serif">消费者决策过程</div>
+          <div class="node-prof">Hoyer & MacInnis · Michigan</div>
+          <div class="node-foot">
+            <span class="price serif">¥49</span>
+            <span class="faded" style="font-size:11px;">90 min</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tier-section">
+      <div class="tier-head">
+        <span class="tag-pill tag-mba">MBA</span>
+        <span class="tier-name serif">深度框架</span>
+        <span class="tier-meta">已点亮 1 / 6 · 进行中 1</span>
+      </div>
+      <div class="node-grid">
+        <div class="node-card" style="border-color:var(--accent-line);background:var(--accent-bg);">
+          <span class="tag-pill tag-mba">进行中</span>
+          <div class="node-title serif">Porter 五力分析</div>
+          <div class="node-prof">Michael Porter · HBS</div>
+          <div class="node-foot">
+            <span style="font-size:11px;color:var(--accent);font-weight:500;">已学 60% — 继续 →</span>
+          </div>
+        </div>
+        <div class="node-card">
+          <span class="tag-pill tag-mba">MBA</span>
+          <div class="node-title serif">CLV 与客户中心化</div>
+          <div class="node-prof">Peter Fader · Wharton</div>
+          <div class="node-foot">
+            <span class="price serif">¥99</span>
+            <span class="faded" style="font-size:11px;">2.5h</span>
+          </div>
+        </div>
+        <div class="node-card">
+          <span class="tag-pill tag-mba">MBA</span>
+          <div class="node-title serif">行为经济学应用</div>
+          <div class="node-prof">Dan Ariely · Duke</div>
+          <div class="node-foot">
+            <span class="price serif">¥99</span>
+            <span class="faded" style="font-size:11px;">3h</span>
+          </div>
+        </div>
+        <div class="node-card">
+          <span class="tag-pill tag-mba">MBA</span>
+          <div class="node-title serif">数字营销战略</div>
+          <div class="node-prof">Sunil Gupta · HBS</div>
+          <div class="node-foot">
+            <span class="price serif">¥99</span>
+            <span class="faded" style="font-size:11px;">2.5h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tier-section">
+      <div class="tier-head">
+        <span class="tag-pill tag-phd">博士 · 大师档</span>
+        <span class="tier-name serif">辩论与张力</span>
+        <span class="tier-meta">仅本月开放</span>
+      </div>
+      <div class="node-grid" style="grid-template-columns:1fr;">
+        <div class="node-card featured">
+          <div class="row" style="justify-content:space-between;align-items:flex-start;">
+            <div class="flex-1">
+              <span class="tag-pill tag-phd">博士 · 大师档</span>
+              <div class="node-title serif mt-2">Christensen 颠覆理论的张力与反例</div>
+              <div class="node-prof">Clayton Christensen · HBS · 由 Andy Rachleff 共同审议</div>
+              <p class="muted" style="font-size:13px;margin:8px 0 0;">不只是讲颠覆——讲它在过去 20 年被怎么误用、被谁反驳、Christensen 自己晚年的修订。</p>
+            </div>
+            <div style="text-align:right;flex-shrink:0;margin-left:16px;">
+              <div class="price serif" style="font-size:20px;">¥299</div>
+              <div class="faded" style="font-size:11px;">仅本月</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="banner">
+      <div class="banner-text serif">
+        <strong>Marketing 学院通票</strong> — 一次性解锁全部 47 节，比逐节购买省 30%。
+      </div>
+      <a href="#" class="btn btn-amber">¥899 · 永久 →</a>
+    </div>
+  </div>
+</div>`
+},
+
+detail: {
+  l: 2, n: 7, t: '节点详情', u: 'academia.app/n/porter-five', s: false,
+  p: '节点是独立销售单元——这页要像电影预告片，单独可分享、可被通讯文章链接',
+  f: '地图 / 推荐 / 通讯链接', nx: '支付页',
+  body: `
+<div class="page-mockup">
+  <div class="pm-topbar">
+    <div class="pm-logo serif">Academia</div>
+    <div class="pm-nav-links"><a href="#">学院</a><a href="#">Marketing</a><a class="muted">Porter 五力</a></div>
+    <div class="pm-nav-actions"><div class="pm-avatar serif">Z</div></div>
+  </div>
+  <div class="pm-body" style="max-width:720px;margin:0 auto;padding:48px 0;">
+    <span class="tag-pill tag-mba">MBA · HBS</span>
+    <h1 class="h-display serif mt-2" style="font-size:32px;">Porter 五力分析</h1>
+    <p class="muted mt-2" style="font-size:15px;">— Michael Porter，竞争战略学派创始人 · 2 — 3 小时 · 苏格拉底式对话</p>
+
+    <div class="row mt-4" style="gap:24px;align-items:flex-start;">
+      <div class="flex-1">
+        <p class="lbl-eyebrow">这一节做完，你能</p>
+        <ul class="prose" style="font-size:15px;padding-left:18px;margin:8px 0 0;">
+          <li>用五力对你正在做的业务做完整诊断，不是套模板而是看清楚力量从哪来；</li>
+          <li>识别"看起来在赚钱但其实在被某个力慢性吸血"的常见误判；</li>
+          <li>说清楚 Porter 自己对五力最常见的误用是什么——这是大多数 MBA 学生不知道的。</li>
+        </ul>
+
+        <div class="divider"></div>
+
+        <p class="lbl-eyebrow">对话片段预览</p>
+        <div class="dlg mt-2">
+          <div class="dlg-avatar ai serif">A</div>
+          <div class="dlg-body">
+            <p style="margin:0;">先不背五个力。你说说你最近一个被竞品打疼的瞬间——具体的，你正面经历过的。</p>
+          </div>
+        </div>
+        <div class="dlg">
+          <div class="dlg-avatar user">你</div>
+          <div class="dlg-body">
+            <p style="margin:0;"><em>(你的回答)</em></p>
+          </div>
+        </div>
+        <div class="dlg">
+          <div class="dlg-avatar ai serif">A</div>
+          <div class="dlg-body">
+            <p style="margin:0;">好。注意你刚才描述的那个"疼"，其实不是 Porter 说的"新进入者威胁"——那是<em>渠道议价能力</em>。这是大家最常搞混的地方，让我换个角度问⋯⋯</p>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <p class="lbl-eyebrow">已学过的人这样说</p>
+        <div class="testimonial">
+          <p>"读了三遍《竞争战略》都没真正用上。这一节做完之后，我对自己当时的护城河判断全部推翻重做。"</p>
+          <div class="by">— Vasily，B2B SaaS 创始人 · 2 周前点亮</div>
+        </div>
+      </div>
+
+      <div style="width:240px;flex-shrink:0;">
+        <div class="card" style="position:sticky;top:24px;">
+          <div class="price serif" style="font-size:32px;">¥99</div>
+          <p class="faded" style="font-size:11px;margin-top:4px;">永久访问 · 无订阅</p>
+          <button class="btn btn-primary btn-block btn-lg mt-3">立即开始 →</button>
+          <div class="divider-soft"></div>
+          <ul style="font-size:11px;color:var(--ink-3);padding:0;list-style:none;margin:0;line-height:1.8;">
+            <li>· 24h 内不满意全额退款</li>
+            <li>· 永久保留笔记</li>
+            <li>· 自动更新地图</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`
+},
+
+pay: {
+  l: 3, n: 8, t: '支付页', u: 'academia.app/checkout', s: false,
+  p: '极简、不交叉销售、不打包折扣干扰——这一节的承诺是清楚的',
+  f: '节点详情', nx: '学习对话',
+  body: `
+<div class="page-mockup">
+  <div class="pm-topbar">
+    <div class="pm-logo serif">Academia</div>
+    <div class="pm-nav-links"></div>
+    <div class="pm-nav-actions"><span class="faded" style="font-size:12px;">安全结账</span></div>
+  </div>
+  <div class="pm-body" style="max-width:480px;margin:0 auto;padding:48px 0;">
+    <h1 class="h-section serif" style="font-size:24px;">确认订单</h1>
+
+    <div class="card mt-3">
+      <p class="lbl-eyebrow">订单</p>
+      <div class="order-row">
+        <div>
+          <div style="font-family:Charter,serif;font-size:15px;">Porter 五力分析</div>
+          <div class="faded" style="font-size:11px;margin-top:2px;">MBA · HBS · Michael Porter</div>
+        </div>
+        <div class="serif tabular">¥99</div>
+      </div>
+      <div class="order-row">
+        <div>总计</div>
+        <div class="serif tabular">¥99</div>
+      </div>
+      <p class="faded mt-2" style="font-size:11px;text-align:center;">永久访问 · 无订阅 · 不会自动续费</p>
+    </div>
+
+    <div class="mt-3">
+      <p class="lbl-eyebrow mb-2">支付方式</p>
+      <div class="pay-method">
+        <input type="radio" id="pm1" name="pm" checked>
+        <label for="pm1">微信支付</label>
+        <input type="radio" id="pm2" name="pm">
+        <label for="pm2">支付宝</label>
+        <input type="radio" id="pm3" name="pm">
+        <label for="pm3">信用卡</label>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-block btn-lg mt-3">确认支付 ¥99</button>
+
+    <p class="faded mt-3" style="font-size:11px;text-align:center;line-height:1.6;">24 小时内不满意 → 一键全额退款，无需理由<br/>支付完成后立即解锁，永久保留</p>
+  </div>
+</div>`
+},
+
+chat: {
+  l: 2, n: 9, t: '学习对话', u: 'academia.app/learn/porter-five', s: true,
+  p: '★ 产品价值兑现的唯一场所——所有人从这里判断你是否值得继续买下一节',
+  f: '支付完成 / 续接', nx: '节点完成',
+  body: `
+<div class="page-mockup">
+  <div class="pm-topbar" style="padding:10px 24px;">
+    <a href="#" class="muted" style="font-size:13px;text-decoration:none;">← Marketing</a>
+    <div class="pm-nav-links" style="margin-left:auto;flex:initial;">
+      <span style="font-size:12px;color:var(--ink-3);">Porter 五力 · 60%</span>
+    </div>
+    <div class="pm-nav-actions">
+      <a href="#" class="btn btn-ghost btn-sm">讲义</a>
+      <a href="#" class="btn btn-ghost btn-sm">笔记</a>
+    </div>
+  </div>
+  <div style="height:2px;background:var(--surface-2);">
+    <div style="width:60%;height:100%;background:var(--ink);"></div>
+  </div>
+  <div class="pm-body" style="max-width:680px;margin:0 auto;padding:32px 0 24px;min-height:540px;">
+    <p class="lbl-eyebrow">第三轮 · 应用到你的业务</p>
+
+    <div class="dlg">
+      <div class="dlg-avatar ai serif">A</div>
+      <div class="dlg-body">
+        <div class="dlg-meta">Academia</div>
+        <p style="margin:0 0 8px;">回到你刚才说的"被新进入者打疼了"——他们靠什么打的？是价格、是渠道、还是用户体验？凭直觉答，不用想全。</p>
+      </div>
+    </div>
+
+    <div class="dlg">
+      <div class="dlg-avatar user">你</div>
+      <div class="dlg-body">
+        <p style="margin:0;">主要是渠道。他们在小红书铺得很重，我们没跟上节奏。</p>
+      </div>
+    </div>
+
+    <div class="dlg">
+      <div class="dlg-avatar ai serif">A</div>
+      <div class="dlg-body">
+        <div class="dlg-meta">Academia</div>
+        <p style="margin:0 0 8px;">注意——你刚才的描述，其实<em>不是</em> Porter 说的"新进入者威胁"。新进入者威胁是说"有没有阻止他们进来的壁垒"，比如规模、专利、品牌。</p>
+        <p style="margin:0 0 8px;">你描述的是他们<strong>在小红书里渠道做得比你狠</strong>——这其实是另外两个力的合力：<em>渠道议价能力</em>（小红书作为流量分配者抽税你）+ <em>替代品威胁</em>（用户的注意力被替代）。</p>
+        <p style="margin:0;">这是为什么 Porter 自己晚年最后悔的事情之一——他承认五力在<strong>平台经济</strong>下需要被重新读。我们慢慢拆。先一个问题：你现在每月在小红书上有没有花钱？</p>
+      </div>
+    </div>
+
+    <div class="dlg" style="opacity:0.4;">
+      <div class="dlg-avatar user">你</div>
+      <div class="dlg-body">
+        <p style="margin:0;font-style:italic;color:var(--ink-3);">正在输入...</p>
+      </div>
+    </div>
+  </div>
+  <div style="border-top:0.5px solid var(--line);padding:16px 24px;background:var(--surface-2);">
+    <div style="max-width:680px;margin:0 auto;display:flex;gap:8px;align-items:flex-end;">
+      <textarea class="input" rows="2" placeholder="想清楚再答 — Academia 不会催你" style="resize:none;font-size:14px;flex:1;"></textarea>
+      <button class="btn btn-primary">发送</button>
+    </div>
+  </div>
+</div>`
+},
+
+complete: {
+  l: 2, n: 10, t: '节点完成', u: 'academia.app/learn/porter-five/done', s: false,
+  p: '点亮的仪式感是这个产品最该雕琢的瞬间——情感价值密度最高的 30 秒',
+  f: '学习对话完成', nx: '下一节 / 回学院地图',
+  body: `
+<div class="page-mockup">
+  <div class="pm-topbar">
+    <div class="pm-logo serif">Academia</div>
+    <div class="pm-nav-links"></div>
+    <div class="pm-nav-actions"><div class="pm-avatar serif">Z</div></div>
+  </div>
+  <div class="pm-body" style="max-width:600px;margin:0 auto;padding:56px 0 48px;">
+    <div style="text-align:center;">
+      <p style="font-family:Charter,serif;font-size:13px;color:var(--accent);letter-spacing:0.15em;text-transform:uppercase;margin:0 0 16px;">— 一个新节点点亮 —</p>
+      <h1 class="h-display serif" style="font-size:36px;">Porter 五力</h1>
+      <p class="muted mt-2" style="font-size:14px;">已永久保存到你的认知地图 · 第 13 节</p>
+    </div>
+
+    <div class="divider mt-5"></div>
+
+    <p class="lbl-eyebrow">为你生成的反思笔记</p>
+    <div class="card mt-2">
+      <h3 class="h-card serif">Porter 五力，应用到你的 SaaS 业务</h3>
+      <p class="prose" style="font-size:14px;margin-top:8px;">
+        基于今天的对话，<strong>你的"增长卡住"问题不在新进入者威胁</strong>，而在两个被低估的力：渠道议价能力（小红书作为分发者）和替代品威胁（注意力替代）。Porter 五力提示你⋯⋯
+      </p>
+      <div class="row-tight mt-2">
+        <a href="#" class="btn btn-secondary btn-sm">查看完整笔记 (820 字)</a>
+        <a href="#" class="btn btn-ghost btn-sm">导出为 markdown</a>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <p class="lbl-eyebrow">你的地图新生长了 2 条连线</p>
+      <div class="card mt-2" style="background:var(--lit-bg);border-color:var(--lit-line);">
+        <p class="serif" style="font-size:14px;margin:0;">
+          <strong style="color:var(--lit);">Porter 五力</strong> ↔ <strong style="color:var(--lit);">颠覆式创新理论</strong><br/>
+          <span class="muted" style="font-size:13px;">这两个理论存在 90 年代经典张力。Porter 重视稳态结构，Christensen 重视破坏式动态。学完两节后你能看到这个张力。</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <p class="lbl-eyebrow">推荐下一节</p>
+      <div class="card mt-2">
+        <div class="row" style="justify-content:space-between;align-items:center;">
+          <div>
+            <h3 class="h-card serif">护城河理论</h3>
+            <p class="faded" style="font-size:12px;">Pat Dorsey · 1.5h · 跟 Porter 五力是连体兄弟</p>
+          </div>
+          <div style="text-align:right;">
+            <div class="price serif" style="font-size:20px;">¥99</div>
+            <a href="#" class="btn btn-primary btn-sm mt-2">继续 →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:32px;">
+      <a href="#" class="btn btn-ghost">返回学院地图</a>
+    </div>
+  </div>
+</div>`
+},
+
+archive: {
+  l: 3, n: 11, t: '认知档案', u: 'academia.app/archive', s: false,
+  p: '替代订阅产品的"我的账户"——这里堆的是用户的智识资产，迁移成本最高的部分',
+  f: '主导航', nx: '回到具体节点',
+  body: `
+<div class="page-mockup">
+  <div class="pm-topbar">
+    <div class="pm-logo serif">Academia</div>
+    <div class="pm-nav-links">
+      <a href="#">校园</a>
+      <a href="#">学院</a>
+      <a href="#" class="active">认知档案</a>
+    </div>
+    <div class="pm-nav-actions"><div class="pm-avatar serif">Z</div></div>
+  </div>
+  <div class="pm-body" style="padding:36px 56px 48px;">
+    <p class="lbl-eyebrow">你的</p>
+    <h1 class="h-section serif" style="font-size:28px;">认知档案</h1>
+    <p class="muted mt-2">一切你点亮的、记下的、连起来的——永远是你的。</p>
+
+    <div class="row mt-4" style="gap:12px;">
+      <div class="card-2 flex-1" style="text-align:center;">
+        <div class="stat-num serif tabular">23</div>
+        <div class="faded" style="font-size:11px;">笔记</div>
+      </div>
+      <div class="card-2 flex-1" style="text-align:center;">
+        <div class="stat-num serif tabular">5</div>
+        <div class="faded" style="font-size:11px;">跨学院连线</div>
+      </div>
+      <div class="card-2 flex-1" style="text-align:center;">
+        <div class="stat-num serif tabular">3</div>
+        <div class="faded" style="font-size:11px;">待复习节点</div>
+      </div>
+    </div>
+
+    <div class="college-tabs mt-4">
+      <div class="college-tab active">笔记</div>
+      <div class="college-tab">连线</div>
+      <div class="college-tab">复习</div>
+      <div class="college-tab">学习历史</div>
+    </div>
+
+    <div class="note-row">
+      <div class="note-row-title serif">Porter 五力，应用到你的 SaaS 业务</div>
+      <div class="note-row-meta">12 月 18 日 · 820 字 <span class="note-row-tags"><span class="note-tag">战略</span><span class="note-tag">竞争</span></span></div>
+    </div>
+    <div class="note-row">
+      <div class="note-row-title serif">CLV 与"平均客户不存在"的反直觉</div>
+      <div class="note-row-meta">12 月 14 日 · 540 字 <span class="note-row-tags"><span class="note-tag">客户</span><span class="note-tag">数据</span></span></div>
+    </div>
+    <div class="note-row">
+      <div class="note-row-title serif">4P 在数字时代的修订——为什么 Place 几乎被颠覆</div>
+      <div class="note-row-meta">12 月 5 日 · 720 字 <span class="note-row-tags"><span class="note-tag">基础</span><span class="note-tag">数字</span></span></div>
+    </div>
+
+    <div class="mt-4 card" style="background:var(--accent-bg);border-color:var(--accent-line);">
+      <p class="lbl-eyebrow" style="color:var(--accent);">间隔重现</p>
+      <p class="serif" style="font-size:15px;margin:6px 0 12px;">距上次复习 4P 框架已 30 天 — 5 分钟测验帮你巩固。</p>
+      <a href="#" class="btn btn-amber btn-sm">开始 5 分钟测验</a>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="row" style="gap:12px;">
+      <a href="#" class="btn btn-secondary btn-sm">导出全部笔记 (markdown)</a>
+      <a href="#" class="btn btn-secondary btn-sm">导出地图状态</a>
+    </div>
+    <p class="faded mt-2" style="font-size:11px;">导出后即使不再使用 Academia，你的所有笔记和地图状态都完整保留在本地。</p>
+  </div>
+</div>`
+},
+
+founders: {
+  l: 3, n: 12, t: 'Founders 圈', u: 'academia.app/founders', s: false,
+  p: '关系订阅，与节点购买完全独立——卖的不是内容访问权，是与创始人的连接',
+  f: '通讯邮件 / 学完 ≥10 节弹窗', nx: '申请审核',
+  body: `
+<div class="page-mockup">
+  <div class="pm-topbar">
+    <div class="pm-logo serif">Academia</div>
+    <div class="pm-nav-links"></div>
+    <div class="pm-nav-actions"><div class="pm-avatar serif">Z</div></div>
+  </div>
+  <div class="pm-body" style="max-width:680px;margin:0 auto;padding:40px 0 56px;">
+    <div class="founders-hero">
+      <p class="lbl-eyebrow" style="color:var(--accent);">邀请制 · 每年限 100 — 200 人</p>
+      <h1 class="h-display serif">Founders 圈</h1>
+      <p class="lead" style="max-width:480px;margin:14px auto 0;">不解锁更多内容——所有节点照常单买。这里你买的，是和我以及一小群同质学习者的关系。</p>
+    </div>
+
+    <div class="card" style="background:var(--surface-2);border:none;">
+      <p class="serif" style="font-size:15px;margin:0;font-style:italic;color:var(--ink-2);">"我把这件事看作 Patreon，不是 SaaS。如果你只想要内容访问，按节单买就够了。如果你想要的是一年里固定能跟我深聊几次、跟一群相似的人在线下吃饭、对未来内容有话语权——那这是为你准备的。"</p>
+      <p class="faded mt-2" style="font-size:12px;">— 张某，创始人</p>
+    </div>
+
+    <div class="benefits">
+      <div class="benefit">
+        <div class="benefit-icon serif">L</div>
+        <div class="benefit-title">每月一次创始人 Live 答疑</div>
+        <div class="benefit-desc">90 分钟 · 不录播 · 你能直接提问</div>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon serif">C</div>
+        <div class="benefit-title">私域社群</div>
+        <div class="benefit-desc">100—200 位同质学习者 · 创业者、产品、战略</div>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon serif">R</div>
+        <div class="benefit-title">年度线下闭门会</div>
+        <div class="benefit-desc">一年一次 · 上海或杭州 · 不超过 50 人</div>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon serif">E</div>
+        <div class="benefit-title">新节点早鸟试听</div>
+        <div class="benefit-desc">每个新节点 Founders 提前 7 天试听并影响最终内容</div>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon serif">V</div>
+        <div class="benefit-title">未来方向投票权</div>
+        <div class="benefit-desc">下一个学院开什么、大师档请谁——Founders 一人一票</div>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon serif">B</div>
+        <div class="benefit-title">年度学习手册</div>
+        <div class="benefit-desc">实体寄送 · 每年一本 · 编号限定</div>
+      </div>
+    </div>
+
+    <div class="card mt-4" style="text-align:center;padding:28px;">
+      <div class="serif" style="font-size:32px;font-weight:500;letter-spacing:-0.01em;">¥9,999<span class="faded" style="font-size:14px;font-weight:400;">／年</span></div>
+      <p class="faded" style="font-size:12px;margin-top:6px;">需提交 500 字申请说明 · 1 周内回复</p>
+      <a href="#" class="btn btn-amber btn-lg mt-3">提交申请</a>
+    </div>
+  </div>
+</div>`
+},
+
+settings: {
+  l: 4, n: 13, t: '设置', u: 'academia.app/settings', s: false,
+  p: '功利、克制、不挽留——退出按钮要明确，不做 dark pattern',
+  f: '账户菜单', nx: '—',
+  body: `
+<div class="page-mockup">
+  <div class="pm-topbar">
+    <div class="pm-logo serif">Academia</div>
+    <div class="pm-nav-links"></div>
+    <div class="pm-nav-actions"><div class="pm-avatar serif">Z</div></div>
+  </div>
+  <div class="pm-body" style="max-width:600px;margin:0 auto;padding:36px 0 48px;">
+    <h1 class="h-section serif" style="font-size:24px;">设置</h1>
+
+    <div class="college-tabs mt-3">
+      <div class="college-tab active">账户</div>
+      <div class="college-tab">通讯</div>
+      <div class="college-tab">数据</div>
+      <div class="college-tab">支付</div>
+    </div>
+
+    <div class="settings-row">
+      <div>
+        <div class="settings-label">邮箱</div>
+        <div class="settings-meta">zhang@example.com</div>
+      </div>
+      <a href="#" class="btn btn-secondary btn-sm">修改</a>
+    </div>
+    <div class="settings-row">
+      <div>
+        <div class="settings-label">密码</div>
+        <div class="settings-meta">最近修改于 12 月 1 日</div>
+      </div>
+      <a href="#" class="btn btn-secondary btn-sm">修改</a>
+    </div>
+    <div class="settings-row">
+      <div>
+        <div class="settings-label">每周通讯</div>
+        <div class="settings-meta">已订阅 · 12 月 1 日加入</div>
+      </div>
+      <a href="#" class="btn btn-secondary btn-sm">取消订阅</a>
+    </div>
+
+    <div class="divider mt-4"></div>
+
+    <p class="lbl-eyebrow">数据导出</p>
+    <p class="muted mt-2" style="font-size:13px;">即使不再使用 Academia，你的所有笔记、学习历史、地图状态都完整保留在本地。</p>
+    <div class="row-tight mt-2">
+      <a href="#" class="btn btn-secondary btn-sm">导出笔记 (markdown)</a>
+      <a href="#" class="btn btn-secondary btn-sm">导出地图状态 (JSON)</a>
+    </div>
+
+    <div class="divider mt-4"></div>
+
+    <p class="lbl-eyebrow" style="color:#A32D2D;">危险区域</p>
+    <div class="row mt-2" style="justify-content:space-between;align-items:center;">
+      <div>
+        <div class="settings-label">永久删除账户</div>
+        <div class="settings-meta">立即生效 · 不可撤销 · 所有数据 30 天后销毁</div>
+      </div>
+      <a href="#" class="btn btn-secondary btn-sm" style="color:#A32D2D;">删除账户</a>
+    </div>
+  </div>
+</div>`
+}
+
+};
+
+const LAYERS = [
+  { id: 0, t: 'Layer 0 · 公共层（不需登录）', k: ['landing', 'preview'] },
+  { id: 1, t: 'Layer 1 · 入口层', k: ['signup', 'onboarding'] },
+  { id: 2, t: 'Layer 2 · 核心学习层', k: ['dashboard', 'map', 'detail', 'chat', 'complete'] },
+  { id: 3, t: 'Layer 3 · 支撑层', k: ['pay', 'archive', 'founders'] },
+  { id: 4, t: 'Layer 4 · 设置层', k: ['settings'] }
+];
+
+const nav = document.getElementById('nav');
+nav.innerHTML = LAYERS.map(l => `
+  <div class="layer-group">
+    <div class="layer-label">${l.t}</div>
+    ${l.k.map(k => `
+      <button class="page-btn" data-key="${k}">
+        <span class="pn">${PAGES[k].n}</span>
+        <span>${PAGES[k].t}</span>
+        ${PAGES[k].s ? '<span class="star">★</span>' : ''}
+      </button>
+    `).join('')}
+  </div>
+`).join('');
+
+function render(k) {
+  const p = PAGES[k];
+  document.getElementById('canvas').innerHTML = `
+    <div class="canvas-meta">
+      <span class="layer-tag">Layer ${p.l}${p.s ? ' · 核心页' : ''}</span>
+      <span class="url-pill">${p.u}</span>
+      <span style="margin-left:auto;font-size:12px;">${p.t}</span>
+    </div>
+    <p class="purpose-line">${p.p}</p>
+    ${p.body}
+    <div class="flow-line">
+      <div><b>FROM</b> &nbsp; ${p.f}</div>
+      <div><b>NEXT</b> &nbsp; ${p.nx}</div>
+    </div>
+  `;
+  document.querySelectorAll('.page-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.key === k);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.querySelectorAll('.page-btn').forEach(b => {
+  b.addEventListener('click', () => render(b.dataset.key));
+});
+
+render('landing');
+</script>
+</body>
+</html>
