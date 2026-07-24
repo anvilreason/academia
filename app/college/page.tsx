@@ -37,7 +37,9 @@ export default function UniversityMapPage() {
         <section className="academic-policy-strip">
           <div>
             <span>毕业要求</span>
-            <strong>146–170 学分</strong>
+            <strong>
+              {universityStats.minCredits}–{universityStats.maxCredits} 学分
+            </strong>
           </div>
           <div>
             <span>课程评价</span>
@@ -56,7 +58,7 @@ export default function UniversityMapPage() {
         <div className="university-section-heading">
           <div>
             <p className="eyebrow">学院总览</p>
-            <h2>十二个学院，一张跨学科地图</h2>
+            <h2>从基础学科到医学与可持续发展</h2>
           </div>
           <p>
             学院对应知识领域，专业对应你的长期项目，课程对应需要逐项完成的学习任务。
@@ -92,6 +94,45 @@ export default function UniversityMapPage() {
             </Link>
           ))}
         </div>
+
+        <section className="catalog-sources">
+          <div>
+            <p className="eyebrow">目录编制依据</p>
+            <h2>参考顶尖大学，但不复制任何一所大学。</h2>
+            <p>
+              学院结构综合中国综合性研究型大学的学科门类，与斯坦福式跨学科项目组织方式；专业名称经过本产品统一整理。
+            </p>
+          </div>
+          <div className="catalog-source-links">
+            <a
+              href="https://www.tsinghua.edu.cn/jyjx/bksjy/bkzy.htm"
+              rel="noreferrer"
+              target="_blank"
+            >
+              <span>清华大学</span>
+              <strong>2026 本科专业设置</strong>
+              <em>工程、医学、建筑与双学士项目 ↗</em>
+            </a>
+            <a
+              href="https://dean.pku.edu.cn/web/about.php"
+              rel="noreferrer"
+              target="_blank"
+            >
+              <span>北京大学</span>
+              <strong>本科教学与交叉培养</strong>
+              <em>134 个本科专业及跨学科培养 ↗</em>
+            </a>
+            <a
+              href="https://majors.stanford.edu/majors"
+              rel="noreferrer"
+              target="_blank"
+            >
+              <span>Stanford University</span>
+              <strong>Undergraduate Majors</strong>
+              <em>跨学院与个性化专业路径 ↗</em>
+            </a>
+          </div>
+        </section>
       </section>
     </ProductShell>
   );

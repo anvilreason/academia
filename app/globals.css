@@ -1695,6 +1695,69 @@ a {
   color: var(--school-accent);
 }
 
+.catalog-sources {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.3fr);
+  gap: 70px;
+  margin-top: 92px;
+  padding: 42px;
+  border-radius: 22px;
+  background: var(--sidebar);
+  color: #f8f3e9;
+}
+
+.catalog-sources h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 34px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.catalog-sources > div:first-child > p:last-child {
+  margin: 18px 0 0;
+  color: #aaa195;
+  font-size: 11px;
+}
+
+.catalog-source-links {
+  display: grid;
+  gap: 8px;
+}
+
+.catalog-source-links a {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 2px 18px;
+  padding: 15px 18px;
+  border: 1px solid #443f38;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 3%);
+}
+
+.catalog-source-links a:hover {
+  border-color: #8d7960;
+  background: rgb(255 255 255 / 5%);
+}
+
+.catalog-source-links span {
+  grid-row: span 2;
+  color: #c6ad8e;
+  font-size: 10px;
+}
+
+.catalog-source-links strong {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.catalog-source-links em {
+  color: #8f877b;
+  font-size: 9px;
+  font-style: normal;
+}
+
 .academic-breadcrumb {
   display: flex;
   flex-wrap: wrap;
@@ -2780,6 +2843,20 @@ a {
   .program-grid,
   .landing-school-grid {
     grid-template-columns: 1fr;
+  }
+
+  .catalog-sources {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    padding: 26px 20px;
+  }
+
+  .catalog-source-links a {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-source-links span {
+    grid-row: auto;
   }
 
   .school-card {

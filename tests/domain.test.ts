@@ -24,6 +24,10 @@ import {
   membershipForCompletedSpend,
   weightedGpa,
 } from "../lib/domain/grading.ts";
+import {
+  universitySchools,
+  universityStats,
+} from "../lib/content/university.ts";
 
 test("password policy rejects weak values and verifies derived hashes", async () => {
   assert.equal(validatePassword("short"), "密码至少需要 10 位");
@@ -128,4 +132,36 @@ test("membership is activated by completed-course spend, never wallet top-up", (
   assert.equal(membershipForCompletedSpend(30_000).name, "研习");
   assert.equal(membershipForCompletedSpend(50_000).name, "知行");
   assert.equal(membershipForCompletedSpend(1_000_000).name, "山长");
+});
+
+test("university catalog has broad, unique and credit-complete programs", () => {
+  assert.equal(universityStats.schools, 17);
+  assert.equal(universityStats.programs, 95);
+  assert.equal(universityStats.courses, 760);
+  assert.equal(universityStats.minCredits, 146);
+  assert.equal(universityStats.maxCredits, 200);
+
+  const programSlugs = universitySchools.flatMap((school) =>
+    school.programs.map((program) => program.slug),
+  );
+  const courseSlugs = universitySchools.flatMap((school) =>
+    school.programs.flatMap((program) =>
+      program.courses.map((course) => course.slug),
+    ),
+  );
+  assert.equal(new Set(programSlugs).size, programSlugs.length);
+  assert.equal(new Set(courseSlugs).size, courseSlugs.length);
+
+  for (const school of universitySchools) {
+    for (const program of school.programs) {
+      assert.equal(
+        program.creditPlan.reduce((sum, band) => sum + band.credits, 0),
+        program.requiredCredits,
+      );
+      assert.equal(
+        program.courses.every((course) => course.credits > 0),
+        true,
+      );
+    }
+  }
 });
