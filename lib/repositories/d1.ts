@@ -1,6 +1,7 @@
-import { and, asc, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
+  authRateLimits,
   agentMessages,
   agentThreads,
   guestTrialUsage,
@@ -43,7 +44,12 @@ function asUser(row: typeof users.$inferSelect): UserRecord {
     email: row.email,
     passwordHash: row.passwordHash,
     passwordSalt: row.passwordSalt,
+    passwordIterations: row.passwordIterations,
+    passwordAlgorithm: row.passwordAlgorithm,
     name: row.name,
+    status: row.status,
+    emailVerifiedAt: row.emailVerifiedAt,
+    lastLoginAt: row.lastLoginAt,
   };
 }
 
@@ -169,6 +175,8 @@ export class D1AcademiaRepository implements AcademiaRepository {
     email: string;
     passwordHash: string;
     passwordSalt: string;
+    passwordIterations: number;
+    passwordAlgorithm: string;
     name?: string;
   }) {
     const now = nowIso();
@@ -179,12 +187,55 @@ export class D1AcademiaRepository implements AcademiaRepository {
         email: input.email.toLowerCase(),
         passwordHash: input.passwordHash,
         passwordSalt: input.passwordSalt,
+        passwordIterations: input.passwordIterations,
+        passwordAlgorithm: input.passwordAlgorithm,
         name: input.name?.trim() || null,
         createdAt: now,
         updatedAt: now,
       })
       .returning();
     return asUser(row);
+  }
+
+  async recordUserLogin(userId: string) {
+    const now = nowIso();
+    await getDb()
+      .update(users)
+      .set({ lastLoginAt: now, updatedAt: now })
+      .where(and(eq(users.id, userId), isNull(users.deletedAt)));
+  }
+
+  async consumeAuthRateLimit(input: {
+    action: "register" | "login";
+    subjectHash: string;
+    windowKey: string;
+    limit: number;
+  }) {
+    const now = nowIso();
+    const [row] = await getDb()
+      .insert(authRateLimits)
+      .values({
+        id: newId(),
+        action: input.action,
+        subjectHash: input.subjectHash,
+        windowKey: input.windowKey,
+        count: 1,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: [
+          authRateLimits.action,
+          authRateLimits.subjectHash,
+          authRateLimits.windowKey,
+        ],
+        set: {
+          count: sql`${authRateLimits.count} + 1`,
+          updatedAt: now,
+        },
+      })
+      .returning({ count: authRateLimits.count });
+    return row.count <= input.limit;
   }
 
   async claimGuestSessions(guestId: string, userId: string) {

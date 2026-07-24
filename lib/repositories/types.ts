@@ -3,7 +3,12 @@ export type UserRecord = {
   email: string;
   passwordHash: string;
   passwordSalt: string;
+  passwordIterations: number;
+  passwordAlgorithm: string;
   name: string | null;
+  status: string;
+  emailVerifiedAt: string | null;
+  lastLoginAt: string | null;
 };
 
 export type LearningSessionRecord = {
@@ -146,8 +151,17 @@ export interface AcademiaRepository {
     email: string;
     passwordHash: string;
     passwordSalt: string;
+    passwordIterations: number;
+    passwordAlgorithm: string;
     name?: string;
   }): Promise<UserRecord>;
+  recordUserLogin(userId: string): Promise<void>;
+  consumeAuthRateLimit(input: {
+    action: "register" | "login";
+    subjectHash: string;
+    windowKey: string;
+    limit: number;
+  }): Promise<boolean>;
   claimGuestSessions(guestId: string, userId: string): Promise<void>;
   createLearningSession(input: {
     nodeSlug: string;

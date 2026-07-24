@@ -19,10 +19,38 @@ export const users = sqliteTable(
     email: text("email").notNull(),
     passwordHash: text("password_hash").notNull(),
     passwordSalt: text("password_salt").notNull(),
+    passwordIterations: integer("password_iterations")
+      .notNull()
+      .default(100_000),
+    passwordAlgorithm: text("password_algorithm")
+      .notNull()
+      .default("pbkdf2-sha256"),
     name: text("name"),
+    status: text("status").notNull().default("active"),
+    emailVerifiedAt: text("email_verified_at"),
+    lastLoginAt: text("last_login_at"),
     ...lifecycle,
   },
   (table) => [uniqueIndex("users_email_unique").on(table.email)],
+);
+
+export const authRateLimits = sqliteTable(
+  "auth_rate_limits",
+  {
+    id: text("id").primaryKey(),
+    action: text("action").notNull(),
+    subjectHash: text("subject_hash").notNull(),
+    windowKey: text("window_key").notNull(),
+    count: integer("count").notNull().default(1),
+    ...lifecycle,
+  },
+  (table) => [
+    uniqueIndex("auth_rate_limits_subject_window_unique").on(
+      table.action,
+      table.subjectHash,
+      table.windowKey,
+    ),
+  ],
 );
 
 export const learningNodes = sqliteTable(

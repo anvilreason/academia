@@ -11,12 +11,31 @@ model User {
   email        String   @unique
   passwordHash String   @map("password_hash")
   passwordSalt String   @map("password_salt")
+  passwordIterations Int @default(100000) @map("password_iterations")
+  passwordAlgorithm String @default("pbkdf2-sha256") @map("password_algorithm")
   name         String?
+  status       String   @default("active")
+  emailVerifiedAt DateTime? @map("email_verified_at")
+  lastLoginAt  DateTime? @map("last_login_at")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
   deletedAt    DateTime? @map("deleted_at")
 
   @@map("users")
+}
+
+model AuthRateLimit {
+  id          String    @id @default(uuid())
+  action      String
+  subjectHash String    @map("subject_hash")
+  windowKey   String    @map("window_key")
+  count       Int       @default(1)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  @@unique([action, subjectHash, windowKey])
+  @@map("auth_rate_limits")
 }
 
 model LearningNode {

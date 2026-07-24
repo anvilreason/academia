@@ -34,17 +34,7 @@ async function json<T>(response: Response) {
   return (await response.json()) as T;
 }
 
-async function registerAndSignIn(jar: CookieJar, email: string) {
-  const registration = await jar.request("/api/auth/register", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      email,
-      password: "Academia2026",
-      name: "集成测试学习者",
-    }),
-  });
-  assert.equal(registration.status, 201);
+async function signIn(jar: CookieJar, email: string) {
   const csrf = await json<{ csrfToken: string }>(
     await jar.request("/api/auth/csrf"),
   );
@@ -63,6 +53,20 @@ async function registerAndSignIn(jar: CookieJar, email: string) {
   assert.equal([200, 302, 303].includes(login.status), true);
 }
 
+async function registerAndSignIn(jar: CookieJar, email: string) {
+  const registration = await jar.request("/api/auth/register", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      email,
+      password: "Academia2026",
+      name: "集成测试学习者",
+    }),
+  });
+  assert.equal(registration.status, 201);
+  await signIn(jar, email);
+}
+
 test(
   "guest claim, paid access, idempotent test payment, authorization and completion",
   { skip: !baseUrl },
@@ -78,6 +82,25 @@ test(
 
     const email = `integration.${Date.now()}@example.com`;
     await registerAndSignIn(jar, email);
+    const duplicateRegistration = await jar.request("/api/auth/register", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        email,
+        password: "Academia2026",
+        name: "重复注册",
+      }),
+    });
+    assert.equal(duplicateRegistration.status, 409);
+
+    const returningUser = new CookieJar();
+    await signIn(returningUser, email);
+    assert.equal(
+      (await returningUser.request("/api/me/dashboard")).status,
+      200,
+      "a new browser session must be able to sign in to the persisted account",
+    );
+
     assert.equal(
       (await jar.request(`/api/learning-sessions/${trial.data.id}`)).status,
       200,

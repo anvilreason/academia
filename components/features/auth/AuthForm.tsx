@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
+import { safeInternalPath } from "@/lib/security/redirect";
 
 export function AuthForm({
   initialMode,
@@ -13,6 +14,7 @@ export function AuthForm({
   const [mode, setMode] = useState<"register" | "login">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +26,9 @@ export function AuthForm({
     setError(null);
     try {
       if (mode === "register") {
+        if (password !== passwordConfirmation) {
+          throw new Error("两次输入的密码不一致");
+        }
         const response = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -42,7 +47,7 @@ export function AuthForm({
         redirect: false,
       });
       if (result?.error) throw new Error("邮箱或密码不正确");
-      window.location.href = continueTo || "/home";
+      window.location.href = safeInternalPath(continueTo);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "操作失败");
     } finally {
@@ -84,6 +89,23 @@ export function AuthForm({
             value={email}
           />
         </div>
+        {mode === "register" && (
+          <div className="field">
+            <label htmlFor="password-confirmation">再次输入密码</label>
+            <input
+              autoComplete="new-password"
+              id="password-confirmation"
+              minLength={10}
+              onChange={(event) =>
+                setPasswordConfirmation(event.target.value)
+              }
+              placeholder="确认刚才输入的密码"
+              required
+              type="password"
+              value={passwordConfirmation}
+            />
+          </div>
+        )}
         <div className="field">
           <label htmlFor="password">密码</label>
           <input
@@ -124,7 +146,9 @@ export function AuthForm({
       >
         {mode === "register" ? "已有学籍？直接进入" : "第一次来？建立学籍"}
       </button>
-      <small>先行校区仍在建设中，请使用独立密码，不要提交敏感资料。</small>
+      <small>
+        密码只会以不可逆摘要保存。先行校区尚未接入邮箱验证与找回密码，请使用独立密码。
+      </small>
     </section>
   );
 }

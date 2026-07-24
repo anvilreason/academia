@@ -17,9 +17,12 @@ import {
 } from "../lib/llm/pricing.ts";
 import {
   hashPassword,
+  PASSWORD_ITERATIONS,
   validatePassword,
   verifyPassword,
 } from "../lib/security/password.ts";
+import { authWindowKey } from "../lib/security/auth-window.ts";
+import { safeInternalPath } from "../lib/security/redirect.ts";
 import {
   gradePointForScore,
   membershipForCompletedSpend,
@@ -39,6 +42,7 @@ test("password policy rejects weak values and verifies derived hashes", async ()
   );
   assert.equal(validatePassword("Academia2026"), null);
   const derived = await hashPassword("Academia2026");
+  assert.equal(derived.iterations, PASSWORD_ITERATIONS);
   assert.equal(
     await verifyPassword("Academia2026", derived.hash, derived.salt),
     true,
@@ -47,6 +51,14 @@ test("password policy rejects weak values and verifies derived hashes", async ()
     await verifyPassword("Academia2027", derived.hash, derived.salt),
     false,
   );
+});
+
+test("auth helpers enforce fixed windows and same-origin redirects", () => {
+  assert.equal(authWindowKey(15, 15 * 60_000 - 1), "0");
+  assert.equal(authWindowKey(15, 15 * 60_000), "1");
+  assert.equal(safeInternalPath("/learn/4p-stp"), "/learn/4p-stp");
+  assert.equal(safeInternalPath("https://example.com"), "/home");
+  assert.equal(safeInternalPath("//example.com"), "/home");
 });
 
 test("test order state machine cannot be used as a production payment bypass", () => {

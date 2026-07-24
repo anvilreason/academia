@@ -13,7 +13,8 @@
 - 页面、REST 接口、权限和 LLM 网关只依赖 `AcademiaRepository`。
 - `D1AcademiaRepository` 是预览实现，Drizzle 管理表结构和迁移。
 - `PrismaAcademiaRepository` 是阿里云 RDS/PostgreSQL 的生产替换点；生产资源就绪后按相同接口完成实现。
-- Auth.js 使用 JWT 会话。密码在服务端通过 Web Crypto PBKDF2 派生，盐和摘要分开保存。
+- Auth.js 使用 JWT 会话。密码在服务端通过 Web Crypto PBKDF2-SHA256 派生，每位用户使用独立盐，并记录算法和迭代次数；原始密码从不保存。Cloudflare 预览使用其运行时支持的 100,000 次迭代，阿里云正式环境迁移至 Argon2id。
+- 注册与登录使用按时间窗口计数的 D1 限流，限流标识由 IP 和邮箱经 HMAC 后生成，不保存原始 IP。正式环境迁移至 Tair，并补齐邮箱验证、找回密码、会话撤销和安全通知。
 - 所有模型请求只能经过 `lib/llm/router.ts`，业务只引用内部别名 `acad-pro`。Provider adapter 负责把统一消息转换为各模型厂商的流式协议。
 - `acad-pro` 可由环境变量映射到 Kimi、OpenAI 或 Anthropic；Kimi 的公开预览默认使用中国区 `kimi-k2.6` 快速模式，K3 适配保留为后续用户主动触发的“深入推演”。日常深入思考由苏格拉底式教学 Prompt 与持久记忆驱动。OpenAI 默认使用 `gpt-5.6-sol`，Anthropic 默认使用 `claude-sonnet-5`。SSE 对前端只暴露 `meta`、`delta`、`progress`、`usage`、`done` 和 `error`。
 - 每日 AI 成本按 Asia/Shanghai 日期结算，全局硬上限为 ¥50；请求开始前预留，结束后按累计 usage 结算。
