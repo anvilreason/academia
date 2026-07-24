@@ -15,6 +15,8 @@ export type AdminSection =
   | "users"
   | "geo"
   | "tracking"
+  | "finance"
+  | "definitions"
   | "team";
 
 const ROLE_SECTIONS: Record<AdminRole, ReadonlySet<AdminSection>> = {
@@ -25,6 +27,8 @@ const ROLE_SECTIONS: Record<AdminRole, ReadonlySet<AdminSection>> = {
     "users",
     "geo",
     "tracking",
+    "finance",
+    "definitions",
     "team",
   ]),
   admin: new Set([
@@ -34,9 +38,17 @@ const ROLE_SECTIONS: Record<AdminRole, ReadonlySet<AdminSection>> = {
     "users",
     "geo",
     "tracking",
+    "finance",
+    "definitions",
   ]),
-  growth: new Set(["overview", "growth", "tracking"]),
-  operations: new Set(["overview", "academics", "users", "geo"]),
+  growth: new Set(["overview", "growth", "tracking", "definitions"]),
+  operations: new Set([
+    "overview",
+    "academics",
+    "users",
+    "geo",
+    "definitions",
+  ]),
   analyst: new Set([
     "overview",
     "growth",
@@ -44,8 +56,10 @@ const ROLE_SECTIONS: Record<AdminRole, ReadonlySet<AdminSection>> = {
     "users",
     "geo",
     "tracking",
+    "finance",
+    "definitions",
   ]),
-  viewer: new Set(["overview"]),
+  viewer: new Set(["overview", "definitions"]),
 };
 
 export function isAdminRole(value: string): value is AdminRole {

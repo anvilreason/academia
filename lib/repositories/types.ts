@@ -42,8 +42,10 @@ export type OrderRecord = {
   nodeSlug: string;
   amountFen: number;
   status: string;
+  paymentMode: "test" | "production";
   idempotencyKey: string;
   confirmedAt: string | null;
+  refundedAt: string | null;
   createdAt: string;
 };
 
@@ -218,6 +220,7 @@ export interface AcademiaRepository {
     userId: string;
     nodeSlug: string;
     amountFen: number;
+    paymentMode: "test" | "production";
     idempotencyKey: string;
   }): Promise<OrderRecord>;
   getOrder(id: string): Promise<OrderRecord | null>;

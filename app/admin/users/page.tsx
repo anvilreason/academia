@@ -75,8 +75,8 @@ export default async function UsersPage({
         />
         <AdminMetric
           icon={CircleDollarSign}
-          label="完成选课"
-          note="测试与正式订单状态"
+          label="生产付费用户"
+          note="不包含测试订单"
           value={formatNumber(report.metrics.paying)}
         />
       </section>
@@ -103,7 +103,7 @@ export default async function UsersPage({
                 <th>专业</th>
                 <th>课程</th>
                 <th>完成</th>
-                <th>订单金额</th>
+                <th>生产净收入</th>
                 <th />
               </tr>
             </thead>

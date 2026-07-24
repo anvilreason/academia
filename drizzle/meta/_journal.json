@@ -57,6 +57,13 @@
       "when": 1784895543933,
       "tag": "0007_violet_valeria_richards",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1784899075623,
+      "tag": "0008_deep_jackal",
+      "breakpoints": true
     }
   ]
 }

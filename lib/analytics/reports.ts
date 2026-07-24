@@ -4,14 +4,17 @@ import {
   adminAuditLogs,
   adminMembers,
   analyticsEvents,
+  analyticsIdentityLinks,
   examAttempts,
   learningSessions,
+  llmCallLogs,
   memoryItems,
   orders,
   trackingLinks,
   userCoursePlans,
   userPrograms,
   users,
+  walletTransactions,
 } from "@/db/schema";
 import {
   getUniversityCourse,
@@ -20,20 +23,13 @@ import {
   universityStats,
 } from "@/lib/content/university";
 import { shanghaiDateKey } from "@/lib/server/api";
+import {
+  ACTIVE_EVENT_NAMES,
+  LEARNING_EVENT_NAMES,
+} from "@/lib/analytics/metric-definitions";
+import { calculateRevenueMetrics } from "@/lib/analytics/revenue-math";
 
 const DAY = 86_400_000;
-const MEANINGFUL_EVENTS = new Set([
-  "login_succeeded",
-  "trial_started",
-  "program_enrolled",
-  "course_enrolled",
-  "course_started",
-  "learning_message_sent",
-  "exam_submitted",
-  "course_completed",
-  "agent_message_sent",
-  "payment_succeeded",
-]);
 
 type ActorRow = { userId: string | null; guestId?: string | null };
 
@@ -62,25 +58,49 @@ function latest(...values: Array<string | null | undefined>) {
 }
 
 async function identityContext() {
-  const rows = await getDb()
-    .select({
-      id: users.id,
-      email: users.email,
-      name: users.name,
-      status: users.status,
-      emailVerifiedAt: users.emailVerifiedAt,
-      lastLoginAt: users.lastLoginAt,
-      createdAt: users.createdAt,
-    })
-    .from(users)
-    .where(isNull(users.deletedAt))
-    .orderBy(desc(users.createdAt));
+  const [rows, links] = await Promise.all([
+    getDb()
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        status: users.status,
+        emailVerifiedAt: users.emailVerifiedAt,
+        lastLoginAt: users.lastLoginAt,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(isNull(users.deletedAt))
+      .orderBy(desc(users.createdAt)),
+    getDb()
+      .select({
+        guestId: analyticsIdentityLinks.guestId,
+        userId: analyticsIdentityLinks.userId,
+      })
+      .from(analyticsIdentityLinks)
+      .where(isNull(analyticsIdentityLinks.deletedAt)),
+  ]);
   const testUserIds = new Set(
     rows.filter((row) => isTestEmail(row.email)).map((row) => row.id),
   );
   return {
     users: rows.filter((row) => !testUserIds.has(row.id)),
     testUserIds,
+    identityByGuest: new Map(
+      links.map((link) => [link.guestId, link.userId]),
+    ),
+  };
+}
+
+function resolveEventIdentity<T extends ActorRow>(
+  event: T,
+  identityByGuest: ReadonlyMap<string, string>,
+) {
+  return {
+    ...event,
+    userId:
+      event.userId ??
+      (event.guestId ? identityByGuest.get(event.guestId) ?? null : null),
   };
 }
 
@@ -123,36 +143,21 @@ export type GrowthReport = Awaited<ReturnType<typeof getGrowthReport>>;
 export async function getGrowthReport() {
   const now = Date.now();
   const since = new Date(now - 120 * DAY).toISOString();
-  const [{ users: realUsers, testUserIds }, rawEvents, sessions] =
+  const [
+    { users: realUsers, testUserIds, identityByGuest },
+    rawEvents,
+  ] =
     await Promise.all([
       identityContext(),
       eventRows(since),
-      getDb()
-        .select({
-          id: learningSessions.id,
-          userId: learningSessions.userId,
-          guestId: learningSessions.guestId,
-          status: learningSessions.status,
-          createdAt: learningSessions.createdAt,
-          updatedAt: learningSessions.updatedAt,
-        })
-        .from(learningSessions)
-        .where(
-          and(
-            gte(learningSessions.createdAt, since),
-            isNull(learningSessions.deletedAt),
-          ),
-        ),
     ]);
-  const events = rawEvents.filter(
-    (event) =>
+  const events = rawEvents
+    .map((event) => resolveEventIdentity(event, identityByGuest))
+    .filter(
+      (event) =>
       !event.isTest &&
       (!event.userId || !testUserIds.has(event.userId)),
-  );
-  const realSessions = sessions.filter(
-    (session) => !session.userId || !testUserIds.has(session.userId),
-  );
-
+    );
   const daily = dateKeys(30).map((dateKey) => {
     const dayEvents = events.filter((event) => event.dateKey === dateKey);
     const unique = (names?: ReadonlySet<string>) =>
@@ -168,15 +173,8 @@ export async function getGrowthReport() {
       registrations: realUsers.filter(
         (user) => shanghaiDateKey(new Date(user.createdAt)) === dateKey,
       ).length,
-      active: unique(MEANINGFUL_EVENTS),
-      learners: unique(
-        new Set([
-          "course_started",
-          "learning_message_sent",
-          "exam_submitted",
-          "course_completed",
-        ]),
-      ),
+      active: unique(ACTIVE_EVENT_NAMES),
+      learners: unique(LEARNING_EVENT_NAMES),
     };
   });
 
@@ -199,7 +197,7 @@ export async function getGrowthReport() {
           events.some((event) => {
             if (
               event.userId !== user.id ||
-              !MEANINGFUL_EVENTS.has(event.eventName)
+              !ACTIVE_EVENT_NAMES.has(event.eventName)
             ) {
               return false;
             }
@@ -224,29 +222,42 @@ export async function getGrowthReport() {
     };
   });
 
+  const actorEvents = new Map<string, typeof events>();
+  for (const event of events) {
+    const actor = actorKey(event);
+    if (!actor) continue;
+    const rows = actorEvents.get(actor) ?? [];
+    rows.push(event);
+    actorEvents.set(actor, rows);
+  }
   const sourceGroups = new Map<
     string,
     { source: string; visitors: Set<string>; signups: Set<string>; learners: Set<string> }
   >();
-  for (const event of events) {
+  for (const [actor, rows] of actorEvents) {
+    const ordered = [...rows].sort((a, b) =>
+      a.occurredAt.localeCompare(b.occurredAt),
+    );
     const source =
-      event.acquisitionSource ?? event.referrerHost ?? "直接访问";
+      ordered.find((event) => event.acquisitionSource)?.acquisitionSource ??
+      ordered.find(
+        (event) => event.eventName === "page_view" && event.referrerHost,
+      )?.referrerHost ??
+      "直接访问";
     const group = sourceGroups.get(source) ?? {
       source,
       visitors: new Set<string>(),
       signups: new Set<string>(),
       learners: new Set<string>(),
     };
-    const actor = actorKey(event);
-    if (actor && event.eventName === "page_view") group.visitors.add(actor);
-    if (actor && event.eventName === "signup_completed") group.signups.add(actor);
+    if (ordered.some((event) => event.eventName === "page_view")) {
+      group.visitors.add(actor);
+    }
+    if (ordered.some((event) => event.eventName === "signup_completed")) {
+      group.signups.add(actor);
+    }
     if (
-      actor &&
-      [
-        "course_started",
-        "learning_message_sent",
-        "course_completed",
-      ].includes(event.eventName)
+      ordered.some((event) => LEARNING_EVENT_NAMES.has(event.eventName))
     ) {
       group.learners.add(actor);
     }
@@ -288,23 +299,18 @@ export async function getGrowthReport() {
   const currentStart = now - 7 * DAY;
   const previousStart = now - 14 * DAY;
   const visitorEvents = new Set(["page_view"]);
-  const learnerEvents = new Set([
-    "course_started",
-    "learning_message_sent",
-    "exam_submitted",
-    "course_completed",
-  ]);
+  const learnerEvents = LEARNING_EVENT_NAMES;
   const visitors7d = periodActors(currentStart, now + 1, visitorEvents);
   const visitorsPrevious7d = periodActors(
     previousStart,
     currentStart,
     visitorEvents,
   );
-  const active7d = periodActors(currentStart, now + 1, MEANINGFUL_EVENTS);
+  const active7d = periodActors(currentStart, now + 1, ACTIVE_EVENT_NAMES);
   const activePrevious7d = periodActors(
     previousStart,
     currentStart,
-    MEANINGFUL_EVENTS,
+    ACTIVE_EVENT_NAMES,
   );
   const learners7d = periodActors(currentStart, now + 1, learnerEvents);
   const learnersPrevious7d = periodActors(
@@ -321,7 +327,7 @@ export async function getGrowthReport() {
     0,
   );
 
-  const visitors30 = new Set(
+  const visitorActors30 = new Set(
     events
       .filter(
         (event) =>
@@ -330,29 +336,50 @@ export async function getGrowthReport() {
       )
       .map(actorKey)
       .filter((key): key is string => Boolean(key)),
-  ).size;
-  const registered30 = realUsers.filter(
-    (user) => new Date(user.createdAt).getTime() >= now - 30 * DAY,
-  ).length;
-  const learners30 = new Set(
-    realSessions
+  );
+  const registeredActors30 = new Set(
+    realUsers
       .filter(
-        (session) =>
-          new Date(session.createdAt).getTime() >= now - 30 * DAY &&
-          Boolean(session.userId),
+        (user) => new Date(user.createdAt).getTime() >= now - 30 * DAY,
       )
-      .map((session) => session.userId as string),
-  ).size;
-  const completed30 = new Set(
-    realSessions
+      .map((user) => `u:${user.id}`),
+  );
+  const learnerActors30 = new Set(
+    events
       .filter(
-        (session) =>
-          session.status === "completed" &&
-          new Date(session.updatedAt).getTime() >= now - 30 * DAY &&
-          Boolean(session.userId),
+        (event) =>
+          LEARNING_EVENT_NAMES.has(event.eventName) &&
+          new Date(event.occurredAt).getTime() >= now - 30 * DAY,
       )
-      .map((session) => session.userId as string),
-  ).size;
+      .map(actorKey)
+      .filter((key): key is string => Boolean(key)),
+  );
+  const passedAttempts = await getDb()
+    .select({
+      userId: examAttempts.userId,
+      passed: examAttempts.passed,
+      createdAt: examAttempts.createdAt,
+    })
+    .from(examAttempts)
+    .where(
+      and(
+        gte(examAttempts.createdAt, new Date(now - 30 * DAY).toISOString()),
+        isNull(examAttempts.deletedAt),
+      ),
+    );
+  const completedActors30 = new Set(
+    passedAttempts
+      .filter(
+        (attempt) =>
+          attempt.passed && !testUserIds.has(attempt.userId),
+      )
+      .map((attempt) => `u:${attempt.userId}`),
+  );
+  const intersect = (left: Set<string>, right: Set<string>) =>
+    new Set([...left].filter((key) => right.has(key)));
+  const funnelRegistered = intersect(visitorActors30, registeredActors30);
+  const funnelLearners = intersect(funnelRegistered, learnerActors30);
+  const funnelCompleted = intersect(funnelLearners, completedActors30);
 
   return {
     generatedAt: new Date(now).toISOString(),
@@ -373,10 +400,10 @@ export async function getGrowthReport() {
     cohorts,
     sources,
     funnel: [
-      { label: "访问", value: visitors30 },
-      { label: "注册", value: registered30 },
-      { label: "进入学习", value: learners30 },
-      { label: "完成课程", value: completed30 },
+      { label: "访问", value: visitorActors30.size },
+      { label: "注册", value: funnelRegistered.size },
+      { label: "进入学习", value: funnelLearners.size },
+      { label: "完成课程", value: funnelCompleted.size },
     ],
   };
 }
@@ -473,8 +500,13 @@ export async function getAcademicsReport() {
   );
   const schoolRows = universitySchools
     .map((school) => {
-      const rows = programRows.filter(
-        (program) => program.schoolSlug === school.slug,
+      const programSlugs = new Set(
+        school.programs.map((program) => program.slug),
+      );
+      const courseSlugs = new Set(
+        school.programs.flatMap((program) =>
+          program.courses.map((course) => course.slug),
+        ),
       );
       return {
         schoolSlug: school.slug,
@@ -485,8 +517,18 @@ export async function getAcademicsReport() {
           (total, program) => total + program.courses.length,
           0,
         ),
-        enrolled: rows.reduce((total, row) => total + row.enrolled, 0),
-        learners: rows.reduce((total, row) => total + row.started, 0),
+        enrolled: new Set(
+          realPrograms
+            .filter((row) => programSlugs.has(row.programSlug))
+            .map((row) => row.userId),
+        ).size,
+        learners: new Set(
+          realSessions
+            .filter(
+              (row) => row.userId && courseSlugs.has(row.nodeSlug),
+            )
+            .map((row) => row.userId as string),
+        ).size,
       };
     })
     .sort((a, b) => b.enrolled - a.enrolled);
@@ -593,9 +635,14 @@ export async function getAcademicsReport() {
           .filter((row) => row.userId)
           .map((row) => row.userId as string),
       ).size,
-      creditsEarned: realAttempts
-        .filter((row) => row.passed)
-        .reduce((total, row) => total + row.creditsEarned, 0),
+      creditsEarned: [
+        ...new Map(
+          realAttempts
+            .filter((row) => row.passed)
+            .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+            .map((row) => [`${row.userId}|${row.nodeSlug}`, row]),
+        ).values(),
+      ].reduce((total, row) => total + row.creditsEarned, 0),
     },
     schools: schoolRows,
     programs: programRows
@@ -609,15 +656,17 @@ export type GeoReport = Awaited<ReturnType<typeof getGeoReport>>;
 
 export async function getGeoReport() {
   const since = new Date(Date.now() - 90 * DAY).toISOString();
-  const [{ testUserIds }, rawEvents] = await Promise.all([
+  const [{ testUserIds, identityByGuest }, rawEvents] = await Promise.all([
     identityContext(),
     eventRows(since),
   ]);
-  const events = rawEvents.filter(
-    (event) =>
+  const events = rawEvents
+    .map((event) => resolveEventIdentity(event, identityByGuest))
+    .filter(
+      (event) =>
       !event.isTest &&
       (!event.userId || !testUserIds.has(event.userId)),
-  );
+    );
   const cities = new Map<
     string,
     {
@@ -641,7 +690,7 @@ export async function getGeoReport() {
       learners: new Set<string>(),
     };
     const actor = actorKey(event);
-    if (actor) row.actors.add(actor);
+    if (actor && event.eventName === "page_view") row.actors.add(actor);
     if (actor && event.eventName === "signup_completed") {
       row.registrations.add(actor);
     }
@@ -671,7 +720,7 @@ export async function getGeoReport() {
 
   const devices = new Map<string, Set<string>>();
   const referrers = new Map<string, Set<string>>();
-  for (const event of events) {
+  for (const event of events.filter((row) => row.eventName === "page_view")) {
     const actor = actorKey(event);
     if (!actor) continue;
     const device = event.deviceCategory ?? "未知设备";
@@ -694,7 +743,9 @@ export async function getGeoReport() {
       cities: cityRows.length,
       identifiedVisitors: new Set(
         events
-          .filter((event) => event.city)
+          .filter(
+            (event) => event.eventName === "page_view" && event.city,
+          )
           .map(actorKey)
           .filter((key): key is string => Boolean(key)),
       ).size,
@@ -714,7 +765,7 @@ export type UsersReport = Awaited<ReturnType<typeof getUsersReport>>;
 
 export async function getUsersReport(search = "") {
   const since = new Date(Date.now() - 180 * DAY).toISOString();
-  const [{ users: realUsers, testUserIds }, programs, plans, sessions, attempts, orderRows, events] =
+  const [{ users: realUsers, testUserIds, identityByGuest }, programs, plans, sessions, attempts, orderRows, rawEvents] =
     await Promise.all([
       identityContext(),
       getDb().select().from(userPrograms).where(isNull(userPrograms.deletedAt)),
@@ -733,6 +784,9 @@ export async function getUsersReport(search = "") {
       getDb().select().from(orders).where(isNull(orders.deletedAt)),
       eventRows(since),
     ]);
+  const events = rawEvents.map((event) =>
+    resolveEventIdentity(event, identityByGuest),
+  );
   const cleanSearch = search.trim().toLowerCase().slice(0, 100);
   const filteredUsers = realUsers.filter(
     (user) =>
@@ -776,7 +830,10 @@ export async function getUsersReport(search = "") {
       ).size,
       spendFen: orderRows
         .filter(
-          (order) => order.userId === user.id && order.status === "paid",
+          (order) =>
+            order.userId === user.id &&
+            order.status === "paid" &&
+            order.paymentMode === "production",
         )
         .reduce((total, order) => total + order.amountFen, 0),
     };
@@ -792,7 +849,7 @@ export async function getUsersReport(search = "") {
               event.userId &&
               !event.isTest &&
               new Date(event.occurredAt).getTime() >= Date.now() - 30 * DAY &&
-              MEANINGFUL_EVENTS.has(event.eventName),
+              ACTIVE_EVENT_NAMES.has(event.eventName),
           )
           .map((event) => event.userId as string),
       ).size,
@@ -800,7 +857,9 @@ export async function getUsersReport(search = "") {
         orderRows
           .filter(
             (order) =>
-              order.status === "paid" && !testUserIds.has(order.userId),
+              order.status === "paid" &&
+              order.paymentMode === "production" &&
+              !testUserIds.has(order.userId),
           )
           .map((order) => order.userId),
       ).size,
@@ -949,7 +1008,7 @@ export type TrackingReport = Awaited<
 
 export async function getTrackingReport() {
   const since = new Date(Date.now() - 365 * DAY).toISOString();
-  const [{ testUserIds }, links, rawEvents] = await Promise.all([
+  const [{ testUserIds, identityByGuest }, links, rawEvents] = await Promise.all([
     identityContext(),
     getDb()
       .select()
@@ -958,11 +1017,13 @@ export async function getTrackingReport() {
       .orderBy(desc(trackingLinks.createdAt)),
     eventRows(since),
   ]);
-  const events = rawEvents.filter(
-    (event) =>
+  const events = rawEvents
+    .map((event) => resolveEventIdentity(event, identityByGuest))
+    .filter(
+      (event) =>
       !event.isTest &&
       (!event.userId || !testUserIds.has(event.userId)),
-  );
+    );
   const rows = links.map((link) => {
     const attributed = events.filter(
       (event) => event.trackingLinkId === link.id,
@@ -1007,6 +1068,223 @@ export async function getTrackingReport() {
       learners: rows.reduce((total, row) => total + row.learners, 0),
     },
     links: rows,
+  };
+}
+
+function monthKey(value: string | Date) {
+  return shanghaiDateKey(
+    typeof value === "string" ? new Date(value) : value,
+  ).slice(0, 7);
+}
+
+function recentMonthKeys(count: number) {
+  const now = new Date();
+  return Array.from({ length: count }, (_, index) => {
+    const date = new Date(
+      Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth() - (count - index - 1),
+        1,
+      ),
+    );
+    return monthKey(date);
+  });
+}
+
+export type RevenueReport = Awaited<ReturnType<typeof getRevenueReport>>;
+
+export async function getRevenueReport() {
+  const [
+    { users: realUsers, testUserIds },
+    allOrders,
+    llmRows,
+    walletRows,
+  ] = await Promise.all([
+    identityContext(),
+    getDb().select().from(orders).where(isNull(orders.deletedAt)),
+    getDb()
+      .select({
+        userId: llmCallLogs.userId,
+        actualFen: llmCallLogs.actualFen,
+      })
+      .from(llmCallLogs)
+      .where(isNull(llmCallLogs.deletedAt)),
+    getDb()
+      .select({
+        userId: walletTransactions.userId,
+        type: walletTransactions.type,
+        amountFen: walletTransactions.amountFen,
+      })
+      .from(walletTransactions)
+      .where(isNull(walletTransactions.deletedAt)),
+  ]);
+  const cleanOrders = allOrders.filter(
+    (order) => !testUserIds.has(order.userId),
+  );
+  const productionOrders = cleanOrders.filter(
+    (order) => order.paymentMode === "production",
+  );
+  const testOrders = cleanOrders.filter(
+    (order) => order.paymentMode === "test",
+  );
+  const production = calculateRevenueMetrics(
+    realUsers.length,
+    productionOrders,
+  );
+  const simulation = calculateRevenueMetrics(realUsers.length, [
+    ...testOrders.map((order) => ({
+      ...order,
+      paymentMode: "production",
+    })),
+  ]);
+  const modelCostFen = llmRows
+    .filter((row) => !row.userId || !testUserIds.has(row.userId))
+    .reduce((total, row) => total + row.actualFen, 0);
+  const testWalletTopupFen = walletRows
+    .filter(
+      (row) =>
+        row.type === "test_topup" && !testUserIds.has(row.userId),
+    )
+    .reduce((total, row) => total + row.amountFen, 0);
+
+  const months = recentMonthKeys(12).map((month) => {
+    const total = (rows: typeof cleanOrders) =>
+      rows
+        .filter(
+          (order) =>
+            order.status === "paid" &&
+            order.confirmedAt &&
+            monthKey(order.confirmedAt) === month,
+        )
+        .reduce((sum, order) => sum + order.amountFen, 0);
+    return {
+      month,
+      productionFen: total(productionOrders),
+      testFen: total(testOrders),
+    };
+  });
+
+  const userById = new Map(realUsers.map((user) => [user.id, user]));
+  const cohorts = recentMonthKeys(8)
+    .map((cohort) => {
+      const cohortUsers = realUsers.filter(
+        (user) => monthKey(user.createdAt) === cohort,
+      );
+      const cohortIds = new Set(cohortUsers.map((user) => user.id));
+      const cohortOrders = productionOrders.filter((order) =>
+        cohortIds.has(order.userId),
+      );
+      const metrics = calculateRevenueMetrics(
+        cohortUsers.length,
+        cohortOrders,
+      );
+      return {
+        cohort,
+        registered: cohortUsers.length,
+        payers: metrics.payerCount,
+        conversionRate: metrics.conversionRate,
+        netRevenueFen: metrics.netRevenueFen,
+        observedLtvFen: metrics.arpuFen,
+      };
+    })
+    .reverse();
+
+  const courseGroups = new Map<
+    string,
+    {
+      nodeSlug: string;
+      title: string;
+      productionFen: number;
+      testFen: number;
+      productionPayers: Set<string>;
+      testPayers: Set<string>;
+    }
+  >();
+  for (const order of cleanOrders.filter(
+    (row) => row.status === "paid",
+  )) {
+    const academic = getUniversityCourse(order.nodeSlug);
+    const row = courseGroups.get(order.nodeSlug) ?? {
+      nodeSlug: order.nodeSlug,
+      title: academic?.course.title ?? order.nodeSlug,
+      productionFen: 0,
+      testFen: 0,
+      productionPayers: new Set<string>(),
+      testPayers: new Set<string>(),
+    };
+    if (order.paymentMode === "production") {
+      row.productionFen += order.amountFen;
+      row.productionPayers.add(order.userId);
+    } else {
+      row.testFen += order.amountFen;
+      row.testPayers.add(order.userId);
+    }
+    courseGroups.set(order.nodeSlug, row);
+  }
+
+  const ltvCurve = [0, 1, 2, 3, 6].map((ageMonths) => {
+    const eligibleUsers = realUsers.filter((user) => {
+      const joined = new Date(user.createdAt);
+      const cutoff = new Date(
+        joined.getFullYear(),
+        joined.getMonth() + ageMonths + 1,
+        1,
+      );
+      return cutoff.getTime() <= Date.now();
+    });
+    const eligibleIds = new Set(eligibleUsers.map((user) => user.id));
+    const revenueFen = productionOrders
+      .filter((order) => {
+        if (
+          order.status !== "paid" ||
+          !order.confirmedAt ||
+          !eligibleIds.has(order.userId)
+        ) {
+          return false;
+        }
+        const joined = new Date(userById.get(order.userId)!.createdAt);
+        const cutoff = new Date(
+          joined.getFullYear(),
+          joined.getMonth() + ageMonths + 1,
+          1,
+        );
+        return new Date(order.confirmedAt).getTime() < cutoff.getTime();
+      })
+      .reduce((total, order) => total + order.amountFen, 0);
+    return {
+      label: `M${ageMonths}`,
+      users: eligibleUsers.length,
+      ltvFen: eligibleUsers.length
+        ? Math.round(revenueFen / eligibleUsers.length)
+        : 0,
+    };
+  });
+
+  return {
+    generatedAt: new Date().toISOString(),
+    production: {
+      ...production,
+      modelCostFen,
+      contributionFen: production.netRevenueFen - modelCostFen,
+    },
+    simulation: {
+      ...simulation,
+      testWalletTopupFen,
+    },
+    months,
+    cohorts,
+    ltvCurve,
+    courses: [...courseGroups.values()]
+      .map((row) => ({
+        ...row,
+        productionPayers: row.productionPayers.size,
+        testPayers: row.testPayers.size,
+      }))
+      .sort(
+        (a, b) =>
+          b.productionFen + b.testFen - (a.productionFen + a.testFen),
+      )
+      .slice(0, 20),
   };
 }
 

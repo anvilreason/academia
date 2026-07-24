@@ -32,6 +32,8 @@ const sections: Array<{ key: AdminSection; label: string }> = [
   { key: "users", label: "用户" },
   { key: "geo", label: "地域" },
   { key: "tracking", label: "渠道" },
+  { key: "finance", label: "付费 LTV" },
+  { key: "definitions", label: "数据口径" },
   { key: "team", label: "团队权限" },
 ];
 
@@ -46,6 +48,8 @@ const actionLabels: Record<string, string> = {
   "users.view": "查看用户数据",
   "geo.view": "查看地域数据",
   "tracking.view": "查看渠道数据",
+  "finance.view": "查看付费与 LTV",
+  "definitions.view": "查看数据口径",
   "team.view": "查看团队权限",
 };
 

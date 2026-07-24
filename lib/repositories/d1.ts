@@ -79,8 +79,11 @@ function asOrder(row: typeof orders.$inferSelect): OrderRecord {
     nodeSlug: row.nodeSlug,
     amountFen: row.amountFen,
     status: row.status,
+    paymentMode:
+      row.paymentMode === "production" ? "production" : "test",
     idempotencyKey: row.idempotencyKey,
     confirmedAt: row.confirmedAt,
+    refundedAt: row.refundedAt,
     createdAt: row.createdAt,
   };
 }
@@ -440,6 +443,7 @@ export class D1AcademiaRepository implements AcademiaRepository {
     userId: string;
     nodeSlug: string;
     amountFen: number;
+    paymentMode: "test" | "production";
     idempotencyKey: string;
   }) {
     const existing = await getDb()
@@ -463,6 +467,7 @@ export class D1AcademiaRepository implements AcademiaRepository {
         nodeSlug: input.nodeSlug,
         amountFen: input.amountFen,
         status: "pending",
+        paymentMode: input.paymentMode,
         idempotencyKey: input.idempotencyKey,
         createdAt: now,
         updatedAt: now,
@@ -499,7 +504,11 @@ export class D1AcademiaRepository implements AcademiaRepository {
 
   async confirmTestOrder(id: string, userId: string) {
     const order = await this.getOrder(id);
-    if (!order || order.userId !== userId) {
+    if (
+      !order ||
+      order.userId !== userId ||
+      order.paymentMode !== "test"
+    ) {
       throw new Error("ORDER_NOT_FOUND");
     }
     if (order.status !== "paid") {

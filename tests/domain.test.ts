@@ -46,6 +46,7 @@ import {
   parseAttributionCookie,
   serializeAttributionCookie,
 } from "../lib/analytics/attribution.ts";
+import { calculateRevenueMetrics } from "../lib/analytics/revenue-math.ts";
 
 test("password policy rejects weak values and verifies derived hashes", async () => {
   assert.equal(validatePassword("short"), "密码至少需要 10 位");
@@ -78,7 +79,10 @@ test("admin roles expose only their assigned operational sections", () => {
   assert.equal(canAccessAdminSection("owner", "team"), true);
   assert.equal(canAccessAdminSection("growth", "tracking"), true);
   assert.equal(canAccessAdminSection("growth", "users"), false);
+  assert.equal(canAccessAdminSection("growth", "finance"), false);
   assert.equal(canAccessAdminSection("operations", "academics"), true);
+  assert.equal(canAccessAdminSection("analyst", "finance"), true);
+  assert.equal(canAccessAdminSection("viewer", "definitions"), true);
   assert.equal(canAccessAdminSection("viewer", "overview"), true);
   assert.equal(canAccessAdminSection("viewer", "growth"), false);
   assert.equal(adminRoleLabel("analyst"), "数据分析");
@@ -106,6 +110,42 @@ test("test order state machine cannot be used as a production payment bypass", (
   assert.equal(canTransitionOrder("paid", "pending", "test"), false);
   assert.equal(canTransitionOrder("paid", "refunded", "production"), true);
   assert.equal(nodePriceFen("porter-five-forces"), 9_900);
+});
+
+test("revenue metrics exclude test orders and refunded revenue", () => {
+  const result = calculateRevenueMetrics(10, [
+    {
+      userId: "u1",
+      amountFen: 9_900,
+      status: "paid",
+      paymentMode: "production",
+    },
+    {
+      userId: "u1",
+      amountFen: 5_000,
+      status: "paid",
+      paymentMode: "production",
+    },
+    {
+      userId: "u2",
+      amountFen: 9_900,
+      status: "refunded",
+      paymentMode: "production",
+    },
+    {
+      userId: "u3",
+      amountFen: 99_900,
+      status: "paid",
+      paymentMode: "test",
+    },
+  ]);
+  assert.equal(result.grossRevenueFen, 24_800);
+  assert.equal(result.refundedFen, 9_900);
+  assert.equal(result.netRevenueFen, 14_900);
+  assert.equal(result.payerCount, 1);
+  assert.equal(result.arpuFen, 1_490);
+  assert.equal(result.arppuFen, 14_900);
+  assert.equal(result.repeatRate, 100);
 });
 
 test("course transfer grants full credit only when scope is covered", () => {

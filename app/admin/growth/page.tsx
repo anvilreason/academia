@@ -5,6 +5,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { AdminDenied } from "@/components/admin/AdminStates";
+import { InteractiveBar } from "@/components/admin/InteractiveBar";
 import {
   AdminMetric,
   AdminPageHeader,
@@ -98,20 +99,26 @@ export default async function GrowthPage() {
             {report.daily.map((day, index) => (
               <div className="growth-day" key={day.dateKey}>
                 <div>
-                  <i
+                  <InteractiveBar
                     className="visitor"
-                    style={{ height: `${Math.max(2, day.visitors / maxDaily * 100)}%` }}
-                    title={`访问 ${day.visitors}`}
+                    label={`${day.dateKey.slice(5)} · 访问`}
+                    orientation="vertical"
+                    percent={Math.max(2, day.visitors / maxDaily * 100)}
+                    value={day.visitors}
                   />
-                  <i
+                  <InteractiveBar
                     className="registration"
-                    style={{ height: `${Math.max(2, day.registrations / maxDaily * 100)}%` }}
-                    title={`新增 ${day.registrations}`}
+                    label={`${day.dateKey.slice(5)} · 新增`}
+                    orientation="vertical"
+                    percent={Math.max(2, day.registrations / maxDaily * 100)}
+                    value={day.registrations}
                   />
-                  <i
+                  <InteractiveBar
                     className="active"
-                    style={{ height: `${Math.max(2, day.active / maxDaily * 100)}%` }}
-                    title={`活跃 ${day.active}`}
+                    label={`${day.dateKey.slice(5)} · 活跃`}
+                    orientation="vertical"
+                    percent={Math.max(2, day.active / maxDaily * 100)}
+                    value={day.active}
                   />
                 </div>
                 {index % 5 === 0 && <small>{day.dateKey.slice(5)}</small>}
@@ -131,10 +138,11 @@ export default async function GrowthPage() {
             {report.funnel.map((item, index) => (
               <div key={item.label}>
                 <span>{item.label}</span>
-                <i
-                  style={{
-                    width: `${Math.max(4, item.value / maxFunnel * 100)}%`,
-                  }}
+                <InteractiveBar
+                  label={`近 30 天 · ${item.label}`}
+                  orientation="horizontal"
+                  percent={Math.max(4, item.value / maxFunnel * 100)}
+                  value={item.value}
                 />
                 <strong>{formatNumber(item.value)}</strong>
                 <small>
@@ -203,7 +211,7 @@ export default async function GrowthPage() {
             </table>
           </div>
           <p className="observatory-empty-note">
-            留存定义为注册后对应时间窗内再次发生学习、考试或账户行为。
+            留存定义为注册后对应时间窗内再次发生有效行为；纯浏览与注册本身不计入。
           </p>
         </article>
 

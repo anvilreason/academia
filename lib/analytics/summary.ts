@@ -2,6 +2,8 @@ import { and, desc, gte, isNull } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
   analyticsEvents,
+  analyticsIdentityLinks,
+  examAttempts,
   learningSessions,
   llmCallLogs,
   orders,
@@ -13,21 +15,12 @@ import {
   getUniversitySchool,
 } from "@/lib/content/university";
 import { shanghaiDateKey } from "@/lib/server/api";
+import {
+  ACTIVE_EVENT_NAMES,
+  LEARNING_EVENT_NAMES,
+} from "@/lib/analytics/metric-definitions";
 
 const DAY = 86_400_000;
-const MEANINGFUL_EVENTS = new Set([
-  "signup_completed",
-  "login_succeeded",
-  "trial_started",
-  "program_enrolled",
-  "course_enrolled",
-  "course_started",
-  "learning_message_sent",
-  "exam_submitted",
-  "course_completed",
-  "agent_message_sent",
-  "payment_succeeded",
-]);
 
 function isTestEmail(email: string) {
   return email.endsWith("@example.com") || email.includes("+test@");
@@ -66,6 +59,8 @@ export async function getAdminSummary() {
     programRows,
     llmRows,
     orderRows,
+    attemptRows,
+    identityRows,
   ] = await Promise.all([
     getDb()
       .select({
@@ -123,6 +118,7 @@ export async function getAdminSummary() {
       .where(isNull(userPrograms.deletedAt)),
     getDb()
       .select({
+        userId: llmCallLogs.userId,
         actualFen: llmCallLogs.actualFen,
         createdAt: llmCallLogs.createdAt,
       })
@@ -137,6 +133,7 @@ export async function getAdminSummary() {
       .select({
         userId: orders.userId,
         status: orders.status,
+        paymentMode: orders.paymentMode,
         amountFen: orders.amountFen,
         createdAt: orders.createdAt,
       })
@@ -147,35 +144,64 @@ export async function getAdminSummary() {
           isNull(orders.deletedAt),
         ),
       ),
+    getDb()
+      .select({
+        userId: examAttempts.userId,
+        nodeSlug: examAttempts.nodeSlug,
+        passed: examAttempts.passed,
+        creditsEarned: examAttempts.creditsEarned,
+        createdAt: examAttempts.createdAt,
+      })
+      .from(examAttempts)
+      .where(isNull(examAttempts.deletedAt)),
+    getDb()
+      .select({
+        guestId: analyticsIdentityLinks.guestId,
+        userId: analyticsIdentityLinks.userId,
+      })
+      .from(analyticsIdentityLinks)
+      .where(isNull(analyticsIdentityLinks.deletedAt)),
   ]);
 
   const realUsers = userRows.filter((user) => !isTestEmail(user.email));
   const testUserIds = new Set(
     userRows.filter((user) => isTestEmail(user.email)).map((user) => user.id),
   );
-  const realEvents = eventRows.filter(
-    (event) => !event.isTest && (!event.userId || !testUserIds.has(event.userId)),
+  const identityByGuest = new Map(
+    identityRows.map((row) => [row.guestId, row.userId]),
   );
+  const realEvents = eventRows
+    .map((event) => ({
+      ...event,
+      userId:
+        event.userId ??
+        (event.guestId
+          ? identityByGuest.get(event.guestId) ?? null
+          : null),
+    }))
+    .filter(
+      (event) =>
+        !event.isTest &&
+        (!event.userId || !testUserIds.has(event.userId)),
+    );
   const realSessions = sessionRows.filter(
     (session) => !session.userId || !testUserIds.has(session.userId),
+  );
+  const realAttempts = attemptRows.filter(
+    (attempt) => !testUserIds.has(attempt.userId),
   );
   const events7d = realEvents.filter(
     (event) => event.occurredAt >= sevenDaysAgo,
   );
   const meaningful7d = events7d.filter((event) =>
-    MEANINGFUL_EVENTS.has(event.eventName),
+    ACTIVE_EVENT_NAMES.has(event.eventName),
   );
   const active7d = new Set(
     meaningful7d.map(actorKey).filter((key): key is string => Boolean(key)),
   );
-  for (const session of realSessions) {
-    if (session.updatedAt < sevenDaysAgo) continue;
-    const key = actorKey(session);
-    if (key) active7d.add(key);
-  }
   const learningUsers7d = new Set(
-    realSessions
-      .filter((session) => session.updatedAt >= sevenDaysAgo)
+    events7d
+      .filter((event) => LEARNING_EVENT_NAMES.has(event.eventName))
       .map(actorKey)
       .filter((key): key is string => Boolean(key)),
   );
@@ -190,7 +216,7 @@ export async function getAdminSummary() {
         .filter(
           (event) =>
             event.dateKey === dateKey &&
-            MEANINGFUL_EVENTS.has(event.eventName),
+            ACTIVE_EVENT_NAMES.has(event.eventName),
         )
         .map(actorKey)
         .filter((key): key is string => Boolean(key)),
@@ -199,7 +225,9 @@ export async function getAdminSummary() {
   });
 
   const pageCounts = new Map<string, number>();
-  for (const event of realEvents) {
+  for (const event of realEvents.filter(
+    (row) => row.eventName === "page_view",
+  )) {
     if (event.eventName !== "page_view" || !event.path) continue;
     pageCounts.set(event.path, (pageCounts.get(event.path) ?? 0) + 1);
   }
@@ -212,7 +240,9 @@ export async function getAdminSummary() {
     string,
     { city: string; region: string | null; country: string | null; actors: Set<string> }
   >();
-  for (const event of realEvents) {
+  for (const event of realEvents.filter(
+    (row) => row.eventName === "page_view",
+  )) {
     const key = actorKey(event);
     if (!key || !event.city) continue;
     const locationKey = `${event.country ?? ""}|${event.region ?? ""}|${event.city}`;
@@ -297,45 +327,59 @@ export async function getAdminSummary() {
       .map(actorKey)
       .filter((key): key is string => Boolean(key)),
   ).size;
-  const trial30 = new Set(
-    realSessions
-      .filter(
-        (session) =>
-          session.nodeSlug === "4p-stp" &&
-          session.createdAt >= thirtyDaysAgo,
-      )
+  const trialActors = new Set(
+    realEvents
+      .filter((event) => event.eventName === "trial_started")
       .map(actorKey)
       .filter((key): key is string => Boolean(key)),
-  ).size;
-  const registered30 = realUsers.filter(
-    (user) => user.createdAt >= thirtyDaysAgo,
-  ).length;
-  const learners30 = new Set(
-    realSessions
+  );
+  const registeredActors = new Set(
+    realUsers
+      .filter((user) => user.createdAt >= thirtyDaysAgo)
+      .map((user) => `u:${user.id}`),
+  );
+  const learnerActors = new Set(
+    realEvents
+      .filter((event) => LEARNING_EVENT_NAMES.has(event.eventName))
+      .map(actorKey)
+      .filter((key): key is string => Boolean(key)),
+  );
+  const completedActors = new Set(
+    realAttempts
       .filter(
-        (session) =>
-          session.createdAt >= thirtyDaysAgo && Boolean(session.userId),
+        (attempt) =>
+          attempt.passed && attempt.createdAt >= thirtyDaysAgo,
       )
-      .map((session) => session.userId as string),
-  ).size;
-  const completed30 = new Set(
-    realSessions
-      .filter(
-        (session) =>
-          session.status === "completed" &&
-          session.updatedAt >= thirtyDaysAgo &&
-          Boolean(session.userId),
-      )
-      .map((session) => session.userId as string),
-  ).size;
-  const paid30 = new Set(
+      .map((attempt) => `u:${attempt.userId}`),
+  );
+  const paidActors = new Set(
     orderRows
       .filter(
         (order) =>
-          order.status === "paid" && !testUserIds.has(order.userId),
+          order.status === "paid" &&
+          order.paymentMode === "production" &&
+          !testUserIds.has(order.userId),
       )
-      .map((order) => order.userId),
-  ).size;
+      .map((order) => `u:${order.userId}`),
+  );
+  const visitorActors = new Set(
+    realEvents
+      .filter((event) => event.eventName === "page_view")
+      .map(actorKey)
+      .filter((key): key is string => Boolean(key)),
+  );
+  const intersect = (left: Set<string>, right: Set<string>) =>
+    new Set([...left].filter((key) => right.has(key)));
+  const funnelTrial = intersect(visitorActors, trialActors);
+  const funnelRegistered = intersect(funnelTrial, registeredActors);
+  const funnelLearners = intersect(funnelRegistered, learnerActors);
+  const funnelCompleted = intersect(funnelLearners, completedActors);
+  const funnelPaid = intersect(funnelCompleted, paidActors);
+  const completedCourseKeys = new Set(
+    realAttempts
+      .filter((attempt) => attempt.passed)
+      .map((attempt) => `${attempt.userId}|${attempt.nodeSlug}`),
+  );
 
   return {
     generatedAt: now.toISOString(),
@@ -346,23 +390,23 @@ export async function getAdminSummary() {
       ).length,
       active7d: active7d.size,
       learningUsers7d: learningUsers7d.size,
-      completedCourses: realSessions.filter(
-        (session) => session.status === "completed",
-      ).length,
+      completedCourses: completedCourseKeys.size,
       costFenToday: llmRows
         .filter(
-          (row) => shanghaiDateKey(new Date(row.createdAt)) === today,
+          (row) =>
+            shanghaiDateKey(new Date(row.createdAt)) === today &&
+            (!row.userId || !testUserIds.has(row.userId)),
         )
         .reduce((sum, row) => sum + row.actualFen, 0),
     },
     trend,
     funnel: [
       { label: "访问", value: visitors30 },
-      { label: "旁听", value: trial30 },
-      { label: "注册", value: registered30 },
-      { label: "开始学习", value: learners30 },
-      { label: "完成课程", value: completed30 },
-      { label: "完成选课", value: paid30 },
+      { label: "旁听", value: funnelTrial.size },
+      { label: "注册", value: funnelRegistered.size },
+      { label: "开始学习", value: funnelLearners.size },
+      { label: "完成课程", value: funnelCompleted.size },
+      { label: "完成选课", value: funnelPaid.size },
     ],
     topPages,
     topCities,

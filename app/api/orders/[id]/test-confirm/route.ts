@@ -17,16 +17,22 @@ export async function POST(
   }
   const { id } = await params;
   try {
-    const order = await getRepository().confirmTestOrder(id, actor.userId);
-    await recordAnalyticsEventSafe({
-      eventName: "payment_succeeded",
-      request,
-      userId: actor.userId,
-      properties: {
-        courseSlug: order.nodeSlug,
-        amountFen: order.amountFen,
-      },
-    });
+    const repository = getRepository();
+    const before = await repository.getOrder(id);
+    const order = await repository.confirmTestOrder(id, actor.userId);
+    if (before?.status !== "paid") {
+      await recordAnalyticsEventSafe({
+        eventName: "payment_succeeded",
+        request,
+        userId: actor.userId,
+        properties: {
+          courseSlug: order.nodeSlug,
+          amountFen: order.amountFen,
+          paymentMode: order.paymentMode,
+          orderId: order.id,
+        },
+      });
+    }
     return apiData({ ...order, warning: "先行校区选课登记" });
   } catch {
     return apiError("NOT_FOUND", "选课记录不存在", 404);

@@ -10,6 +10,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { AdminDenied } from "@/components/admin/AdminStates";
+import { InteractiveBar } from "@/components/admin/InteractiveBar";
 import { loadAdminSection } from "@/lib/analytics/admin-page";
 import { getAdminSummary } from "@/lib/analytics/summary";
 
@@ -105,19 +106,19 @@ export default async function AdminPage() {
         <Metric
           icon={Activity}
           label="7 日活跃"
-          note="发生过学习或账户行为"
+          note="排除纯浏览与注册"
           value={number(summary.metrics.active7d)}
         />
         <Metric
           icon={BookOpenCheck}
-          label="本周学习"
-          note="进入过对话课堂"
+          label="7 日学习"
+          note="课程学习事件去重"
           value={number(summary.metrics.learningUsers7d)}
         />
         <Metric
           icon={GraduationCap}
           label="完成课程"
-          note="通过考试并获得学分"
+          note="用户 × 课程去重"
           value={number(summary.metrics.completedCourses)}
         />
         <Metric
@@ -144,25 +145,19 @@ export default async function AdminPage() {
             {summary.trend.map((item) => (
               <div className="trend-day" key={item.dateKey}>
                 <div className="trend-bars">
-                  <i
+                  <InteractiveBar
                     className="registration"
-                    style={{
-                      height: `${Math.max(
-                        3,
-                        (item.registrations / maxTrend) * 100,
-                      )}%`,
-                    }}
-                    title={`新增 ${item.registrations}`}
+                    label={`${item.dateKey.slice(5)} · 新增`}
+                    orientation="vertical"
+                    percent={Math.max(3, item.registrations / maxTrend * 100)}
+                    value={item.registrations}
                   />
-                  <i
+                  <InteractiveBar
                     className="active"
-                    style={{
-                      height: `${Math.max(
-                        3,
-                        (item.active / maxTrend) * 100,
-                      )}%`,
-                    }}
-                    title={`活跃 ${item.active}`}
+                    label={`${item.dateKey.slice(5)} · 活跃`}
+                    orientation="vertical"
+                    percent={Math.max(3, item.active / maxTrend * 100)}
+                    value={item.active}
                   />
                 </div>
                 <small>{item.dateKey.slice(5)}</small>
@@ -187,13 +182,11 @@ export default async function AdminPage() {
             {summary.funnel.map((item, index) => (
               <div key={item.label}>
                 <span>{item.label}</span>
-                <i
-                  style={{
-                    width: `${Math.max(
-                      4,
-                      (item.value / maxFunnel) * 100,
-                    )}%`,
-                  }}
+                <InteractiveBar
+                  label={`近 30 天 · ${item.label}`}
+                  orientation="horizontal"
+                  percent={Math.max(4, item.value / maxFunnel * 100)}
+                  value={item.value}
                 />
                 <strong>{number(item.value)}</strong>
                 {index > 0 && (

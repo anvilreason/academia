@@ -7,6 +7,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { AdminDenied } from "@/components/admin/AdminStates";
+import { InteractiveBar } from "@/components/admin/InteractiveBar";
 import {
   AdminMetric,
   AdminPageHeader,
@@ -99,13 +100,11 @@ export default async function AcademicsPage() {
                   </small>
                 </div>
                 <div className="school-bar">
-                  <i
-                    style={{
-                      width: `${Math.max(
-                        2,
-                        school.enrolled / maxSchool * 100,
-                      )}%`,
-                    }}
+                  <InteractiveBar
+                    label={`${school.school} · 报名`}
+                    orientation="horizontal"
+                    percent={Math.max(2, school.enrolled / maxSchool * 100)}
+                    value={school.enrolled}
                   />
                 </div>
                 <span>{school.enrolled} 报名</span>
@@ -136,7 +135,7 @@ export default async function AcademicsPage() {
                 <dl>
                   <div><dt>报名</dt><dd>{program.enrolled}</dd></div>
                   <div><dt>开始</dt><dd>{program.started}</dd></div>
-                  <div><dt>完成课</dt><dd>{program.completed}</dd></div>
+                  <div><dt>通过学生</dt><dd>{program.completed}</dd></div>
                 </dl>
               </div>
             ))}

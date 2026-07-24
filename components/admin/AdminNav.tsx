@@ -4,7 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  BookMarked,
   BookOpenCheck,
+  CircleDollarSign,
   Gauge,
   Link2,
   MapPinned,
@@ -53,6 +55,18 @@ const entries: Array<{
     label: "渠道追踪",
     section: "tracking",
     icon: Link2,
+  },
+  {
+    href: "/admin/finance",
+    label: "付费与 LTV",
+    section: "finance",
+    icon: CircleDollarSign,
+  },
+  {
+    href: "/admin/definitions",
+    label: "数据口径",
+    section: "definitions",
+    icon: BookMarked,
   },
   {
     href: "/admin/team",

@@ -6,6 +6,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { AdminDenied } from "@/components/admin/AdminStates";
+import { InteractiveBar } from "@/components/admin/InteractiveBar";
 import {
   AdminMetric,
   AdminPageHeader,
@@ -126,11 +127,12 @@ export default async function GeoPage() {
               {report.devices.map((device) => (
                 <div key={device.label}>
                   <span>{deviceLabels[device.label] ?? device.label}</span>
-                  <i>
-                    <b
-                      style={{
-                        width: `${device.users / maxDevice * 100}%`,
-                      }}
+                  <i className="distribution-track">
+                    <InteractiveBar
+                      label={`${deviceLabels[device.label] ?? device.label} · 访问者`}
+                      orientation="horizontal"
+                      percent={device.users / maxDevice * 100}
+                      value={device.users}
                     />
                   </i>
                   <strong>{device.users}</strong>

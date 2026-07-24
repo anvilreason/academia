@@ -108,8 +108,10 @@ export const orders = sqliteTable(
     nodeSlug: text("node_slug").notNull(),
     amountFen: integer("amount_fen").notNull(),
     status: text("status").notNull().default("pending"),
+    paymentMode: text("payment_mode").notNull().default("test"),
     idempotencyKey: text("idempotency_key").notNull(),
     confirmedAt: text("confirmed_at"),
+    refundedAt: text("refunded_at"),
     ...lifecycle,
   },
   (table) => [

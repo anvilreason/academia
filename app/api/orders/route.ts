@@ -5,6 +5,7 @@ import { getActor } from "@/lib/server/actor";
 import { apiData, apiError } from "@/lib/server/api";
 import { getCourseRecognitionQuote } from "@/lib/server/course-recognition";
 import { recordAnalyticsEventSafe } from "@/lib/analytics/events";
+import { runtimeEnv } from "@/lib/server/env";
 
 export async function POST(request: Request) {
   const actor = await getActor(request);
@@ -40,6 +41,8 @@ export async function POST(request: Request) {
     userId: actor.userId,
     nodeSlug,
     amountFen,
+    paymentMode:
+      runtimeEnv().PAYMENT_MODE === "production" ? "production" : "test",
     idempotencyKey: body.idempotencyKey,
   });
   await recordAnalyticsEventSafe({
