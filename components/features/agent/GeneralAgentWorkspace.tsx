@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, KeyboardEvent, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -336,6 +336,17 @@ export function GeneralAgentWorkspace() {
               disabled={streaming}
               maxLength={4000}
               onChange={(event) => setDraft(event.target.value)}
+              onKeyDown={(event: KeyboardEvent<HTMLTextAreaElement>) => {
+                if (
+                  event.key !== "Enter" ||
+                  event.shiftKey ||
+                  event.nativeEvent.isComposing
+                ) {
+                  return;
+                }
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }}
               placeholder="写下问题、判断，或者一个还没有想清楚的念头…"
               rows={2}
               value={draft}
@@ -343,12 +354,15 @@ export function GeneralAgentWorkspace() {
             <button
               aria-label="发送"
               disabled={streaming || !draft.trim()}
+              title="发送（Enter）"
               type="submit"
             >
               {streaming ? "…" : <ArrowUp aria-hidden="true" size={18} />}
             </button>
           </form>
-          <p>长期记忆只来自你的课程、项目和对话；你可以随时修正过去的判断。</p>
+          <p>
+            Enter 发送 · Shift + Enter 换行 · 长期记忆只来自你的课程、项目和对话
+          </p>
         </div>
       </section>
       {memoryOpen && (

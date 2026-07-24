@@ -1134,15 +1134,40 @@ body {
 }
 
 .agent-general-composer button {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
+  align-self: center;
+  padding: 0;
   border: 0;
-  border-radius: 10px;
+  border-radius: 50%;
   background: var(--ink);
   color: white;
   cursor: pointer;
+  line-height: 1;
+  box-shadow: 0 5px 14px rgb(20 19 16 / 16%);
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.agent-general-composer button:not(:disabled):hover {
+  transform: translateY(-1px);
+  background: #2b2924;
+  box-shadow: 0 7px 18px rgb(20 19 16 / 22%);
+}
+
+.agent-general-composer button:not(:disabled):active {
+  transform: translateY(1px) scale(0.96);
+  box-shadow: 0 2px 8px rgb(20 19 16 / 18%);
+}
+
+.agent-general-composer button svg {
+  display: block;
+  margin: 0;
+  stroke-width: 1.8;
 }
 
 .agent-general-composer button:disabled {

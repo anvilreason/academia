@@ -1,6 +1,11 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import {
+  FormEvent,
+  KeyboardEvent,
+  useEffect,
+  useState,
+} from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUp, Brain } from "lucide-react";
@@ -280,6 +285,17 @@ export function AgentWorkspace({
             disabled={streaming || registrationRequired}
             maxLength={2000}
             onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event: KeyboardEvent<HTMLTextAreaElement>) => {
+              if (
+                event.key !== "Enter" ||
+                event.shiftKey ||
+                event.nativeEvent.isComposing
+              ) {
+                return;
+              }
+              event.preventDefault();
+              event.currentTarget.form?.requestSubmit();
+            }}
             placeholder={
               registrationRequired
                 ? "建立学籍后继续这段对话"
@@ -293,13 +309,14 @@ export function AgentWorkspace({
             disabled={
               streaming || registrationRequired || !draft.trim()
             }
+            title="确认回答（Enter）"
             type="submit"
           >
             {streaming ? "…" : <ArrowUp aria-hidden="true" size={18} />}
           </button>
         </form>
         <div className="composer-hint">
-          Academia 对话课堂 · 单条最多 2,000 字 · 允许停顿，也允许改变答案
+          Enter 确认 · Shift + Enter 换行 · 单条最多 2,000 字
         </div>
       </div>
     </>
