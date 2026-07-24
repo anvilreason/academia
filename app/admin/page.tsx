@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { AdminDenied } from "@/components/admin/AdminStates";
 import { InteractiveBar } from "@/components/admin/InteractiveBar";
+import { InteractiveChartDay } from "@/components/admin/InteractiveChartDay";
 import { loadAdminSection } from "@/lib/analytics/admin-page";
 import { getAdminSummary } from "@/lib/analytics/summary";
 
@@ -143,25 +144,32 @@ export default async function AdminPage() {
           </header>
           <div className="trend-chart" aria-label="最近十四天新增与活跃趋势">
             {summary.trend.map((item) => (
-              <div className="trend-day" key={item.dateKey}>
-                <div className="trend-bars">
-                  <InteractiveBar
-                    className="registration"
-                    label={`${item.dateKey.slice(5)} · 新增`}
-                    orientation="vertical"
-                    percent={Math.max(3, item.registrations / maxTrend * 100)}
-                    value={item.registrations}
-                  />
-                  <InteractiveBar
-                    className="active"
-                    label={`${item.dateKey.slice(5)} · 活跃`}
-                    orientation="vertical"
-                    percent={Math.max(3, item.active / maxTrend * 100)}
-                    value={item.active}
-                  />
-                </div>
-                <small>{item.dateKey.slice(5)}</small>
-              </div>
+              <InteractiveChartDay
+                barsClassName="trend-bars"
+                dateLabel={item.dateKey.slice(5)}
+                key={item.dateKey}
+                rootClassName="trend-day"
+                series={[
+                  {
+                    className: "registration",
+                    label: "新增",
+                    percent: Math.max(
+                      3,
+                      item.registrations / maxTrend * 100,
+                    ),
+                    value: item.registrations,
+                  },
+                  {
+                    className: "active",
+                    label: "活跃",
+                    percent: Math.max(
+                      3,
+                      item.active / maxTrend * 100,
+                    ),
+                    value: item.active,
+                  },
+                ]}
+              />
             ))}
           </div>
           {!summary.trackingSince && (

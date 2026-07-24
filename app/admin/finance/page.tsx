@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { AdminDenied } from "@/components/admin/AdminStates";
 import { InteractiveBar } from "@/components/admin/InteractiveBar";
+import { InteractiveChartDay } from "@/components/admin/InteractiveChartDay";
 import {
   AdminMetric,
   AdminPageHeader,
@@ -118,27 +119,35 @@ export default async function FinancePage() {
           </header>
           <div className="finance-month-chart" aria-label="最近十二个月订单金额">
             {report.months.map((row) => (
-              <div className="finance-month" key={row.month}>
-                <div>
-                  <InteractiveBar
-                    className="production"
-                    format="currency"
-                    label={`${row.month} · 生产净收入`}
-                    orientation="vertical"
-                    percent={Math.max(2, row.productionFen / maxMonth * 100)}
-                    value={row.productionFen / 100}
-                  />
-                  <InteractiveBar
-                    className="test"
-                    format="currency"
-                    label={`${row.month} · 测试交易额`}
-                    orientation="vertical"
-                    percent={Math.max(2, row.testFen / maxMonth * 100)}
-                    value={row.testFen / 100}
-                  />
-                </div>
-                <small>{row.month.slice(5)}</small>
-              </div>
+              <InteractiveChartDay
+                barsClassName="finance-month-bars"
+                dateLabel={row.month}
+                displayedDate={row.month.slice(5)}
+                key={row.month}
+                rootClassName="finance-month"
+                series={[
+                  {
+                    className: "production",
+                    format: "currency",
+                    label: "生产净收入",
+                    percent: Math.max(
+                      2,
+                      row.productionFen / maxMonth * 100,
+                    ),
+                    value: row.productionFen / 100,
+                  },
+                  {
+                    className: "test",
+                    format: "currency",
+                    label: "测试交易额",
+                    percent: Math.max(
+                      2,
+                      row.testFen / maxMonth * 100,
+                    ),
+                    value: row.testFen / 100,
+                  },
+                ]}
+              />
             ))}
           </div>
         </article>

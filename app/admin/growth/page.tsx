@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { AdminDenied } from "@/components/admin/AdminStates";
 import { InteractiveBar } from "@/components/admin/InteractiveBar";
+import { InteractiveChartDay } from "@/components/admin/InteractiveChartDay";
 import {
   AdminMetric,
   AdminPageHeader,
@@ -97,32 +98,33 @@ export default async function GrowthPage() {
           </header>
           <div className="growth-chart" aria-label="最近三十天增长趋势">
             {report.daily.map((day, index) => (
-              <div className="growth-day" key={day.dateKey}>
-                <div>
-                  <InteractiveBar
-                    className="visitor"
-                    label={`${day.dateKey.slice(5)} · 访问`}
-                    orientation="vertical"
-                    percent={Math.max(2, day.visitors / maxDaily * 100)}
-                    value={day.visitors}
-                  />
-                  <InteractiveBar
-                    className="registration"
-                    label={`${day.dateKey.slice(5)} · 新增`}
-                    orientation="vertical"
-                    percent={Math.max(2, day.registrations / maxDaily * 100)}
-                    value={day.registrations}
-                  />
-                  <InteractiveBar
-                    className="active"
-                    label={`${day.dateKey.slice(5)} · 活跃`}
-                    orientation="vertical"
-                    percent={Math.max(2, day.active / maxDaily * 100)}
-                    value={day.active}
-                  />
-                </div>
-                {index % 5 === 0 && <small>{day.dateKey.slice(5)}</small>}
-              </div>
+              <InteractiveChartDay
+                barsClassName="growth-day-bars"
+                dateLabel={day.dateKey.slice(5)}
+                displayedDate={index % 5 === 0 ? day.dateKey.slice(5) : " "}
+                key={day.dateKey}
+                rootClassName="growth-day"
+                series={[
+                  {
+                    className: "visitor",
+                    label: "访问",
+                    percent: Math.max(2, day.visitors / maxDaily * 100),
+                    value: day.visitors,
+                  },
+                  {
+                    className: "registration",
+                    label: "新增",
+                    percent: Math.max(2, day.registrations / maxDaily * 100),
+                    value: day.registrations,
+                  },
+                  {
+                    className: "active",
+                    label: "活跃",
+                    percent: Math.max(2, day.active / maxDaily * 100),
+                    value: day.active,
+                  },
+                ]}
+              />
             ))}
           </div>
         </article>

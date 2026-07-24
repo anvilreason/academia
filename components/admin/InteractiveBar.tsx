@@ -71,7 +71,7 @@ export function InteractiveBar({
     <button
       aria-label={`${label}：${formatValue(value, format)}`}
       className={`interactive-bar ${orientation} ${className} ${
-        active ? "active" : ""
+        active ? "is-interacting" : ""
       }`}
       onBlur={reset}
       onFocus={animate}
