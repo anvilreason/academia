@@ -126,5 +126,6 @@ test("membership is activated by completed-course spend, never wallet top-up", (
   assert.equal(walletTopUpFen > 0, true);
   assert.equal(membershipForCompletedSpend(0).name, "新知");
   assert.equal(membershipForCompletedSpend(30_000).name, "研习");
+  assert.equal(membershipForCompletedSpend(50_000).name, "知行");
   assert.equal(membershipForCompletedSpend(1_000_000).name, "山长");
 });

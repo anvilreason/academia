@@ -26,6 +26,7 @@ export function weightedGpa(
 export const membershipLevels = [
   { name: "新知", thresholdFen: 0, description: "开始建立第一张认知地图" },
   { name: "研习", thresholdFen: 30_000, description: "完成课程消费满 ¥300" },
+  { name: "知行", thresholdFen: 50_000, description: "完成课程消费满 ¥500" },
   { name: "博雅", thresholdFen: 100_000, description: "完成课程消费满 ¥1,000" },
   { name: "格物", thresholdFen: 200_000, description: "完成课程消费满 ¥2,000" },
   { name: "问道", thresholdFen: 500_000, description: "完成课程消费满 ¥5,000" },
