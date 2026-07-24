@@ -89,23 +89,6 @@ export function AuthForm({
             value={email}
           />
         </div>
-        {mode === "register" && (
-          <div className="field">
-            <label htmlFor="password-confirmation">再次输入密码</label>
-            <input
-              autoComplete="new-password"
-              id="password-confirmation"
-              minLength={10}
-              onChange={(event) =>
-                setPasswordConfirmation(event.target.value)
-              }
-              placeholder="确认刚才输入的密码"
-              required
-              type="password"
-              value={passwordConfirmation}
-            />
-          </div>
-        )}
         <div className="field">
           <label htmlFor="password">密码</label>
           <input
@@ -123,6 +106,23 @@ export function AuthForm({
             value={password}
           />
         </div>
+        {mode === "register" && (
+          <div className="field">
+            <label htmlFor="password-confirmation">再次输入密码</label>
+            <input
+              autoComplete="new-password"
+              id="password-confirmation"
+              minLength={10}
+              onChange={(event) =>
+                setPasswordConfirmation(event.target.value)
+              }
+              placeholder="确认刚才输入的密码"
+              required
+              type="password"
+              value={passwordConfirmation}
+            />
+          </div>
+        )}
         {error && <div className="form-error">{error}</div>}
         <button
           className="button button-dark button-block"
