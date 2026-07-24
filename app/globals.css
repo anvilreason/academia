@@ -594,6 +594,38 @@ body {
   }
 }
 
+/* Final college-map interaction layer: shared card resets above must not
+   suppress the individual school colour. */
+.university-page .school-grid > .school-card:is(:hover, :focus-visible) {
+  border-color: var(--school-accent) !important;
+  background-color: var(--school-accent) !important;
+  background-image: none !important;
+  color: #fffdf6 !important;
+  box-shadow:
+    0 18px 42px color-mix(in srgb, var(--school-accent) 28%, transparent),
+    inset 0 4px 0 rgb(255 255 255 / 22%) !important;
+  transform: translateY(-4px) !important;
+}
+
+.university-page
+  .school-grid
+  > .school-card:is(:hover, :focus-visible)
+  :is(h3, .program-preview span, .school-card-foot strong) {
+  color: #fffdf6 !important;
+}
+
+.university-page
+  .school-grid
+  > .school-card:is(:hover, :focus-visible)
+  :is(
+    .school-card-top,
+    .school-english,
+    div:nth-child(2) > p:last-child,
+    .school-card-foot
+  ) {
+  color: rgb(255 253 246 / 78%) !important;
+}
+
 /* v0.6 cascade anchor */
 body {
   font-size: 15px;
