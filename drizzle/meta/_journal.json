@@ -22,6 +22,13 @@
       "when": 1784881685071,
       "tag": "0002_moaning_epoch",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1784882533366,
+      "tag": "0003_gifted_thunderbolts",
+      "breakpoints": true
     }
   ]
 }

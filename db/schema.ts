@@ -220,6 +220,65 @@ export const practiceProjects = sqliteTable(
   ],
 );
 
+export const agentThreads = sqliteTable(
+  "agent_threads",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    title: text("title").notNull().default("新的思考"),
+    status: text("status").notNull().default("active"),
+    ...lifecycle,
+  },
+  (table) => [
+    index("agent_threads_user_updated_idx").on(table.userId, table.updatedAt),
+  ],
+);
+
+export const agentMessages = sqliteTable(
+  "agent_messages",
+  {
+    id: text("id").primaryKey(),
+    threadId: text("thread_id").notNull(),
+    role: text("role").notNull(),
+    content: text("content").notNull(),
+    idempotencyKey: text("idempotency_key"),
+    inputTokens: integer("input_tokens"),
+    outputTokens: integer("output_tokens"),
+    ...lifecycle,
+  },
+  (table) => [
+    uniqueIndex("agent_messages_thread_idempotency_unique").on(
+      table.threadId,
+      table.idempotencyKey,
+      table.role,
+    ),
+  ],
+);
+
+export const memoryItems = sqliteTable(
+  "memory_items",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    kind: text("kind").notNull(),
+    contextLabel: text("context_label").notNull(),
+    content: text("content").notNull(),
+    sourceType: text("source_type").notNull(),
+    sourceId: text("source_id").notNull(),
+    salience: integer("salience").notNull().default(50),
+    lastUsedAt: text("last_used_at"),
+    ...lifecycle,
+  },
+  (table) => [
+    uniqueIndex("memory_items_source_unique").on(
+      table.userId,
+      table.sourceType,
+      table.sourceId,
+    ),
+    index("memory_items_user_updated_idx").on(table.userId, table.updatedAt),
+  ],
+);
+
 export const examAttempts = sqliteTable("exam_attempts", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull(),

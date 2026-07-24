@@ -106,6 +106,40 @@ export type PracticeProjectRecord = {
   updatedAt: string;
 };
 
+export type AgentThreadRecord = {
+  id: string;
+  userId: string;
+  title: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AgentMessageRecord = {
+  id: string;
+  threadId: string;
+  role: string;
+  content: string;
+  idempotencyKey: string | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  createdAt: string;
+};
+
+export type MemoryItemRecord = {
+  id: string;
+  userId: string;
+  kind: string;
+  contextLabel: string;
+  content: string;
+  sourceType: string;
+  sourceId: string;
+  salience: number;
+  lastUsedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export interface AcademiaRepository {
   findUserByEmail(email: string): Promise<UserRecord | null>;
   createUser(input: {
@@ -193,6 +227,40 @@ export interface AcademiaRepository {
     context: string;
     goal: string;
   }): Promise<PracticeProjectRecord>;
+  listAgentThreads(userId: string): Promise<AgentThreadRecord[]>;
+  createAgentThread(
+    userId: string,
+    title?: string,
+  ): Promise<AgentThreadRecord>;
+  getAgentThread(id: string): Promise<AgentThreadRecord | null>;
+  listAgentMessages(threadId: string): Promise<AgentMessageRecord[]>;
+  findAgentMessageByIdempotency(
+    threadId: string,
+    role: "user" | "assistant",
+    idempotencyKey: string,
+  ): Promise<AgentMessageRecord | null>;
+  appendAgentMessage(input: {
+    threadId: string;
+    role: "user" | "assistant";
+    content: string;
+    idempotencyKey?: string | null;
+    inputTokens?: number;
+    outputTokens?: number;
+  }): Promise<AgentMessageRecord>;
+  remember(input: {
+    userId: string;
+    kind: string;
+    contextLabel: string;
+    content: string;
+    sourceType: string;
+    sourceId: string;
+    salience?: number;
+  }): Promise<MemoryItemRecord>;
+  listMemoryItems(
+    userId: string,
+    limit?: number,
+  ): Promise<MemoryItemRecord[]>;
+  forgetMemory(userId: string, id: string): Promise<boolean>;
   recordExamAttempt(input: {
     userId: string;
     sessionId: string;

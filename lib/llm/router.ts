@@ -1,4 +1,8 @@
-import type { MessageRecord } from "@/lib/repositories/types";
+import type {
+  AgentMessageRecord,
+  MemoryItemRecord,
+  MessageRecord,
+} from "@/lib/repositories/types";
 import { runtimeEnv } from "@/lib/server/env";
 import {
   estimateCostFen,
@@ -7,9 +11,23 @@ import {
   reserveBudget,
   settleBudget,
 } from "./cost-tracker";
-import { promptForNode, toClaudeMessages } from "./prompts/socratic-zh-v1";
+import { tokenPriceFor } from "./pricing";
+import { academiaAgentPrompt } from "./prompts/academia-agent-zh-v1";
+import { promptForNode } from "./prompts/socratic-zh-v1";
+import { streamAnthropic } from "./providers/anthropic";
+import { streamOpenAi } from "./providers/openai";
+import type { LlmMessage } from "./providers/types";
+import {
+  LlmBudgetError,
+  LlmProviderError,
+} from "./router-errors";
+
+export { LlmBudgetError, LlmProviderError } from "./router-errors";
 
 export type LlmUsage = { inputTokens: number; outputTokens: number };
+export type LlmMode =
+  | { type: "course"; nodeSlug: string }
+  | { type: "general-agent" };
 
 type StreamCallbacks = {
   onDelta(text: string): Promise<void>;
@@ -20,102 +38,95 @@ type StreamCallbacks = {
   }): Promise<void>;
 };
 
-export class LlmBudgetError extends Error {}
-export class LlmProviderError extends Error {}
-
-export async function streamAcadPro(
-  history: MessageRecord[],
-  nodeSlug: string,
-  callbacks: StreamCallbacks,
-) {
+function providerConfig() {
   const config = runtimeEnv();
-  if (!config.ANTHROPIC_API_KEY) {
-    throw new LlmProviderError("ANTHROPIC_API_KEY is unavailable");
+  const requested = config.LLM_PROVIDER?.toLowerCase();
+  if (requested === "openai") {
+    if (!config.OPENAI_API_KEY) {
+      throw new LlmProviderError("OPENAI_API_KEY is unavailable");
+    }
+    return {
+      provider: "openai" as const,
+      apiKey: config.OPENAI_API_KEY,
+      model: config.OPENAI_MODEL || "gpt-5.6-sol",
+    };
   }
-  const systemPrompt = promptForNode(nodeSlug);
-  const providerModel = config.ANTHROPIC_MODEL || "claude-sonnet-5";
-  const estimatedInput = estimateTokens(
-    systemPrompt + history.map((message) => message.content).join("\n"),
-  );
-  const reservation = await reserveBudget(estimatedInput);
-  if (!reservation) throw new LlmBudgetError("daily budget exhausted");
-  await callbacks.onReserved?.({ providerModel, ...reservation });
+  if (requested === "anthropic") {
+    if (!config.ANTHROPIC_API_KEY) {
+      throw new LlmProviderError("ANTHROPIC_API_KEY is unavailable");
+    }
+    return {
+      provider: "anthropic" as const,
+      apiKey: config.ANTHROPIC_API_KEY,
+      model: config.ANTHROPIC_MODEL || "claude-sonnet-5",
+    };
+  }
+  if (config.OPENAI_API_KEY) {
+    return {
+      provider: "openai" as const,
+      apiKey: config.OPENAI_API_KEY,
+      model: config.OPENAI_MODEL || "gpt-5.6-sol",
+    };
+  }
+  if (config.ANTHROPIC_API_KEY) {
+    return {
+      provider: "anthropic" as const,
+      apiKey: config.ANTHROPIC_API_KEY,
+      model: config.ANTHROPIC_MODEL || "claude-sonnet-5",
+    };
+  }
+  throw new LlmProviderError("No LLM provider is configured");
+}
 
-  let inputTokens = estimatedInput;
-  let outputTokens = 0;
-  let fullText = "";
+export async function streamAcadPro(input: {
+  history: Array<MessageRecord | AgentMessageRecord>;
+  mode: LlmMode;
+  memories?: MemoryItemRecord[];
+  callbacks: StreamCallbacks;
+}) {
+  const provider = providerConfig();
+  const memories = input.memories ?? [];
+  const systemPrompt =
+    input.mode.type === "general-agent"
+      ? academiaAgentPrompt(memories)
+      : promptForNode(input.mode.nodeSlug, memories);
+  const estimatedInput = estimateTokens(
+    systemPrompt +
+      input.history.map((message) => message.content).join("\n"),
+  );
+  const tokenPrice = tokenPriceFor(provider.provider, provider.model);
+  const usdCnyRate = Number(runtimeEnv().USD_CNY_RATE || 7.2);
+  const reservation = await reserveBudget(estimatedInput, {
+    tokenPrice,
+    usdCnyRate,
+  });
+  if (!reservation) throw new LlmBudgetError("daily budget exhausted");
+  const providerModel = `${provider.provider}:${provider.model}`;
+  await input.callbacks.onReserved?.({ providerModel, ...reservation });
+
   let succeeded = false;
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": config.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: providerModel,
-        max_tokens: MAX_OUTPUT_TOKENS,
-        stream: true,
-        thinking: { type: "disabled" },
-        system: systemPrompt,
-        messages: toClaudeMessages(history),
-      }),
-    });
-    if (!response.ok || !response.body) {
-      const detail = await response.text();
-      throw new LlmProviderError(
-        `Anthropic ${response.status}: ${detail.slice(0, 240)}`,
-      );
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      buffer += decoder.decode(value, { stream: !done });
-      const frames = buffer.split("\n\n");
-      buffer = frames.pop() ?? "";
-      for (const frame of frames) {
-        const dataLine = frame
-          .split("\n")
-          .find((line) => line.startsWith("data:"));
-        if (!dataLine) continue;
-        const event = JSON.parse(dataLine.slice(5).trim()) as {
-          type: string;
-          message?: { usage?: { input_tokens?: number } };
-          delta?: {
-            type?: string;
-            text?: string;
-            usage?: { output_tokens?: number };
-          };
-          usage?: { output_tokens?: number };
-          error?: { message?: string };
-        };
-        if (event.type === "message_start") {
-          inputTokens = event.message?.usage?.input_tokens ?? inputTokens;
-        } else if (
-          event.type === "content_block_delta" &&
-          event.delta?.type === "text_delta" &&
-          event.delta.text
-        ) {
-          fullText += event.delta.text;
-          await callbacks.onDelta(event.delta.text);
-        } else if (event.type === "message_delta") {
-          outputTokens =
-            event.usage?.output_tokens ??
-            event.delta?.usage?.output_tokens ??
-            outputTokens;
-        } else if (event.type === "error") {
-          throw new LlmProviderError(
-            event.error?.message ?? "Anthropic stream error",
-          );
-        }
-      }
-      if (done) break;
-    }
-    const actualFen = estimateCostFen(inputTokens, outputTokens);
+    const providerInput = {
+      apiKey: provider.apiKey,
+      model: provider.model,
+      systemPrompt,
+      history: input.history satisfies LlmMessage[],
+      maxOutputTokens: MAX_OUTPUT_TOKENS,
+      onDelta: input.callbacks.onDelta,
+    };
+    const streamed =
+      provider.provider === "openai"
+        ? await streamOpenAi(providerInput)
+        : await streamAnthropic(providerInput);
+    const inputTokens = streamed.inputTokens || estimatedInput;
+    const outputTokens =
+      streamed.outputTokens || estimateTokens(streamed.text);
+    const actualFen = estimateCostFen(
+      inputTokens,
+      outputTokens,
+      usdCnyRate,
+      tokenPrice,
+    );
     await settleBudget(
       reservation.dateKey,
       reservation.reservedFen,
@@ -123,7 +134,7 @@ export async function streamAcadPro(
     );
     succeeded = true;
     return {
-      text: fullText.trim(),
+      text: streamed.text,
       providerModel,
       usage: { inputTokens, outputTokens } satisfies LlmUsage,
       actualFen,

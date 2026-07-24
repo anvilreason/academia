@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
 import {
   BookOpenText,
+  BrainCircuit,
   ChartNoAxesColumnIncreasing,
   Clock3,
   FolderKanban,
@@ -21,7 +22,7 @@ import {
 
 type ProductShellProps = {
   children: React.ReactNode;
-  active?: "home" | "college" | "learn" | "projects";
+  active?: "home" | "college" | "learn" | "projects" | "agent";
   title?: string;
   context?: string;
 };
@@ -71,6 +72,13 @@ export function ProductShell({
       <Link className="sidebar-action" href="/college">
         <Plus aria-hidden="true" />
         选择专业
+      </Link>
+      <Link
+        className={`sidebar-link ${active === "agent" ? "active" : ""}`}
+        href="/agent"
+      >
+        <BrainCircuit aria-hidden="true" />
+        Academia Agent
       </Link>
       <Link
         className={`sidebar-link ${active === "projects" ? "active" : ""}`}

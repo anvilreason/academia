@@ -4,6 +4,7 @@ import {
   estimateCostFen,
   GLOBAL_DAILY_LIMIT_FEN,
   MAX_OUTPUT_TOKENS,
+  type TokenPrice,
 } from "./pricing";
 
 export {
@@ -13,11 +14,19 @@ export {
   MAX_OUTPUT_TOKENS,
 } from "./pricing";
 
-export async function reserveBudget(inputTokens: number) {
+export async function reserveBudget(
+  inputTokens: number,
+  input: { usdCnyRate?: number; tokenPrice?: TokenPrice } = {},
+) {
   const bindings = env as unknown as { DB: D1Database };
   const dateKey = shanghaiDateKey();
   const now = nowIso();
-  const reservedFen = estimateCostFen(inputTokens, MAX_OUTPUT_TOKENS);
+  const reservedFen = estimateCostFen(
+    inputTokens,
+    MAX_OUTPUT_TOKENS,
+    input.usdCnyRate,
+    input.tokenPrice,
+  );
   const id = newId();
   const statement = bindings.DB.prepare(
     `INSERT INTO daily_cost_quotas

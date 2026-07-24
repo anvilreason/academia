@@ -1,12 +1,15 @@
 import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
+  agentMessages,
+  agentThreads,
   guestTrialUsage,
   examAttempts,
   learningNotes,
   learningSessions,
   llmCallLogs,
   messages,
+  memoryItems,
   nodeEntitlements,
   orders,
   practiceProjects,
@@ -19,9 +22,12 @@ import {
 import { newId, nowIso } from "@/lib/server/api";
 import type {
   AcademiaRepository,
+  AgentMessageRecord,
+  AgentThreadRecord,
   ExamAttemptRecord,
   LearningSessionRecord,
   MessageRecord,
+  MemoryItemRecord,
   NoteRecord,
   OrderRecord,
   PracticeProjectRecord,
@@ -119,6 +125,33 @@ function asWallet(row: typeof walletAccounts.$inferSelect): WalletRecord {
 function asPracticeProject(
   row: typeof practiceProjects.$inferSelect,
 ): PracticeProjectRecord {
+  return row;
+}
+
+function asAgentThread(
+  row: typeof agentThreads.$inferSelect,
+): AgentThreadRecord {
+  return row;
+}
+
+function asAgentMessage(
+  row: typeof agentMessages.$inferSelect,
+): AgentMessageRecord {
+  return {
+    id: row.id,
+    threadId: row.threadId,
+    role: row.role,
+    content: row.content,
+    idempotencyKey: row.idempotencyKey,
+    inputTokens: row.inputTokens,
+    outputTokens: row.outputTokens,
+    createdAt: row.createdAt,
+  };
+}
+
+function asMemoryItem(
+  row: typeof memoryItems.$inferSelect,
+): MemoryItemRecord {
   return row;
 }
 
@@ -621,6 +654,177 @@ export class D1AcademiaRepository implements AcademiaRepository {
       })
       .returning();
     return asPracticeProject(created);
+  }
+
+  async listAgentThreads(userId: string) {
+    const rows = await getDb()
+      .select()
+      .from(agentThreads)
+      .where(
+        and(eq(agentThreads.userId, userId), isNull(agentThreads.deletedAt)),
+      )
+      .orderBy(desc(agentThreads.updatedAt))
+      .limit(20);
+    return rows.map(asAgentThread);
+  }
+
+  async createAgentThread(userId: string, title = "新的思考") {
+    const now = nowIso();
+    const [created] = await getDb()
+      .insert(agentThreads)
+      .values({
+        id: newId(),
+        userId,
+        title: title.trim().slice(0, 80) || "新的思考",
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    return asAgentThread(created);
+  }
+
+  async getAgentThread(id: string) {
+    const [row] = await getDb()
+      .select()
+      .from(agentThreads)
+      .where(and(eq(agentThreads.id, id), isNull(agentThreads.deletedAt)))
+      .limit(1);
+    return row ? asAgentThread(row) : null;
+  }
+
+  async listAgentMessages(threadId: string) {
+    const rows = await getDb()
+      .select()
+      .from(agentMessages)
+      .where(
+        and(
+          eq(agentMessages.threadId, threadId),
+          isNull(agentMessages.deletedAt),
+        ),
+      )
+      .orderBy(asc(agentMessages.createdAt), asc(agentMessages.id));
+    return rows.map(asAgentMessage);
+  }
+
+  async findAgentMessageByIdempotency(
+    threadId: string,
+    role: "user" | "assistant",
+    idempotencyKey: string,
+  ) {
+    const [row] = await getDb()
+      .select()
+      .from(agentMessages)
+      .where(
+        and(
+          eq(agentMessages.threadId, threadId),
+          eq(agentMessages.role, role),
+          eq(agentMessages.idempotencyKey, idempotencyKey),
+          isNull(agentMessages.deletedAt),
+        ),
+      )
+      .limit(1);
+    return row ? asAgentMessage(row) : null;
+  }
+
+  async appendAgentMessage(input: {
+    threadId: string;
+    role: "user" | "assistant";
+    content: string;
+    idempotencyKey?: string | null;
+    inputTokens?: number;
+    outputTokens?: number;
+  }) {
+    const now = nowIso();
+    const [created] = await getDb()
+      .insert(agentMessages)
+      .values({
+        id: newId(),
+        threadId: input.threadId,
+        role: input.role,
+        content: input.content,
+        idempotencyKey: input.idempotencyKey ?? null,
+        inputTokens: input.inputTokens ?? null,
+        outputTokens: input.outputTokens ?? null,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    await getDb()
+      .update(agentThreads)
+      .set({ updatedAt: now })
+      .where(eq(agentThreads.id, input.threadId));
+    return asAgentMessage(created);
+  }
+
+  async remember(input: {
+    userId: string;
+    kind: string;
+    contextLabel: string;
+    content: string;
+    sourceType: string;
+    sourceId: string;
+    salience?: number;
+  }) {
+    const now = nowIso();
+    const [created] = await getDb()
+      .insert(memoryItems)
+      .values({
+        id: newId(),
+        userId: input.userId,
+        kind: input.kind,
+        contextLabel: input.contextLabel,
+        content: input.content.slice(0, 2_000),
+        sourceType: input.sourceType,
+        sourceId: input.sourceId,
+        salience: input.salience ?? 50,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: [
+          memoryItems.userId,
+          memoryItems.sourceType,
+          memoryItems.sourceId,
+        ],
+        set: {
+          content: input.content.slice(0, 2_000),
+          contextLabel: input.contextLabel,
+          salience: input.salience ?? 50,
+          updatedAt: now,
+          deletedAt: null,
+        },
+      })
+      .returning();
+    return asMemoryItem(created);
+  }
+
+  async listMemoryItems(userId: string, limit = 120) {
+    const rows = await getDb()
+      .select()
+      .from(memoryItems)
+      .where(
+        and(eq(memoryItems.userId, userId), isNull(memoryItems.deletedAt)),
+      )
+      .orderBy(desc(memoryItems.updatedAt))
+      .limit(Math.min(200, Math.max(1, limit)));
+    return rows.map(asMemoryItem);
+  }
+
+  async forgetMemory(userId: string, id: string) {
+    const deletedAt = nowIso();
+    const [forgotten] = await getDb()
+      .update(memoryItems)
+      .set({ deletedAt, updatedAt: deletedAt })
+      .where(
+        and(
+          eq(memoryItems.id, id),
+          eq(memoryItems.userId, userId),
+          isNull(memoryItems.deletedAt),
+        ),
+      )
+      .returning({ id: memoryItems.id });
+    return Boolean(forgotten);
   }
 
   async recordExamAttempt(input: {

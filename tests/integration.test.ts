@@ -273,5 +273,76 @@ test(
       projectList.data.some((item) => item.id === project.data.id),
       true,
     );
+
+    const agentThreadResponse = await jar.request("/api/agent/threads", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ title: "连接课程与项目" }),
+    });
+    assert.equal(agentThreadResponse.status, 201);
+    const agentThread = await json<{ data: { id: string } }>(
+      agentThreadResponse,
+    );
+    const agentStream = await jar.request(
+      `/api/agent/threads/${agentThread.data.id}/messages`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          content: "把我在 Porter 课程里的判断和实践项目联系起来。",
+          idempotencyKey: crypto.randomUUID(),
+        }),
+      },
+    );
+    assert.equal(agentStream.status, 200);
+    const agentStreamText = await agentStream.text();
+    const metaData = agentStreamText.match(
+      /^event: meta\ndata: (.+)$/m,
+    )?.[1];
+    assert.ok(metaData);
+    const agentMeta = JSON.parse(metaData) as {
+      memoryCount: number;
+      memoryContexts: string[];
+    };
+    assert.equal(agentMeta.memoryCount > 0, true);
+    assert.equal(
+      agentMeta.memoryContexts.some(
+        (context) =>
+          context.includes("Porter") || context.includes("实践项目"),
+      ),
+      true,
+    );
+    const agentDetail = await json<{
+      data: { messages: Array<{ role: string; content: string }> };
+    }>(await jar.request(`/api/agent/threads/${agentThread.data.id}`));
+    assert.equal(
+      agentDetail.data.messages.some(
+        (message) =>
+          message.role === "user" && message.content.includes("Porter"),
+      ),
+      true,
+    );
+    const memoryList = await json<{
+      data: Array<{ id: string; content: string }>;
+    }>(await jar.request("/api/me/memories"));
+    assert.equal(memoryList.data.length > 0, true);
+    const memoryToForget = memoryList.data[0];
+    assert.equal(
+      (
+        await jar.request(`/api/me/memories/${memoryToForget.id}`, {
+          method: "DELETE",
+        })
+      ).status,
+      200,
+    );
+    const memoriesAfterForget = await json<{
+      data: Array<{ id: string }>;
+    }>(await jar.request("/api/me/memories"));
+    assert.equal(
+      memoriesAfterForget.data.some(
+        (memory) => memory.id === memoryToForget.id,
+      ),
+      false,
+    );
   },
 );

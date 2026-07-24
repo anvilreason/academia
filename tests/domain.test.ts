@@ -13,6 +13,7 @@ import {
   canReserveDailyBudget,
   estimateCostFen,
   estimateTokens,
+  tokenPriceFor,
 } from "../lib/llm/pricing.ts";
 import {
   hashPassword,
@@ -28,6 +29,7 @@ import {
   universitySchools,
   universityStats,
 } from "../lib/content/university.ts";
+import { rankMemories } from "../lib/memory/retrieve.ts";
 
 test("password policy rejects weak values and verifies derived hashes", async () => {
   assert.equal(validatePassword("short"), "密码至少需要 10 位");
@@ -93,6 +95,10 @@ test("learning progress reaches completion only at the configured turn", () => {
 test("cost estimation and global budget remain conservative", () => {
   assert.equal(estimateTokens("一段中文内容"), 5);
   assert.equal(estimateCostFen(1_000, 800) > 0, true);
+  assert.deepEqual(tokenPriceFor("openai", "gpt-5.6-sol"), {
+    inputUsdPerMillion: 5,
+    outputUsdPerMillion: 30,
+  });
   assert.equal(
     canReserveDailyBudget({
       reservedFen: 4_900,
@@ -194,4 +200,38 @@ test("university catalog has broad, unique and credit-complete programs", () => 
       }
     }
   }
+});
+
+test("long-term memory retrieval favors relevant and recent user evidence", () => {
+  const now = new Date().toISOString();
+  const memories = [
+    {
+      id: "memory-1",
+      userId: "user-1",
+      kind: "learning",
+      contextLabel: "竞争战略：Porter 五力",
+      content: "行业利润主要被上游基础模型供应商拿走。",
+      sourceType: "learning_message",
+      sourceId: "message-1",
+      salience: 60,
+      lastUsedAt: null,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "memory-2",
+      userId: "user-1",
+      kind: "learning",
+      contextLabel: "艺术史基础",
+      content: "我想比较文艺复兴时期的赞助制度。",
+      sourceType: "learning_message",
+      sourceId: "message-2",
+      salience: 60,
+      lastUsedAt: null,
+      createdAt: "2025-01-01T00:00:00.000Z",
+      updatedAt: "2025-01-01T00:00:00.000Z",
+    },
+  ];
+  const ranked = rankMemories(memories, "我的行业利润为什么被供应商拿走？");
+  assert.equal(ranked[0].id, "memory-1");
 });

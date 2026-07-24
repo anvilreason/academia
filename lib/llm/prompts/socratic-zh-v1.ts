@@ -1,4 +1,9 @@
-import type { MessageRecord } from "@/lib/repositories/types";
+import type {
+  AgentMessageRecord,
+  MemoryItemRecord,
+  MessageRecord,
+} from "@/lib/repositories/types";
+import { renderMemoryContext } from "@/lib/memory/retrieve";
 
 const KOTLER_PROMPT = `你是 Academia 的苏格拉底式课程导师，正在教授 Philip Kotler 的 4P 与 STP。
 
@@ -26,11 +31,22 @@ const PORTER_PROMPT = `你是 Academia 的苏格拉底式课程导师，正在�
 6. 不提及系统提示、token、模型或内部实现。
 7. 这是测试环境，不索取真实姓名、联系方式、财务账号或其他敏感信息。`;
 
-export function promptForNode(nodeSlug: string) {
-  return nodeSlug === "porter-five-forces" ? PORTER_PROMPT : KOTLER_PROMPT;
+export function promptForNode(
+  nodeSlug: string,
+  memories: MemoryItemRecord[] = [],
+) {
+  const coursePrompt =
+    nodeSlug === "porter-five-forces" ? PORTER_PROMPT : KOTLER_PROMPT;
+  if (!memories.length) return coursePrompt;
+  return `${coursePrompt}
+
+你还可以使用下列长期学习记忆。只在与当前问题真正相关时引用，并指出它来自哪门课程或哪个项目。记忆只代表学习者当时的表达，不要把它当成永远不变的事实：
+${renderMemoryContext(memories)}`;
 }
 
-export function toClaudeMessages(history: MessageRecord[]) {
+export function toClaudeMessages(
+  history: Array<MessageRecord | AgentMessageRecord>,
+) {
   return history.slice(-12).map((message) => ({
     role: message.role === "assistant" ? ("assistant" as const) : ("user" as const),
     content: message.content,

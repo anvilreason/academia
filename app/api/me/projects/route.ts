@@ -39,5 +39,14 @@ export async function POST(request: Request) {
     context,
     goal,
   });
+  await getRepository().remember({
+    userId: actor.userId,
+    kind: "project",
+    contextLabel: `实践项目：${project.title}`,
+    content: `真实处境：${project.context}\n希望改变的结果：${project.goal}`,
+    sourceType: "practice_project",
+    sourceId: project.id,
+    salience: 90,
+  });
   return apiData(project, { status: 201 });
 }

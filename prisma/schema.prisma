@@ -199,6 +199,54 @@ model PracticeProject {
   @@map("practice_projects")
 }
 
+model AgentThread {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  title     String    @default("新的思考")
+  status    String    @default("active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([userId, updatedAt])
+  @@map("agent_threads")
+}
+
+model AgentMessage {
+  id             String    @id @default(uuid())
+  threadId       String    @map("thread_id")
+  role           String
+  content        String
+  idempotencyKey String?   @map("idempotency_key")
+  inputTokens    Int?      @map("input_tokens")
+  outputTokens   Int?      @map("output_tokens")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  @@unique([threadId, idempotencyKey, role])
+  @@map("agent_messages")
+}
+
+model MemoryItem {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  kind         String
+  contextLabel String    @map("context_label")
+  content      String
+  sourceType   String    @map("source_type")
+  sourceId     String    @map("source_id")
+  salience     Int       @default(50)
+  lastUsedAt   DateTime? @map("last_used_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  @@unique([userId, sourceType, sourceId])
+  @@index([userId, updatedAt])
+  @@map("memory_items")
+}
+
 model ExamAttempt {
   id                    String    @id @default(uuid())
   userId                String    @map("user_id")

@@ -1,9 +1,9 @@
 "use client";
 
-import { FormEvent, useEffect } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, Brain } from "lucide-react";
 import {
   type LearningMessage,
   useLearningStore,
@@ -72,6 +72,7 @@ export function AgentWorkspace({
   professor: string;
   school: string;
 }) {
+  const [memoryContexts, setMemoryContexts] = useState<string[]>([]);
   const {
     messages,
     draft,
@@ -144,7 +145,12 @@ export function AgentWorkspace({
         for (const frame of frames) {
           const parsed = parseSseFrame(frame);
           if (!parsed) continue;
-          if (parsed.name === "delta") {
+          if (parsed.name === "meta") {
+            const contexts = parsed.data.memoryContexts;
+            if (Array.isArray(contexts)) {
+              setMemoryContexts(contexts.map(String));
+            }
+          } else if (parsed.name === "delta") {
             appendDelta(assistantId, String(parsed.data.text ?? ""));
           } else if (parsed.name === "progress") {
             setProgress(
@@ -215,6 +221,13 @@ export function AgentWorkspace({
             {professor} · {school} · 已进行 {turnCount}/
             {nodeSlug === "porter-five-forces" ? 4 : 5} 轮 · {progress}%
           </p>
+          {memoryContexts.length > 0 && (
+            <div className="course-memory-chip">
+              <Brain aria-hidden="true" size={13} />
+              已联系：
+              {memoryContexts.join(" · ")}
+            </div>
+          )}
         </div>
         {messages.map((message) =>
           message.role === "assistant" ? (

@@ -5,18 +5,10 @@ import {
   LlmProviderError,
   streamAcadPro,
 } from "@/lib/llm/router";
-import { getRepository } from "@/lib/repositories";
-import { progressForTurn } from "@/lib/domain/learning";
-import { getUniversityCourse } from "@/lib/content/university";
 import { rankMemories } from "@/lib/memory/retrieve";
+import { getRepository } from "@/lib/repositories";
 
-type ClientEvent =
-  | "meta"
-  | "delta"
-  | "progress"
-  | "usage"
-  | "done"
-  | "error";
+type ClientEvent = "meta" | "delta" | "usage" | "done" | "error";
 
 function event(name: ClientEvent, data: unknown) {
   return `event: ${name}\ndata: ${JSON.stringify(data)}\n\n`;
@@ -36,6 +28,10 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const actor = await getActor(request);
+  if (!actor.userId) {
+    return streamError("UNAUTHORIZED", "请先建立学籍", 401);
+  }
   const { id } = await params;
   const body = (await request.json()) as {
     content?: string;
@@ -43,52 +39,35 @@ export async function POST(
   };
   const content = body.content?.trim() ?? "";
   const idempotencyKey = body.idempotencyKey?.trim() ?? "";
-  if (!content || content.length > 2_000 || !idempotencyKey) {
+  if (!content || content.length > 4_000 || !idempotencyKey) {
     return streamError(
       "BAD_REQUEST",
-      content.length > 2_000
-        ? "单条回答最多 2,000 字"
-        : "回答内容或请求标识缺失",
+      content.length > 4_000
+        ? "单条内容最多 4,000 字"
+        : "内容或请求标识缺失",
       400,
     );
   }
 
   const repository = getRepository();
-  const [session, actor] = await Promise.all([
-    repository.getLearningSession(id),
-    getActor(request),
-  ]);
-  if (!session) return streamError("NOT_FOUND", "学习会话不存在", 404);
-  const allowed =
-    (actor.userId && session.userId === actor.userId) ||
-    (actor.guestId && session.guestId === actor.guestId);
-  if (!allowed) return streamError("FORBIDDEN", "无权访问该会话", 403);
-  if (!actor.userId && session.turnCount >= 5) {
-    return streamError(
-      "REGISTRATION_REQUIRED",
-      "开放旁听的对话已经完成。建立学籍后，这段思考会被保留。",
-      403,
-    );
+  const thread = await repository.getAgentThread(id);
+  if (!thread) return streamError("NOT_FOUND", "对话不存在", 404);
+  if (thread.userId !== actor.userId) {
+    return streamError("FORBIDDEN", "无权访问这段对话", 403);
   }
 
-  const existingUserMessage = await repository.findMessageByIdempotency(
-    id,
-    "user",
-    idempotencyKey,
-  );
-  const existingAssistant = await repository.findMessageByIdempotency(
-    id,
-    "assistant",
-    idempotencyKey,
-  );
+  const [existingUser, existingAssistant] = await Promise.all([
+    repository.findAgentMessageByIdempotency(id, "user", idempotencyKey),
+    repository.findAgentMessageByIdempotency(
+      id,
+      "assistant",
+      idempotencyKey,
+    ),
+  ]);
   if (existingAssistant) {
     return new Response(
-      event("meta", { sessionId: id, replayed: true }) +
+      event("meta", { threadId: id, replayed: true, memoryCount: 0 }) +
         event("delta", { text: existingAssistant.content }) +
-        event("progress", {
-          turnCount: session.turnCount,
-          progress: session.progress,
-        }) +
         event("done", { messageId: existingAssistant.id }),
       {
         headers: {
@@ -98,38 +77,32 @@ export async function POST(
       },
     );
   }
-  const memoryCandidates = actor.userId
-    ? await repository.listMemoryItems(actor.userId)
-    : [];
-  if (!existingUserMessage) {
-    const userMessage = await repository.appendMessage({
-      sessionId: id,
+
+  const memoryCandidates = await repository.listMemoryItems(actor.userId);
+  if (!existingUser) {
+    const message = await repository.appendAgentMessage({
+      threadId: id,
       role: "user",
       content,
       idempotencyKey,
     });
-    if (actor.userId) {
-      const course = getUniversityCourse(session.nodeSlug)?.course;
-      await repository.remember({
-        userId: actor.userId,
-        kind: "learning",
-        contextLabel: course?.title ?? session.nodeSlug,
-        content,
-        sourceType: "learning_message",
-        sourceId: userMessage.id,
-        salience: 60,
-      });
-    }
+    await repository.remember({
+      userId: actor.userId,
+      kind: "agent",
+      contextLabel: `总 Agent：${thread.title}`,
+      content,
+      sourceType: "agent_message",
+      sourceId: message.id,
+      salience: 65,
+    });
   }
-  const history = await repository.listMessages(id);
-  const memories = actor.userId
-    ? rankMemories(memoryCandidates, content)
-    : [];
-  const nextTurn = session.turnCount + 1;
-  const nextProgress = progressForTurn(session.nodeSlug, nextTurn);
+  const history = await repository.listAgentMessages(id);
+  const memories = rankMemories(memoryCandidates, content, {
+    limit: 14,
+    maxCharacters: 7_000,
+  });
   const callId = newId();
   let callReserved = false;
-
   const output = new TransformStream();
   const writer = output.writable.getWriter();
   const encoder = new TextEncoder();
@@ -139,16 +112,16 @@ export async function POST(
   void (async () => {
     try {
       await write("meta", {
-        sessionId: id,
+        threadId: id,
         model: "acad-pro",
-        promptVersion: session.promptVersion,
+        promptVersion: "academia-agent-zh-v1",
         memoryCount: memories.length,
         memoryContexts: [...new Set(memories.map((item) => item.contextLabel))]
-          .slice(0, 3),
+          .slice(0, 4),
       });
       const result = await streamAcadPro({
         history,
-        mode: { type: "course", nodeSlug: session.nodeSlug },
+        mode: { type: "general-agent" },
         memories,
         callbacks: {
           async onReserved(reservation) {
@@ -157,7 +130,6 @@ export async function POST(
               id: callId,
               sessionId: id,
               userId: actor.userId,
-              guestId: actor.guestId,
               providerModel: reservation.providerModel,
               reservedFen: reservation.reservedFen,
             });
@@ -167,26 +139,20 @@ export async function POST(
           },
         },
       });
-      const assistant = await repository.appendMessage({
-        sessionId: id,
+      const assistant = await repository.appendAgentMessage({
+        threadId: id,
         role: "assistant",
         content: result.text,
         idempotencyKey,
         inputTokens: result.usage.inputTokens,
         outputTokens: result.usage.outputTokens,
       });
-      await repository.updateSessionProgress(id, nextTurn, nextProgress);
       await repository.finishLlmCall({
         id: callId,
         status: "succeeded",
         inputTokens: result.usage.inputTokens,
         outputTokens: result.usage.outputTokens,
         actualFen: result.actualFen,
-      });
-      await write("progress", {
-        turnCount: nextTurn,
-        progress: nextProgress,
-        registrationRequired: !actor.userId && nextTurn >= 5,
       });
       await write("usage", result.usage);
       await write("done", { messageId: assistant.id });
@@ -204,21 +170,18 @@ export async function POST(
               : "MODEL_UNAVAILABLE",
         });
       }
-      if (error instanceof LlmBudgetError) {
-        await write("error", {
-          code: "BUDGET_EXCEEDED",
-          message: "今天的开放课堂已经结束，请明天再来。",
-        });
-      } else {
-        console.error("learning_stream_failed", error);
-        await write("error", {
-          code:
-            error instanceof LlmProviderError
+      await write("error", {
+        code:
+          error instanceof LlmBudgetError
+            ? "BUDGET_EXCEEDED"
+            : error instanceof LlmProviderError
               ? "MODEL_UNAVAILABLE"
               : "INTERNAL_ERROR",
-          message: "导师暂时没有回应。你的回答已经保存，可以稍后重试。",
-        });
-      }
+        message:
+          error instanceof LlmBudgetError
+            ? "今天的公共模型额度已经用完，记忆与问题都已保存。"
+            : "Agent 暂时没有完成回答。你的问题和记忆已经保存，可以稍后重试。",
+      });
     } finally {
       await writer.close();
     }
