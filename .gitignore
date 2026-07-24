@@ -19,6 +19,14 @@
 
 # production
 /build
+/dist
+/.wrangler
+
+# local runtime secrets
+.dev.vars
+.env
+.env.local
+.env.*.local
 
 # misc
 .DS_Store
