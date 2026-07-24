@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { AnalyticsSignal } from "@/components/analytics/AnalyticsSignal";
 import { TrackedKnowledgeLink } from "@/components/analytics/TrackedKnowledgeLink";
-import { FalseDemandPathWorkspace } from "@/components/features/answers/FalseDemandPathWorkspace";
+import { AnswerPathWorkspace } from "@/components/features/answers/AnswerPathWorkspace";
 import { ProductShell } from "@/components/shared/ProductShell";
 import {
   ANSWER_CONTENT_VERSION,
@@ -160,7 +160,7 @@ export default async function AnswerPathPreviewPage({
         )}
 
         {topic.status === "flagship-open" && (
-          <FalseDemandPathWorkspace slug={topic.slug} />
+          <AnswerPathWorkspace slug={topic.slug} />
         )}
 
         <section className="answer-knowledge-links">

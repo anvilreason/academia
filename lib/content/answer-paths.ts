@@ -277,7 +277,7 @@ export const answerTopics: AnswerTopic[] = [
     duration: "5—7 天",
     artifact: "访谈提纲、原始记录与证据摘要",
     disciplines: ["质性研究", "用户研究", "认知偏差"],
-    status: "flagship-building",
+    status: "flagship-open",
     flagship: true,
     links: [schoolLinks.social, schoolLinks.design],
     preview: {
@@ -315,7 +315,7 @@ export const answerTopics: AnswerTopic[] = [
     duration: "7—14 天",
     artifact: "一件可公开讲述的课程作品",
     disciplines: ["项目制学习", "研究写作", "作品集设计"],
-    status: "flagship-building",
+    status: "flagship-open",
     flagship: true,
     links: [schoolLinks.design, schoolLinks.journalism],
     preview: {
@@ -340,7 +340,7 @@ export const answerTopics: AnswerTopic[] = [
     duration: "5—10 天",
     artifact: "可测试原型与测试脚本",
     disciplines: ["产品设计", "交互设计", "精益实验"],
-    status: "flagship-building",
+    status: "flagship-open",
     flagship: true,
     links: [schoolLinks.design, schoolLinks.computing],
     preview: {
@@ -404,7 +404,7 @@ export const answerTopics: AnswerTopic[] = [
     duration: "7—10 天",
     artifact: "需求证据表与真实成本实验",
     disciplines: ["用户研究", "行为经济学", "定价", "实验设计"],
-    status: "flagship-building",
+    status: "flagship-open",
     flagship: true,
     links: [
       {
@@ -481,7 +481,7 @@ export const answerTopics: AnswerTopic[] = [
     duration: "4—7 天",
     artifact: "继续／调整／停止决策备忘录",
     disciplines: ["战略", "决策科学", "创业财务"],
-    status: "flagship-building",
+    status: "flagship-open",
     flagship: true,
     links: [
       {

@@ -18,6 +18,7 @@ import {
   Menu,
   SquarePen,
   WalletCards,
+  Sparkles,
   X,
 } from "lucide-react";
 
@@ -172,6 +173,10 @@ export function ProductShell({
         <div className="sidebar-spacer" />
         {session && (
           <div className="sidebar-account-links">
+            <Link href="/capabilities">
+              <Sparkles aria-hidden="true" />
+              能力档案
+            </Link>
             <Link href="/transcript">
               <GraduationCap aria-hidden="true" />
               学籍与成绩

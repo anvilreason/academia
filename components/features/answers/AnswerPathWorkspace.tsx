@@ -13,7 +13,9 @@ import {
 } from "lucide-react";
 import {
   completionProgress,
-  falseDemandSteps,
+  formalAnswerPathConfigs,
+  getFormalAnswerPath,
+  type FormalAnswerPathConfig,
 } from "@/lib/domain/answer-path";
 import type { AnswerPathSnapshot } from "@/lib/repositories/types";
 
@@ -35,13 +37,6 @@ async function api<T>(url: string, init?: RequestInit) {
   return payload.data as T;
 }
 
-const evidenceLabels: Record<string, string> = {
-  interview: "访谈原始记录",
-  behavior: "已经发生的行为",
-  cost: "真实成本",
-  counterexample: "反例",
-};
-
 const decisionLabels: Record<string, string> = {
   continue: "继续验证",
   narrow: "缩小问题",
@@ -49,7 +44,8 @@ const decisionLabels: Record<string, string> = {
   stop: "停止投入",
 };
 
-export function FalseDemandPathWorkspace({ slug }: { slug: string }) {
+export function AnswerPathWorkspace({ slug }: { slug: string }) {
+  const pathConfig = getFormalAnswerPath(slug) ?? formalAnswerPathConfigs[0];
   const endpoint = `/api/answer-paths/${slug}`;
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -77,13 +73,14 @@ export function FalseDemandPathWorkspace({ slug }: { slug: string }) {
       completionProgress({
         hasBaseline: Boolean(snapshot?.baseline),
         evidenceCount: snapshot?.evidence.length ?? 0,
+        evidenceMinimum: pathConfig.evidenceMinimum,
         artifactCount: snapshot?.artifacts.length ?? 0,
         reviewCount: snapshot?.evaluations.length ?? 0,
         latestReviewRequiresRevision:
           latestEvaluation?.requiredRevision ?? null,
         hasOutcome: Boolean(snapshot?.outcome),
       }),
-    [latestEvaluation, snapshot],
+    [latestEvaluation, pathConfig.evidenceMinimum, snapshot],
   );
 
   async function perform(label: string, action: () => Promise<unknown>) {
@@ -120,8 +117,8 @@ export function FalseDemandPathWorkspace({ slug }: { slug: string }) {
           <p className="eyebrow">YOUR WORK MUST PERSIST</p>
           <h2>先建立学籍，再让证据持续积累。</h2>
           <p>
-            这条路径包含 7—10 天的现实行动。访谈、证据表、Agent
-            评价和修订都会永久保存在你的学籍中。
+            这条路径包含现实行动、证据、作品、Agent
+            评价与必要修订，它们都会持续保存在你的学籍中。
           </p>
           <Link
             className="button button-dark"
@@ -158,12 +155,9 @@ export function FalseDemandPathWorkspace({ slug }: { slug: string }) {
       <section className="path-workspace path-entry-gate" id="start-path">
         <FileSearch aria-hidden="true" />
         <div>
-          <p className="eyebrow">FORMAL PATH · V1.1</p>
-          <h2>从一个你正在考虑投入的真实想法开始。</h2>
-          <p>
-            路径不会替你证明需求。它会要求你进入真实情境、保留来源、寻找反例，
-            最后由现实决定继续、改变或停止。
-          </p>
+          <p className="eyebrow">FORMAL PATH · V1.2</p>
+          <h2>{pathConfig.entryTitle}</h2>
+          <p>{pathConfig.entryDescription}</p>
           <button
             className="button button-dark"
             disabled={Boolean(busy)}
@@ -190,7 +184,7 @@ export function FalseDemandPathWorkspace({ slug }: { slug: string }) {
         <div>
           <p className="eyebrow">YOUR FIELD PATH</p>
           <h2>
-            {snapshot.baseline?.projectTitle ?? "伪需求判断路径"}
+            {snapshot.baseline?.projectTitle ?? pathConfig.title}
           </h2>
           <p>完成只由证据、评价、修订和现实结果决定。</p>
         </div>
@@ -201,11 +195,12 @@ export function FalseDemandPathWorkspace({ slug }: { slug: string }) {
       </header>
 
       <ol className="path-step-rail">
-        {falseDemandSteps.map((step) => {
+        {pathConfig.steps.map((step) => {
           const completed =
             (step.key === "baseline" && Boolean(snapshot.baseline)) ||
             (step.key === "action" && snapshot.evidence.length > 0) ||
-            (step.key === "evidence" && snapshot.evidence.length >= 5) ||
+            (step.key === "evidence" &&
+              snapshot.evidence.length >= pathConfig.evidenceMinimum) ||
             (step.key === "artifact" && snapshot.artifacts.length > 0) ||
             (step.key === "review" && snapshot.evaluations.length > 0) ||
             (step.key === "revision" &&
@@ -227,6 +222,7 @@ export function FalseDemandPathWorkspace({ slug }: { slug: string }) {
 
       {!snapshot.baseline && (
         <BaselineForm
+          config={pathConfig}
           busy={busy === "baseline"}
           onSubmit={(payload) =>
             perform("baseline", () =>
@@ -243,6 +239,7 @@ export function FalseDemandPathWorkspace({ slug }: { slug: string }) {
       {snapshot.baseline && (
         <>
           <EvidenceLedger
+            config={pathConfig}
             busy={busy === "evidence"}
             evidence={snapshot.evidence}
             onSubmit={(payload) =>
@@ -256,11 +253,13 @@ export function FalseDemandPathWorkspace({ slug }: { slug: string }) {
             }
           />
 
-          {snapshot.evidence.length >= 3 &&
+          {snapshot.evidence.length >=
+              Math.max(3, pathConfig.evidenceMinimum - 2) &&
             (!latestArtifact ||
               (latestEvaluation?.requiredRevision &&
                 latestArtifactReviewed)) && (
               <ArtifactForm
+                config={pathConfig}
                 busy={busy === "artifact"}
                 revision={Boolean(latestArtifact)}
                 previous={latestArtifact?.content}
@@ -280,10 +279,10 @@ export function FalseDemandPathWorkspace({ slug }: { slug: string }) {
             <section className="path-panel review-call">
               <div>
                 <p className="eyebrow">ADVERSARIAL REVIEW</p>
-                <h3>让 Agent 站在反方审阅这一版证据表。</h3>
+                <h3>让 Agent 站在反方审阅这一版{pathConfig.artifactTitle}。</h3>
                 <p>
                   评价基于公开量规。证据不足时，系统会要求修订；
-                  Agent 不会替你补写访谈或虚构成本。
+                  Agent 不会替你补写行动、证据或现实结果。
                 </p>
               </div>
               <button
@@ -352,9 +351,11 @@ export function FalseDemandPathWorkspace({ slug }: { slug: string }) {
 
 function BaselineForm({
   busy,
+  config,
   onSubmit,
 }: {
   busy: boolean;
+  config: FormalAnswerPathConfig;
   onSubmit(payload: Record<string, string | number>): void;
 }) {
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -375,34 +376,34 @@ function BaselineForm({
         <span>01</span>
         <div>
           <p className="eyebrow">BASELINE DIAGNOSIS</p>
-          <h3>在寻找答案之前，先留下现在的判断。</h3>
+          <h3>在寻找答案之前，先留下此刻的判断。</h3>
         </div>
       </header>
       <div className="path-form-grid">
         <label>
-          <span>项目或想法的名字</span>
-          <input name="projectTitle" placeholder="例如：面向独立设计师的报价助手" required />
+          <span>{config.baseline.projectLabel}</span>
+          <input name="projectTitle" placeholder={config.baseline.projectPlaceholder} required />
         </label>
         <label>
-          <span>你认为它解决了什么问题</span>
-          <textarea name="ideaSummary" placeholder="用自己的话描述，不写产品宣传语。" required />
+          <span>{config.baseline.ideaLabel}</span>
+          <textarea name="ideaSummary" placeholder={config.baseline.ideaPlaceholder} required />
         </label>
         <label>
-          <span>具体是谁在什么情境下遇到它</span>
-          <textarea name="targetUser" placeholder="不要只写年龄和职业，写出发生问题的情境。" required />
+          <span>{config.baseline.targetLabel}</span>
+          <textarea name="targetUser" placeholder={config.baseline.targetPlaceholder} required />
         </label>
         <label>
-          <span>现在有哪些依据</span>
-          <textarea name="currentEvidence" placeholder="区分亲眼看到的事实、听来的说法和自己的推测。" required />
+          <span>{config.baseline.evidenceLabel}</span>
+          <textarea name="currentEvidence" placeholder={config.baseline.evidencePlaceholder} required />
         </label>
         <label>
-          <span>最可能让这个想法不成立的未知是什么</span>
-          <textarea name="biggestUncertainty" placeholder="如果只能验证一件事，你最需要知道什么？" required />
+          <span>{config.baseline.uncertaintyLabel}</span>
+          <textarea name="biggestUncertainty" placeholder={config.baseline.uncertaintyPlaceholder} required />
         </label>
         <label className="confidence-field">
           <span>你现在有多大把握？</span>
           <input defaultValue="50" max="100" min="0" name="confidence" type="range" />
-          <small>0 = 几乎没有依据；100 = 已有重复发生的行为证据</small>
+          <small>{config.baseline.confidenceHint}</small>
         </label>
       </div>
       <button className="button button-dark" disabled={busy} type="submit">
@@ -414,10 +415,12 @@ function BaselineForm({
 
 function EvidenceLedger({
   busy,
+  config,
   evidence,
   onSubmit,
 }: {
   busy: boolean;
+  config: FormalAnswerPathConfig;
   evidence: AnswerPathSnapshot["evidence"];
   onSubmit(payload: Record<string, string>): void;
 }) {
@@ -441,7 +444,7 @@ function EvidenceLedger({
           <p className="eyebrow">FIELD EVIDENCE</p>
           <h3>真实对象与真实行为</h3>
         </div>
-        <strong>{evidence.length}<small>/ 至少 5 条</small></strong>
+        <strong>{evidence.length}<small>/ 至少 {config.evidenceMinimum} 条</small></strong>
       </header>
       {evidence.length > 0 && (
         <div className="evidence-list">
@@ -449,7 +452,7 @@ function EvidenceLedger({
             <article key={item.id}>
               <span>{String(index + 1).padStart(2, "0")}</span>
               <div>
-                <small>{evidenceLabels[item.evidenceType] ?? item.evidenceType} · {item.subjectLabel}</small>
+                <small>{config.evidenceTypes.find((type) => type.value === item.evidenceType)?.label ?? item.evidenceType} · {item.subjectLabel}</small>
                 <p>{item.content}</p>
                 <em>来源：{item.provenance}</em>
               </div>
@@ -460,20 +463,19 @@ function EvidenceLedger({
       <form className="evidence-form" onSubmit={submit}>
         <label>
           <span>证据类型</span>
-          <select defaultValue="interview" name="evidenceType">
-            <option value="interview">访谈原始记录</option>
-            <option value="behavior">已经发生的行为</option>
-            <option value="cost">真实成本（钱、时间、风险或放弃）</option>
-            <option value="counterexample">反例</option>
+          <select defaultValue={config.evidenceTypes[0].value} name="evidenceType">
+            {config.evidenceTypes.map((type) => (
+              <option key={type.value} value={type.value}>{type.label}</option>
+            ))}
           </select>
         </label>
         <label>
           <span>对象代号</span>
-          <input name="subjectLabel" placeholder="例如：受访者 03 / 门店 A" required />
+          <input name="subjectLabel" placeholder="例如：受访者 03 / 测试对象 A / 版本 01" required />
         </label>
         <label className="wide">
           <span>你具体观察到什么</span>
-          <textarea name="content" placeholder="记录已经发生的动作、原话、替代方案或代价；不要只写你的总结。" required />
+          <textarea name="content" placeholder="记录已经发生的动作、原话、版本变化或代价；不要只写总结。" required />
         </label>
         <label>
           <span>来源与保存位置</span>
@@ -494,11 +496,13 @@ function EvidenceLedger({
 
 function ArtifactForm({
   busy,
+  config,
   onSubmit,
   previous,
   revision,
 }: {
   busy: boolean;
+  config: FormalAnswerPathConfig;
   onSubmit(payload: Record<string, string>): void;
   previous?: string;
   revision: boolean;
@@ -519,12 +523,12 @@ function ArtifactForm({
         <span>{revision ? "06" : "04"}</span>
         <div>
           <p className="eyebrow">{revision ? "REVISION" : "EVIDENCE ARTIFACT"}</p>
-          <h3>{revision ? "依据审阅重写判断。" : "把证据变成一份可以被反驳的判断。"}</h3>
+          <h3>{revision ? "依据审阅重新行动并修订。" : `把证据整理成可以被反驳的${config.artifactTitle}。`}</h3>
         </div>
       </header>
       <label>
-        <span>需求证据表标题</span>
-        <input defaultValue={revision ? "需求证据表（修订版）" : "需求证据表"} name="title" required />
+        <span>{config.artifactTitle}标题</span>
+        <input defaultValue={revision ? `${config.artifactTitle}（修订版）` : config.artifactTitle} name="title" required />
       </label>
       <label>
         <span>事实、反例、判断与边界</span>
@@ -532,7 +536,7 @@ function ArtifactForm({
           defaultValue={previous}
           className="artifact-editor"
           name="content"
-          placeholder={"1. 已观察到的事实\n2. 与判断冲突的反例\n3. 当前可以下到哪一步的结论\n4. 什么证据会推翻结论\n5. 仍然不知道什么"}
+          placeholder={config.artifactPrompt}
           required
         />
       </label>

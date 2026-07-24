@@ -1047,6 +1047,20 @@ export class D1AcademiaRepository implements AcademiaRepository {
     return row ? asAnswerPathEnrollment(row) : null;
   }
 
+  async listAnswerPathEnrollments(userId: string) {
+    const rows = await getDb()
+      .select()
+      .from(answerPathEnrollments)
+      .where(
+        and(
+          eq(answerPathEnrollments.userId, userId),
+          isNull(answerPathEnrollments.deletedAt),
+        ),
+      )
+      .orderBy(desc(answerPathEnrollments.updatedAt));
+    return rows.map(asAnswerPathEnrollment);
+  }
+
   async getAnswerPathSnapshot(
     userId: string,
     pathSlug: string,
@@ -1232,6 +1246,7 @@ export class D1AcademiaRepository implements AcademiaRepository {
     enrollmentId: string;
     userId: string;
     title: string;
+    artifactType: string;
     content: string;
     userContribution: string;
     agentContribution: string;
@@ -1264,7 +1279,6 @@ export class D1AcademiaRepository implements AcademiaRepository {
       .values({
         id: newId(),
         ...input,
-        artifactType: "demand_evidence_table",
         version,
         visibility: "private",
         createdAt: now,
@@ -1329,6 +1343,7 @@ export class D1AcademiaRepository implements AcademiaRepository {
     happenedAt: string;
     capabilityLevel: number;
     capabilityConfidence: number;
+    capabilityId: string;
   }) {
     const [enrollment] = await getDb()
       .select()
@@ -1390,7 +1405,7 @@ export class D1AcademiaRepository implements AcademiaRepository {
         id: newId(),
         userId: input.userId,
         enrollmentId: input.enrollmentId,
-        capabilityId: "evidence_based_demand_judgment",
+        capabilityId: input.capabilityId,
         level: input.capabilityLevel,
         sourceType: "real_world_outcome",
         sourceId: outcome.id,

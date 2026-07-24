@@ -132,6 +132,65 @@ test(
     assert.equal(snapshot.data.baseline.projectTitle, "独立设计师报价助手");
     assert.equal(snapshot.data.evidence.length, 1);
     assert.match(snapshot.data.evidence[0].provenance, /访谈记录/);
+
+    const interviewPath =
+      "/api/answer-paths/non-leading-user-interviews";
+    assert.equal(
+      (await jar.request(interviewPath, { method: "POST" })).status,
+      201,
+    );
+    assert.equal(
+      (
+        await jar.request(`${interviewPath}/baseline`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            projectTitle: "新用户访谈计划",
+            ideaSummary: "判断首次使用者为什么没有完成第一项任务。",
+            targetUser: "过去七天注册但没有完成首次任务的真实用户。",
+            currentEvidence: "目前只有产品日志，尚未知道用户如何理解任务。",
+            biggestUncertainty: "提问者会不会为了验证自己的解释而诱导受访者。",
+            confidence: 28,
+          }),
+        })
+      ).status,
+      200,
+    );
+    assert.equal(
+      (
+        await jar.request(`${interviewPath}/evidence`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            evidenceType: "reflection",
+            subjectLabel: "访谈 01",
+            content: "原问题暗示了任务很容易，现已改为追问上一次操作时具体看到了什么。",
+            provenance: "集成测试访谈提纲 v2 第 3 题",
+            observedAt: "2026-07-24",
+          }),
+        })
+      ).status,
+      201,
+    );
+    const capabilityResponse = await jar.request("/api/me/capabilities");
+    assert.equal(capabilityResponse.status, 200);
+    const capabilityPayload = await json<{
+      data: {
+        paths: Array<{ slug: string; evidenceCount: number }>;
+        recommendation: { slug: string } | null;
+      };
+    }>(capabilityResponse);
+    assert.equal(capabilityPayload.data.paths.length, 6);
+    assert.equal(
+      capabilityPayload.data.paths.find(
+        (item) => item.slug === "non-leading-user-interviews",
+      )?.evidenceCount,
+      1,
+    );
+    assert.equal(
+      capabilityPayload.data.recommendation?.slug,
+      "non-leading-user-interviews",
+    );
   },
 );
 

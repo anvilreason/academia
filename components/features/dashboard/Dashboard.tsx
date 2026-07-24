@@ -18,6 +18,15 @@ type DashboardData = {
   }>;
   entitlements: string[];
   recommendation: null | { slug: string; title: string };
+  nextAction: {
+    type: "answer_path" | "capabilities";
+    slug: string | null;
+    pathTitle: string;
+    capabilityLabel: string;
+    label: string;
+    title: string;
+    description: string;
+  };
 };
 
 async function loadDashboard() {
@@ -58,9 +67,26 @@ export function Dashboard() {
     );
   }
 
-  const { sessions, notes, recommendation } = query.data;
+  const { sessions, notes, recommendation, nextAction } = query.data;
   return (
     <div className="dashboard-grid">
+      <Link
+        className="dashboard-next-action"
+        href={
+          nextAction.type === "answer_path" && nextAction.slug
+            ? `/answers/${nextAction.slug}#start-path`
+            : "/capabilities"
+        }
+      >
+        <span>{nextAction.label}</span>
+        <div>
+          <small>{nextAction.pathTitle}</small>
+          <h2>{nextAction.title}</h2>
+          <p>{nextAction.description}</p>
+          <em>目标能力 · {nextAction.capabilityLabel}</em>
+        </div>
+        <ArrowRight aria-hidden="true" />
+      </Link>
       <section className="dashboard-primary">
         <span className="section-kicker">最近学习</span>
         {sessions.length ? (

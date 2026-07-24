@@ -1,8 +1,7 @@
 import { recordAnalyticsEventSafe } from "@/lib/analytics/events";
 import {
-  FALSE_DEMAND_PATH_SLUG,
-  FALSE_DEMAND_RUBRIC_VERSION,
-  scoreFalseDemandArtifact,
+  getFormalAnswerPath,
+  scoreAnswerPathArtifact,
 } from "@/lib/domain/answer-path";
 import {
   LlmBudgetError,
@@ -21,14 +20,19 @@ export async function POST(
   const actor = await getActor(request);
   if (!actor.userId) return apiError("UNAUTHORIZED", "请先建立学籍。", 401);
   const { slug } = await params;
-  if (slug !== FALSE_DEMAND_PATH_SLUG) {
+  const pathConfig = getFormalAnswerPath(slug);
+  if (!pathConfig) {
     return apiError("NOT_FOUND", "这条路径尚未开放。", 404);
   }
   const repository = getRepository();
   const snapshot = await repository.getAnswerPathSnapshot(actor.userId, slug);
   const artifact = snapshot?.artifacts.at(-1);
   if (!snapshot?.baseline || !artifact) {
-    return apiError("CONFLICT", "请先提交需求证据表。", 409);
+    return apiError(
+      "CONFLICT",
+      `请先提交${pathConfig.artifactTitle}。`,
+      409,
+    );
   }
   const alreadyReviewed = snapshot.evaluations.some(
     (item) => item.artifactId === artifact.id,
@@ -36,7 +40,7 @@ export async function POST(
   if (alreadyReviewed) {
     return apiError("CONFLICT", "这一版已经审阅，请按反馈修订后再提交。", 409);
   }
-  const rubric = scoreFalseDemandArtifact({
+  const rubric = scoreAnswerPathArtifact(pathConfig, {
     baseline: snapshot.baseline,
     evidence: snapshot.evidence,
     artifact,
@@ -51,7 +55,7 @@ export async function POST(
       (item, index) =>
         `${index + 1}. [${item.evidenceType}] ${item.subjectLabel}：${item.content}；来源：${item.provenance}`,
     ),
-    `需求证据表 v${artifact.version}：${artifact.content}`,
+    `${pathConfig.artifactTitle} v${artifact.version}：${artifact.content}`,
     `用户贡献：${artifact.userContribution}`,
     `Agent 贡献：${artifact.agentContribution}`,
   ].join("\n");
@@ -72,6 +76,7 @@ export async function POST(
       history: [message],
       mode: {
         type: "answer-review",
+        pathContext: `${pathConfig.title}路径中的${pathConfig.artifactTitle}`,
         rubricContext: JSON.stringify({
           scores: rubric.scores,
           total: rubric.total,
@@ -103,7 +108,7 @@ export async function POST(
     const evaluation = await repository.createRubricEvaluation({
       enrollmentId: snapshot.enrollment.id,
       artifactId: artifact.id,
-      rubricVersion: FALSE_DEMAND_RUBRIC_VERSION,
+      rubricVersion: pathConfig.rubricVersion,
       scoreDetail: rubric.scores,
       strengths: rubric.strengths,
       weaknesses: rubric.weaknesses,
@@ -122,7 +127,7 @@ export async function POST(
         pathVersion: snapshot.enrollment.pathVersion,
         contentVersion: snapshot.enrollment.contentVersion,
         evaluationVersion: snapshot.enrollment.evaluationVersion,
-        rubricVersion: FALSE_DEMAND_RUBRIC_VERSION,
+        rubricVersion: pathConfig.rubricVersion,
       },
     });
     if (!rubric.requiredRevision) {

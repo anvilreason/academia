@@ -1,6 +1,6 @@
 import { recordAnalyticsEventSafe } from "@/lib/analytics/events";
 import {
-  FALSE_DEMAND_PATH_SLUG,
+  getFormalAnswerPath,
   validateBaseline,
 } from "@/lib/domain/answer-path";
 import { getRepository } from "@/lib/repositories";
@@ -14,7 +14,7 @@ export async function POST(
   const actor = await getActor(request);
   if (!actor.userId) return apiError("UNAUTHORIZED", "请先建立学籍。", 401);
   const { slug } = await params;
-  if (slug !== FALSE_DEMAND_PATH_SLUG) {
+  if (!getFormalAnswerPath(slug)) {
     return apiError("NOT_FOUND", "这条路径尚未开放。", 404);
   }
   const body = (await request.json()) as {

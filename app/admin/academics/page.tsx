@@ -161,6 +161,50 @@ export default async function AcademicsPage() {
         </article>
       </section>
 
+      <section className="observatory-panel">
+        <header>
+          <div>
+            <span>旗舰路径层级</span>
+            <h2>六条路径的行动与结果</h2>
+          </div>
+        </header>
+        <div className="user-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>答案路径</th>
+                <th>目标能力</th>
+                <th>开始</th>
+                <th>基线</th>
+                <th>证据</th>
+                <th>作品</th>
+                <th>修订</th>
+                <th>审阅</th>
+                <th>现实结果</th>
+              </tr>
+            </thead>
+            <tbody>
+              {report.answerPaths.paths.map((path) => (
+                <tr key={path.slug}>
+                  <td>
+                    <strong>{path.title}</strong>
+                    <small>{path.slug}</small>
+                  </td>
+                  <td>{path.capability}</td>
+                  <td>{path.started}</td>
+                  <td>{path.baseline}</td>
+                  <td>{path.evidence}</td>
+                  <td>{path.artifacts}</td>
+                  <td>{path.revisions}</td>
+                  <td>{path.reviews}</td>
+                  <td>{path.completed}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <section className="observatory-grid observatory-half-grid">
         <article className="observatory-panel">
           <header>

@@ -30,7 +30,11 @@ export type LlmUsage = { inputTokens: number; outputTokens: number };
 export type LlmMode =
   | { type: "course"; nodeSlug: string }
   | { type: "general-agent" }
-  | { type: "answer-review"; rubricContext: string };
+  | {
+      type: "answer-review";
+      rubricContext: string;
+      pathContext?: string;
+    };
 
 type StreamCallbacks = {
   onDelta(text: string): Promise<void>;
@@ -122,7 +126,10 @@ export async function streamAcadPro(input: {
     input.mode.type === "general-agent"
       ? academiaAgentPrompt(memories)
       : input.mode.type === "answer-review"
-        ? answerReviewPrompt(input.mode.rubricContext)
+        ? answerReviewPrompt(
+            input.mode.rubricContext,
+            input.mode.pathContext,
+          )
         : promptForNode(input.mode.nodeSlug, memories);
   const estimatedInput = estimateTokens(
     systemPrompt +

@@ -414,6 +414,9 @@ export interface AcademiaRepository {
     userId: string,
     pathSlug: string,
   ): Promise<AnswerPathEnrollmentRecord | null>;
+  listAnswerPathEnrollments(
+    userId: string,
+  ): Promise<AnswerPathEnrollmentRecord[]>;
   getAnswerPathSnapshot(
     userId: string,
     pathSlug: string,
@@ -442,6 +445,7 @@ export interface AcademiaRepository {
     enrollmentId: string;
     userId: string;
     title: string;
+    artifactType: string;
     content: string;
     userContribution: string;
     agentContribution: string;
@@ -466,6 +470,7 @@ export interface AcademiaRepository {
     happenedAt: string;
     capabilityLevel: number;
     capabilityConfidence: number;
+    capabilityId: string;
   }): Promise<{
     outcome: RealWorldOutcomeRecord;
     capability: CapabilityEvidenceRecord;

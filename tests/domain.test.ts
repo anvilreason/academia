@@ -57,6 +57,9 @@ import {
 } from "../lib/content/content-status.ts";
 import {
   completionProgress,
+  formalAnswerPathConfigs,
+  recommendNextAnswerPath,
+  scoreAnswerPathArtifact,
   scoreFalseDemandArtifact,
   validateBaseline,
   validateEvidence,
@@ -375,7 +378,7 @@ test("university catalog has broad, unique and credit-complete programs", () => 
   }
 });
 
-test("answer atlas exposes 30 versioned questions and only one formal path", () => {
+test("answer atlas exposes 30 versioned questions and six formal paths", () => {
   assert.equal(answerTopics.length, 30);
   assert.equal(new Set(answerTopics.map((topic) => topic.slug)).size, 30);
   assert.equal(flagshipAnswerTopics.length, 6);
@@ -397,12 +400,77 @@ test("answer atlas exposes 30 versioned questions and only one formal path", () 
   }
   assert.equal(
     answerTopics.filter((topic) => topic.status === "flagship-open").length,
-    1,
+    6,
   );
   for (const topic of flagshipAnswerTopics) {
     assert.ok(topic.preview);
     assert.equal(topic.preview.misconceptions.length >= 3, true);
   }
+});
+
+test("six formal paths have distinct requirements, rubrics and capabilities", () => {
+  assert.equal(formalAnswerPathConfigs.length, 6);
+  assert.deepEqual(
+    new Set(formalAnswerPathConfigs.map((path) => path.slug)),
+    new Set(
+      flagshipAnswerTopics.map((path) => path.slug),
+    ),
+  );
+  assert.equal(
+    new Set(formalAnswerPathConfigs.map((path) => path.capabilityId)).size,
+    6,
+  );
+  assert.equal(
+    new Set(formalAnswerPathConfigs.map((path) => path.artifactType)).size,
+    6,
+  );
+  for (const path of formalAnswerPathConfigs) {
+    assert.equal(path.steps.length, 7);
+    assert.equal(path.evidenceMinimum >= 4, true);
+    assert.equal(path.requiredEvidenceTypes.length >= 2, true);
+    assert.equal(path.artifactMinimum >= 280, true);
+    assert.equal(path.evidenceTypes.length >= 4, true);
+  }
+});
+
+test("path recommendation resumes active work before opening the next capability", () => {
+  const now = new Date().toISOString();
+  const base = {
+    id: "enrollment-1",
+    userId: "user",
+    pathVersion: "v1",
+    contentVersion: "v1",
+    evaluationVersion: "v1",
+    currentStep: "evidence",
+    outcomeStatus: null,
+    startedAt: now,
+    completedAt: null,
+    createdAt: now,
+    updatedAt: now,
+  };
+  assert.equal(recommendNextAnswerPath([])?.slug, "is-this-a-false-demand");
+  assert.equal(
+    recommendNextAnswerPath([
+      {
+        ...base,
+        pathSlug: "course-to-portfolio",
+        status: "active",
+      },
+    ])?.slug,
+    "course-to-portfolio",
+  );
+  assert.equal(
+    recommendNextAnswerPath([
+      {
+        ...base,
+        pathSlug: "is-this-a-false-demand",
+        currentStep: "completed",
+        status: "completed",
+        completedAt: now,
+      },
+    ])?.slug,
+    "non-leading-user-interviews",
+  );
 });
 
 test("false-demand path requires traceable reality evidence and can demand revision", () => {
@@ -472,6 +540,17 @@ test("false-demand path requires traceable reality evidence and can demand revis
   };
   const passing = scoreFalseDemandArtifact({ baseline, evidence, artifact });
   assert.equal(passing.requiredRevision, false);
+  const portfolioPath = formalAnswerPathConfigs.find(
+    (path) => path.slug === "course-to-portfolio",
+  )!;
+  assert.equal(
+    scoreAnswerPathArtifact(portfolioPath, {
+      baseline,
+      evidence,
+      artifact: { ...artifact, artifactType: portfolioPath.artifactType },
+    }).requiredRevision,
+    true,
+  );
   const failing = scoreFalseDemandArtifact({
     baseline,
     evidence: evidence.slice(0, 2),

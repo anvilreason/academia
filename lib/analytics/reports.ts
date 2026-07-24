@@ -34,6 +34,7 @@ import {
   LEARNING_EVENT_NAMES,
 } from "@/lib/analytics/metric-definitions";
 import { calculateRevenueMetrics } from "@/lib/analytics/revenue-math";
+import { formalAnswerPathConfigs } from "@/lib/domain/answer-path";
 
 const DAY = 86_400_000;
 
@@ -535,6 +536,44 @@ export async function getAcademicsReport() {
     ),
     outcome: new Set(realOutcomes.map((row) => row.userId)),
   };
+  const pathSlugByEnrollment = new Map(
+    realPathEnrollments.map((row) => [row.id, row.pathSlug]),
+  );
+  const answerPathRows = formalAnswerPathConfigs.map((config) => {
+    const enrollments = realPathEnrollments.filter(
+      (row) => row.pathSlug === config.slug,
+    );
+    const enrollmentIds = new Set(enrollments.map((row) => row.id));
+    const artifacts = realPathArtifacts.filter((row) =>
+      enrollmentIds.has(row.enrollmentId),
+    );
+    const artifactIds = new Set(artifacts.map((row) => row.id));
+    const evaluations = realPathEvaluations.filter((row) =>
+      artifactIds.has(row.artifactId),
+    );
+    return {
+      slug: config.slug,
+      title: config.title,
+      capability: config.capabilityLabel,
+      started: new Set(enrollments.map((row) => row.userId)).size,
+      baseline: new Set(
+        realBaselines
+          .filter((row) => enrollmentIds.has(row.enrollmentId))
+          .map((row) => row.userId),
+      ).size,
+      evidence: realPathEvidence.filter(
+        (row) => pathSlugByEnrollment.get(row.enrollmentId) === config.slug,
+      ).length,
+      artifacts: artifacts.length,
+      revisions: artifacts.filter((row) => row.version > 1).length,
+      reviews: evaluations.length,
+      completed: new Set(
+        realOutcomes
+          .filter((row) => enrollmentIds.has(row.enrollmentId))
+          .map((row) => row.userId),
+      ).size,
+    };
+  });
 
   const programRows = universitySchools.flatMap((school) =>
     school.programs.map((program) => {
@@ -731,6 +770,7 @@ export async function getAcademicsReport() {
       .slice(0, 30),
     courses,
     answerPaths: {
+      paths: answerPathRows,
       funnel: [
         { label: "开始路径", value: pathActorSets.started.size },
         { label: "完成基线", value: pathActorSets.baseline.size },

@@ -1,5 +1,5 @@
 import { recordAnalyticsEventSafe } from "@/lib/analytics/events";
-import { FALSE_DEMAND_PATH_SLUG } from "@/lib/domain/answer-path";
+import { getFormalAnswerPath } from "@/lib/domain/answer-path";
 import { getRepository } from "@/lib/repositories";
 import { getActor } from "@/lib/server/actor";
 import { apiData, apiError } from "@/lib/server/api";
@@ -11,7 +11,8 @@ export async function POST(
   const actor = await getActor(request);
   if (!actor.userId) return apiError("UNAUTHORIZED", "请先建立学籍。", 401);
   const { slug } = await params;
-  if (slug !== FALSE_DEMAND_PATH_SLUG) {
+  const pathConfig = getFormalAnswerPath(slug);
+  if (!pathConfig) {
     return apiError("NOT_FOUND", "这条路径尚未开放。", 404);
   }
   const body = (await request.json()) as {
@@ -53,6 +54,7 @@ export async function POST(
       happenedAt,
       capabilityLevel: 2,
       capabilityConfidence: 72,
+      capabilityId: pathConfig.capabilityId,
     });
     await repository.remember({
       userId: actor.userId,

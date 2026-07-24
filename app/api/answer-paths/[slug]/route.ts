@@ -1,8 +1,5 @@
 import { recordAnalyticsEventSafe } from "@/lib/analytics/events";
-import {
-  FALSE_DEMAND_PATH_SLUG,
-  FALSE_DEMAND_PATH_VERSION,
-} from "@/lib/domain/answer-path";
+import { getFormalAnswerPath } from "@/lib/domain/answer-path";
 import {
   ANSWER_CONTENT_VERSION,
   ANSWER_EVALUATION_VERSION,
@@ -13,10 +10,6 @@ import { apiData, apiError } from "@/lib/server/api";
 
 export const dynamic = "force-dynamic";
 
-function supportsPath(slug: string) {
-  return slug === FALSE_DEMAND_PATH_SLUG;
-}
-
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ slug: string }> },
@@ -26,7 +19,7 @@ export async function GET(
     return apiError("UNAUTHORIZED", "建立学籍后，路径才能持续保存。", 401);
   }
   const { slug } = await params;
-  if (!supportsPath(slug)) {
+  if (!getFormalAnswerPath(slug)) {
     return apiError("NOT_FOUND", "这条路径尚未开放。", 404);
   }
   const snapshot = await getRepository().getAnswerPathSnapshot(
@@ -45,15 +38,17 @@ export async function POST(
     return apiError("UNAUTHORIZED", "请先建立学籍，再开始这条路径。", 401);
   }
   const { slug } = await params;
-  if (!supportsPath(slug)) {
+  const pathConfig = getFormalAnswerPath(slug);
+  if (!pathConfig) {
     return apiError("NOT_FOUND", "这条路径尚未开放。", 404);
   }
   const repository = getRepository();
+  const enrollments = await repository.listAnswerPathEnrollments(actor.userId);
   const existing = await repository.getAnswerPathEnrollment(actor.userId, slug);
   const enrollment = await repository.startAnswerPath({
     userId: actor.userId,
     pathSlug: slug,
-    pathVersion: FALSE_DEMAND_PATH_VERSION,
+    pathVersion: pathConfig.pathVersion,
     contentVersion: ANSWER_CONTENT_VERSION,
     evaluationVersion: ANSWER_EVALUATION_VERSION,
   });
@@ -65,11 +60,23 @@ export async function POST(
       path: `/answers/${slug}`,
       properties: {
         answerPathSlug: slug,
-        pathVersion: FALSE_DEMAND_PATH_VERSION,
+        pathVersion: pathConfig.pathVersion,
         contentVersion: ANSWER_CONTENT_VERSION,
         evaluationVersion: ANSWER_EVALUATION_VERSION,
       },
     });
+    if (enrollments.some((item) => item.pathSlug !== slug)) {
+      await recordAnalyticsEventSafe({
+        eventName: "next_path_started",
+        request,
+        userId: actor.userId,
+        path: `/answers/${slug}`,
+        properties: {
+          answerPathSlug: slug,
+          pathVersion: pathConfig.pathVersion,
+        },
+      });
+    }
   }
   return apiData(enrollment, { status: existing ? 200 : 201 });
 }
