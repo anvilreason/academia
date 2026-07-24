@@ -2,6 +2,9 @@ import { env } from "cloudflare:workers";
 
 type RuntimeEnv = {
   LLM_PROVIDER?: string;
+  MOONSHOT_API_KEY?: string;
+  KIMI_MODEL?: string;
+  KIMI_REASONING_EFFORT?: string;
   ANTHROPIC_API_KEY?: string;
   ANTHROPIC_MODEL?: string;
   OPENAI_API_KEY?: string;
