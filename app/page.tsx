@@ -119,6 +119,7 @@ export default function LandingPage() {
               className="landing-school-card"
               href={`/college/${school.slug}`}
               key={school.slug}
+              style={{ "--school-accent": school.accent } as React.CSSProperties}
             >
               <span className="course-index">
                 {String(index + 1).padStart(2, "0")}

@@ -584,7 +584,7 @@ const schoolSeeds: SchoolSeed[] = [
     englishName: "School of Humanities",
     discipline: "文学",
     description: "理解思想、语言与历史如何塑造人的处境。",
-    accent: "#8d5135",
+    accent: "#9b5940",
     programs: [
       {
         slug: "philosophy",
@@ -618,7 +618,7 @@ const schoolSeeds: SchoolSeed[] = [
     englishName: "School of Social Sciences",
     discipline: "法学",
     description: "研究制度、群体与国家如何共同塑造社会。",
-    accent: "#665785",
+    accent: "#65558c",
     programs: [
       {
         slug: "economics",
@@ -652,7 +652,7 @@ const schoolSeeds: SchoolSeed[] = [
     englishName: "School of Business",
     discipline: "管理学",
     description: "把市场、组织、资本与战略放进同一张决策地图。",
-    accent: "#9a4f18",
+    accent: "#a45a24",
     programs: [
       {
         slug: "business-administration",
@@ -686,7 +686,7 @@ const schoolSeeds: SchoolSeed[] = [
     englishName: "School of Law",
     discipline: "法学",
     description: "在规则、事实与公共价值之间进行严谨论证。",
-    accent: "#6e4932",
+    accent: "#704238",
     programs: [
       {
         slug: "law-major",
@@ -712,7 +712,7 @@ const schoolSeeds: SchoolSeed[] = [
     englishName: "School of Education",
     discipline: "教育学",
     description: "研究学习如何发生，以及怎样设计更好的教育系统。",
-    accent: "#59715a",
+    accent: "#52715c",
     programs: [
       {
         slug: "education-studies",
@@ -738,7 +738,7 @@ const schoolSeeds: SchoolSeed[] = [
     englishName: "School of Sciences",
     discipline: "理学",
     description: "用数学、实验与模型逼近自然世界的结构。",
-    accent: "#3d6683",
+    accent: "#356e91",
     programs: [
       {
         slug: "mathematics",
@@ -772,7 +772,7 @@ const schoolSeeds: SchoolSeed[] = [
     englishName: "School of Life & Health",
     discipline: "医学",
     description: "从分子、个体到人群理解生命与健康。",
-    accent: "#4d725f",
+    accent: "#3f765d",
     programs: [
       {
         slug: "biological-sciences",
@@ -806,7 +806,7 @@ const schoolSeeds: SchoolSeed[] = [
     englishName: "School of Computing & Intelligence",
     discipline: "工学",
     description: "构建计算系统，并理解智能的能力与边界。",
-    accent: "#3f566e",
+    accent: "#354f73",
     programs: [
       {
         slug: "computer-science",
@@ -840,7 +840,7 @@ const schoolSeeds: SchoolSeed[] = [
     englishName: "School of Engineering",
     discipline: "工学",
     description: "把科学原理转化为可验证、可制造的系统。",
-    accent: "#5c6670",
+    accent: "#59636e",
     programs: [
       {
         slug: "mechanical-engineering",
@@ -874,7 +874,7 @@ const schoolSeeds: SchoolSeed[] = [
     englishName: "School of Architecture & Design",
     discipline: "工学",
     description: "在空间、技术、审美与人的体验之间创造。",
-    accent: "#81644d",
+    accent: "#8a6246",
     programs: [
       {
         slug: "architecture",
@@ -900,7 +900,7 @@ const schoolSeeds: SchoolSeed[] = [
     englishName: "School of Media & Arts",
     discipline: "艺术学",
     description: "理解媒介如何塑造公共叙事、文化与体验。",
-    accent: "#8b5368",
+    accent: "#94506c",
     programs: [
       {
         slug: "journalism-communication",
@@ -926,7 +926,7 @@ const schoolSeeds: SchoolSeed[] = [
     englishName: "School of Public Governance",
     discipline: "管理学",
     description: "把公共问题转化为可执行、可评估的治理行动。",
-    accent: "#536c67",
+    accent: "#426d68",
     programs: [
       {
         slug: "public-administration",
@@ -1292,7 +1292,7 @@ schoolSeeds.push(
     englishName: "School of Languages & Global Studies",
     discipline: "文学",
     description: "通过语言进入不同文明，并理解区域与全球关系。",
-    accent: "#6f5a7e",
+    accent: "#765a8a",
     programs: [
       {
         slug: "english-literature",
@@ -1342,7 +1342,7 @@ schoolSeeds.push(
     englishName: "School of Medicine",
     discipline: "医学",
     description: "把基础科学、临床判断、患者体验与公共责任结合。",
-    accent: "#8b4f55",
+    accent: "#9b4b52",
     programs: [
       {
         slug: "clinical-medicine",
@@ -1403,7 +1403,7 @@ schoolSeeds.push(
     englishName: "School of Sustainability & Earth",
     discipline: "交叉学科",
     description: "理解地球系统，并设计面向气候、能源与海洋的解决方案。",
-    accent: "#3d7269",
+    accent: "#2f7467",
     programs: [
       {
         slug: "earth-systems",
@@ -1461,7 +1461,7 @@ schoolSeeds.push(
     englishName: "School of Interdisciplinary Studies",
     discipline: "交叉学科",
     description: "让新问题决定知识组合，而不是让传统院系决定问题。",
-    accent: "#775a3e",
+    accent: "#7f643f",
     programs: [
       {
         slug: "symbolic-systems",
@@ -1519,7 +1519,7 @@ schoolSeeds.push(
     englishName: "School of Sport & Human Performance",
     discipline: "教育学",
     description: "理解运动、身体、健康与高水平表现。",
-    accent: "#526d78",
+    accent: "#42697a",
     programs: [
       {
         slug: "sports-science",

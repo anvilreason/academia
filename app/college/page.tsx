@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { ProductShell } from "@/components/shared/ProductShell";
 import {
   universitySchools,
@@ -76,7 +76,6 @@ export default function UniversityMapPage() {
             >
               <div className="school-card-top">
                 <span>{String(index + 1).padStart(2, "0")}</span>
-                <em>{school.discipline}</em>
               </div>
               <div>
                 <h3>{school.name}</h3>
@@ -98,55 +97,6 @@ export default function UniversityMapPage() {
             </Link>
           ))}
         </div>
-
-        <section className="catalog-sources">
-          <div>
-            <p className="eyebrow">目录编制依据</p>
-            <h2>向大学传统学习，也保留重新编排知识的自由。</h2>
-            <p>
-              这份目录借鉴综合性研究型大学的学科谱系，也容纳跨学科与自定义路径。
-              参考意味着看见来处，不意味着停止发明。
-            </p>
-          </div>
-          <div className="catalog-source-links">
-            <a
-              href="https://www.tsinghua.edu.cn/jyjx/bksjy/bkzy.htm"
-              rel="noreferrer"
-              target="_blank"
-            >
-              <span>清华大学</span>
-              <strong>2026 本科专业设置</strong>
-              <em>
-                工程、医学、建筑与双学士项目
-                <ArrowUpRight aria-hidden="true" size={14} />
-              </em>
-            </a>
-            <a
-              href="https://dean.pku.edu.cn/web/about.php"
-              rel="noreferrer"
-              target="_blank"
-            >
-              <span>北京大学</span>
-              <strong>本科教学与交叉培养</strong>
-              <em>
-                134 个本科专业及跨学科培养
-                <ArrowUpRight aria-hidden="true" size={14} />
-              </em>
-            </a>
-            <a
-              href="https://majors.stanford.edu/majors"
-              rel="noreferrer"
-              target="_blank"
-            >
-              <span>Stanford University</span>
-              <strong>Undergraduate Majors</strong>
-              <em>
-                跨学院与个性化专业路径
-                <ArrowUpRight aria-hidden="true" size={14} />
-              </em>
-            </a>
-          </div>
-        </section>
       </section>
     </ProductShell>
   );

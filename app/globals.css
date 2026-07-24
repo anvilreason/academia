@@ -266,19 +266,20 @@ body {
   transition: background 160ms ease, color 160ms ease;
 }
 
-.landing-school-card:hover {
-  background: var(--signal);
+.landing-school-card:is(:hover, :focus-visible) {
+  background: var(--school-accent);
   color: white;
+  outline: none;
 }
 
-.landing-school-card:hover p,
-.landing-school-card:hover small,
-.landing-school-card:hover .course-index {
-  color: #d8dcfb;
+.landing-school-card:is(:hover, :focus-visible) p,
+.landing-school-card:is(:hover, :focus-visible) small,
+.landing-school-card:is(:hover, :focus-visible) .course-index {
+  color: rgb(255 255 255 / 76%);
 }
 
-.landing-school-card:hover b {
-  color: #ff9b84;
+.landing-school-card:is(:hover, :focus-visible) b {
+  color: #fff;
 }
 
 .method-section {
@@ -3140,12 +3141,44 @@ a {
   border-radius: 18px;
   background: var(--surface);
   box-shadow: inset 0 4px 0 var(--school-accent);
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
 }
 
-.school-card:hover {
+.school-grid .school-card:is(:hover, :focus-visible) {
+  border-color: var(--school-accent);
+  background: var(--school-accent);
+  color: #fffdf6;
   transform: translateY(-3px);
   box-shadow: var(--shadow), inset 0 4px 0 var(--school-accent);
+  outline: none;
+}
+
+.school-grid .school-card:is(:hover, :focus-visible) .school-card-top,
+.school-grid .school-card:is(:hover, :focus-visible) .school-english,
+.school-grid .school-card:is(:hover, :focus-visible)
+  > div:nth-child(2)
+  > p:last-child,
+.school-grid .school-card:is(:hover, :focus-visible) .school-card-foot {
+  color: rgb(255 253 246 / 78%);
+}
+
+.school-grid .school-card:is(:hover, :focus-visible) .program-preview span {
+  border-color: rgb(255 255 255 / 42%);
+  color: #fffdf6;
+}
+
+.school-grid .school-card:is(:hover, :focus-visible) .school-card-foot {
+  border-color: rgb(255 255 255 / 32%);
+}
+
+.school-grid .school-card:is(:hover, :focus-visible)
+  .school-card-foot strong {
+  color: #fffdf6;
 }
 
 .school-card-top,
@@ -3155,11 +3188,6 @@ a {
   justify-content: space-between;
   color: var(--ink-faint);
   font-size: 10px;
-}
-
-.school-card-top em {
-  color: var(--school-accent);
-  font-style: normal;
 }
 
 .school-card h3 {
