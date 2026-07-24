@@ -74,6 +74,18 @@ test(
   { skip: !baseUrl },
   async () => {
     const jar = new CookieJar();
+    const pageEvent = await jar.request("/api/analytics/events", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        eventId: crypto.randomUUID(),
+        eventName: "page_view",
+        analyticsSessionId: crypto.randomUUID(),
+        path: "/college",
+        referrer: "https://example.org/integration",
+      }),
+    });
+    assert.equal(pageEvent.status, 202);
     const trialResponse = await jar.request("/api/learning-sessions", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -84,6 +96,9 @@ test(
 
     const email = `integration.${Date.now()}@example.com`;
     const userId = await registerAndSignIn(jar, email);
+    const forbiddenAdmin = await jar.request("/admin");
+    assert.equal(forbiddenAdmin.status, 200);
+    assert.match(await forbiddenAdmin.text(), /尚未加入校务观测台/);
     const duplicateRegistration = await jar.request("/api/auth/register", {
       method: "POST",
       headers: { "content-type": "application/json" },

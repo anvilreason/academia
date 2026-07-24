@@ -5,6 +5,7 @@ import { getRepository } from "@/lib/repositories";
 import { getActor } from "@/lib/server/actor";
 import { apiData, apiError } from "@/lib/server/api";
 import { getCourseRecognitionQuote } from "@/lib/server/course-recognition";
+import { recordAnalyticsEventSafe } from "@/lib/analytics/events";
 
 function buildNote(nodeTitle: string, score: number, weakTopics: string[]) {
   return {
@@ -120,6 +121,18 @@ export async function POST(
     passed,
     weakTopics,
   });
+  await recordAnalyticsEventSafe({
+    eventName: "exam_submitted",
+    request,
+    userId: result.actor.userId,
+    properties: {
+      courseSlug: result.session.nodeSlug,
+      sessionId: result.session.id,
+      score,
+      passed,
+      creditsEarned,
+    },
+  });
 
   if (!passed) {
     return apiData({
@@ -143,6 +156,18 @@ export async function POST(
     paidAmount,
     result.session.id,
   );
+  await recordAnalyticsEventSafe({
+    eventName: "course_completed",
+    request,
+    userId: result.actor.userId,
+    properties: {
+      courseSlug: result.session.nodeSlug,
+      programSlug: result.academic.program.slug,
+      sessionId: result.session.id,
+      score,
+      creditsEarned,
+    },
+  });
   return apiData({
     ...attempt,
     note,

@@ -7,6 +7,7 @@ import {
 } from "@/lib/llm/router";
 import { rankMemories } from "@/lib/memory/retrieve";
 import { getRepository } from "@/lib/repositories";
+import { recordAnalyticsEventSafe } from "@/lib/analytics/events";
 
 type ClientEvent = "meta" | "delta" | "usage" | "done" | "error";
 
@@ -94,6 +95,12 @@ export async function POST(
       sourceType: "agent_message",
       sourceId: message.id,
       salience: 65,
+    });
+    await recordAnalyticsEventSafe({
+      eventName: "agent_message_sent",
+      request,
+      userId: actor.userId,
+      properties: { threadId: id },
     });
   }
   const history = await repository.listAgentMessages(id);

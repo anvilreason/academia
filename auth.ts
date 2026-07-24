@@ -7,6 +7,11 @@ import {
   authSubjectHash,
   authWindowKey,
 } from "@/lib/security/auth-rate-limit";
+import { guestIdFromRequest } from "@/lib/server/actor";
+import {
+  claimAnalyticsIdentitySafe,
+  recordAnalyticsEventSafe,
+} from "@/lib/analytics/events";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: runtimeEnv().AUTH_SECRET,
@@ -48,6 +53,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
         await repository.recordUserLogin(user.id);
+        const guestId = guestIdFromRequest(request);
+        await claimAnalyticsIdentitySafe(guestId, user.id);
+        await recordAnalyticsEventSafe({
+          eventName: "login_succeeded",
+          request,
+          userId: user.id,
+          guestId,
+          isTest:
+            user.email.endsWith("@example.com") ||
+            user.email.includes("+test@"),
+        });
         return { id: user.id, email: user.email, name: user.name };
       },
     }),

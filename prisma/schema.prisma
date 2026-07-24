@@ -316,3 +316,78 @@ model WalletTransaction {
   @@unique([userId, type, referenceId])
   @@map("wallet_transactions")
 }
+
+model AnalyticsEvent {
+  id                 String    @id @default(uuid())
+  eventName          String    @map("event_name")
+  schemaVersion      Int       @default(1) @map("schema_version")
+  dateKey            String    @map("date_key")
+  userId             String?   @map("user_id")
+  guestId            String?   @map("guest_id")
+  analyticsSessionId String?   @map("analytics_session_id")
+  path                String?
+  referrerHost        String?  @map("referrer_host")
+  schoolSlug          String?  @map("school_slug")
+  programSlug         String?  @map("program_slug")
+  courseSlug          String?  @map("course_slug")
+  country             String?
+  region              String?
+  city                String?
+  timezone            String?
+  deviceCategory      String?  @map("device_category")
+  engagementMs        Int?     @map("engagement_ms")
+  propertiesJson      String    @default("{}") @map("properties_json")
+  isTest              Boolean   @default(false) @map("is_test")
+  occurredAt          DateTime  @map("occurred_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  deletedAt           DateTime? @map("deleted_at")
+
+  @@index([dateKey, eventName])
+  @@index([userId, occurredAt])
+  @@index([guestId, occurredAt])
+  @@index([programSlug, occurredAt])
+  @@map("analytics_events")
+}
+
+model AnalyticsIdentityLink {
+  id        String    @id @default(uuid())
+  guestId   String    @map("guest_id")
+  userId    String    @map("user_id")
+  linkedAt  DateTime  @map("linked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@unique([guestId, userId])
+  @@map("analytics_identity_links")
+}
+
+model AdminMember {
+  id           String    @id @default(uuid())
+  userId       String?   @map("user_id")
+  email        String    @unique
+  role         String    @default("viewer")
+  status       String    @default("active")
+  lastAccessAt DateTime? @map("last_access_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  @@map("admin_members")
+}
+
+model AdminAuditLog {
+  id           String    @id @default(uuid())
+  adminEmail   String    @map("admin_email")
+  action       String
+  resourceType String?   @map("resource_type")
+  resourceId   String?   @map("resource_id")
+  metadataJson String    @default("{}") @map("metadata_json")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  @@index([adminEmail, createdAt])
+  @@map("admin_audit_logs")
+}

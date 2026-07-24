@@ -5,6 +5,7 @@ import {
 import { getRepository } from "@/lib/repositories";
 import { getActor } from "@/lib/server/actor";
 import { apiData, apiError } from "@/lib/server/api";
+import { recordAnalyticsEventSafe } from "@/lib/analytics/events";
 
 export async function GET(request: Request) {
   const actor = await getActor(request);
@@ -38,5 +39,11 @@ export async function POST(request: Request) {
     actor.userId,
     body.programSlug,
   );
+  await recordAnalyticsEventSafe({
+    eventName: "program_enrolled",
+    request,
+    userId: actor.userId,
+    properties: { programSlug: body.programSlug },
+  });
   return apiData(program, { status: 201 });
 }

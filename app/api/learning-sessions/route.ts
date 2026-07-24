@@ -3,6 +3,7 @@ import { apiData, apiError, shanghaiDateKey } from "@/lib/server/api";
 import { getRepository } from "@/lib/repositories";
 import { mayAccessNode } from "@/lib/domain/learning";
 import { getUniversityCourse } from "@/lib/content/university";
+import { recordAnalyticsEventSafe } from "@/lib/analytics/events";
 
 const OPENINGS: Record<string, string> = {
   "4p-stp":
@@ -73,6 +74,18 @@ export async function POST(request: Request) {
       sessionId: session.id,
       role: "assistant",
       content: OPENINGS[nodeSlug],
+    });
+    const academic = getUniversityCourse(nodeSlug);
+    await recordAnalyticsEventSafe({
+      eventName: guestId ? "trial_started" : "course_started",
+      request,
+      userId: actor.userId,
+      guestId,
+      properties: {
+        courseSlug: nodeSlug,
+        programSlug: academic?.program.slug,
+        sessionId: session.id,
+      },
     });
     return apiData({ ...session, messages: [opening] }, { status: 201 });
   } catch (error) {

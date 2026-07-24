@@ -4,6 +4,7 @@ import { getRepository } from "@/lib/repositories";
 import { getActor } from "@/lib/server/actor";
 import { apiData, apiError } from "@/lib/server/api";
 import { getCourseRecognitionQuote } from "@/lib/server/course-recognition";
+import { recordAnalyticsEventSafe } from "@/lib/analytics/events";
 
 export async function POST(request: Request) {
   const actor = await getActor(request);
@@ -40,6 +41,12 @@ export async function POST(request: Request) {
     nodeSlug,
     amountFen,
     idempotencyKey: body.idempotencyKey,
+  });
+  await recordAnalyticsEventSafe({
+    eventName: "order_created",
+    request,
+    userId: actor.userId,
+    properties: { courseSlug: nodeSlug, amountFen },
   });
   return apiData(order, { status: 201 });
 }

@@ -3,7 +3,22 @@ import { getToken } from "next-auth/jwt";
 import { newId } from "./api";
 import { runtimeEnv } from "./env";
 
-const GUEST_COOKIE = "academia_guest";
+export const GUEST_COOKIE = "academia_guest";
+
+export function guestIdFromRequest(request: Request) {
+  const cookie = request.headers.get("cookie") ?? "";
+  const encoded = cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${GUEST_COOKIE}=`))
+    ?.slice(GUEST_COOKIE.length + 1);
+  if (!encoded) return null;
+  try {
+    return decodeURIComponent(encoded);
+  } catch {
+    return encoded;
+  }
+}
 
 export async function getActor(request: Request) {
   const token = await getToken({

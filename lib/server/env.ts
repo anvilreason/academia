@@ -10,6 +10,7 @@ type RuntimeEnv = {
   OPENAI_API_KEY?: string;
   OPENAI_MODEL?: string;
   AUTH_SECRET?: string;
+  ADMIN_OWNER_EMAILS?: string;
   PAYMENT_MODE?: string;
   USD_CNY_RATE?: string;
 };

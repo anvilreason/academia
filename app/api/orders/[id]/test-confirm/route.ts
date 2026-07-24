@@ -2,6 +2,7 @@ import { getRepository } from "@/lib/repositories";
 import { getActor } from "@/lib/server/actor";
 import { apiData, apiError } from "@/lib/server/api";
 import { runtimeEnv } from "@/lib/server/env";
+import { recordAnalyticsEventSafe } from "@/lib/analytics/events";
 
 export async function POST(
   request: Request,
@@ -17,6 +18,15 @@ export async function POST(
   const { id } = await params;
   try {
     const order = await getRepository().confirmTestOrder(id, actor.userId);
+    await recordAnalyticsEventSafe({
+      eventName: "payment_succeeded",
+      request,
+      userId: actor.userId,
+      properties: {
+        courseSlug: order.nodeSlug,
+        amountFen: order.amountFen,
+      },
+    });
     return apiData({ ...order, warning: "先行校区选课登记" });
   } catch {
     return apiError("NOT_FOUND", "选课记录不存在", 404);

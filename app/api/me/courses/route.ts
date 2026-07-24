@@ -2,6 +2,7 @@ import { getUniversityCourse } from "@/lib/content/university";
 import { getRepository } from "@/lib/repositories";
 import { getActor } from "@/lib/server/actor";
 import { apiData, apiError } from "@/lib/server/api";
+import { recordAnalyticsEventSafe } from "@/lib/analytics/events";
 
 export async function POST(request: Request) {
   const actor = await getActor(request);
@@ -18,5 +19,14 @@ export async function POST(request: Request) {
     result.program.slug,
     result.course.slug,
   );
+  await recordAnalyticsEventSafe({
+    eventName: "course_enrolled",
+    request,
+    userId: actor.userId,
+    properties: {
+      courseSlug: result.course.slug,
+      programSlug: result.program.slug,
+    },
+  });
   return apiData(course, { status: 201 });
 }

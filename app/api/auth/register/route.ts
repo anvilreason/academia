@@ -6,6 +6,10 @@ import {
   authSubjectHash,
   authWindowKey,
 } from "@/lib/security/auth-rate-limit";
+import {
+  claimAnalyticsIdentitySafe,
+  recordAnalyticsEventSafe,
+} from "@/lib/analytics/events";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -60,8 +64,18 @@ export async function POST(request: Request) {
     });
     if (actor.guestId) {
       await repository.claimGuestSessions(actor.guestId, user.id);
+      await claimAnalyticsIdentitySafe(actor.guestId, user.id);
       await clearGuestId();
     }
+    await recordAnalyticsEventSafe({
+      eventName: "signup_completed",
+      request,
+      userId: user.id,
+      guestId: actor.guestId,
+      isTest:
+        user.email.endsWith("@example.com") ||
+        user.email.includes("+test@"),
+    });
     return apiData(
       {
         id: user.id,

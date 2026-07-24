@@ -359,3 +359,101 @@ export const walletTransactions = sqliteTable(
     ),
   ],
 );
+
+export const analyticsEvents = sqliteTable(
+  "analytics_events",
+  {
+    id: text("id").primaryKey(),
+    eventName: text("event_name").notNull(),
+    schemaVersion: integer("schema_version").notNull().default(1),
+    dateKey: text("date_key").notNull(),
+    userId: text("user_id"),
+    guestId: text("guest_id"),
+    analyticsSessionId: text("analytics_session_id"),
+    path: text("path"),
+    referrerHost: text("referrer_host"),
+    schoolSlug: text("school_slug"),
+    programSlug: text("program_slug"),
+    courseSlug: text("course_slug"),
+    country: text("country"),
+    region: text("region"),
+    city: text("city"),
+    timezone: text("timezone"),
+    deviceCategory: text("device_category"),
+    engagementMs: integer("engagement_ms"),
+    propertiesJson: text("properties_json").notNull().default("{}"),
+    isTest: integer("is_test", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    occurredAt: text("occurred_at").notNull(),
+    ...lifecycle,
+  },
+  (table) => [
+    index("analytics_events_date_name_idx").on(
+      table.dateKey,
+      table.eventName,
+    ),
+    index("analytics_events_user_time_idx").on(
+      table.userId,
+      table.occurredAt,
+    ),
+    index("analytics_events_guest_time_idx").on(
+      table.guestId,
+      table.occurredAt,
+    ),
+    index("analytics_events_program_time_idx").on(
+      table.programSlug,
+      table.occurredAt,
+    ),
+  ],
+);
+
+export const analyticsIdentityLinks = sqliteTable(
+  "analytics_identity_links",
+  {
+    id: text("id").primaryKey(),
+    guestId: text("guest_id").notNull(),
+    userId: text("user_id").notNull(),
+    linkedAt: text("linked_at").notNull(),
+    ...lifecycle,
+  },
+  (table) => [
+    uniqueIndex("analytics_identity_guest_user_unique").on(
+      table.guestId,
+      table.userId,
+    ),
+  ],
+);
+
+export const adminMembers = sqliteTable(
+  "admin_members",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id"),
+    email: text("email").notNull(),
+    role: text("role").notNull().default("viewer"),
+    status: text("status").notNull().default("active"),
+    lastAccessAt: text("last_access_at"),
+    ...lifecycle,
+  },
+  (table) => [uniqueIndex("admin_members_email_unique").on(table.email)],
+);
+
+export const adminAuditLogs = sqliteTable(
+  "admin_audit_logs",
+  {
+    id: text("id").primaryKey(),
+    adminEmail: text("admin_email").notNull(),
+    action: text("action").notNull(),
+    resourceType: text("resource_type"),
+    resourceId: text("resource_id"),
+    metadataJson: text("metadata_json").notNull().default("{}"),
+    ...lifecycle,
+  },
+  (table) => [
+    index("admin_audit_logs_email_time_idx").on(
+      table.adminEmail,
+      table.createdAt,
+    ),
+  ],
+);

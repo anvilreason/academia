@@ -9,6 +9,7 @@ import { getRepository } from "@/lib/repositories";
 import { progressForTurn } from "@/lib/domain/learning";
 import { getUniversityCourse } from "@/lib/content/university";
 import { rankMemories } from "@/lib/memory/retrieve";
+import { recordAnalyticsEventSafe } from "@/lib/analytics/events";
 
 type ClientEvent =
   | "meta"
@@ -120,6 +121,17 @@ export async function POST(
         salience: 60,
       });
     }
+    await recordAnalyticsEventSafe({
+      eventName: "learning_message_sent",
+      request,
+      userId: actor.userId,
+      guestId: actor.guestId,
+      properties: {
+        courseSlug: session.nodeSlug,
+        sessionId: id,
+        turnNumber: session.turnCount + 1,
+      },
+    });
   }
   const history = await repository.listMessages(id);
   const memories = actor.userId

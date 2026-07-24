@@ -43,6 +43,13 @@
       "when": 1784887422680,
       "tag": "0005_mysterious_titanium_man",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1784892019437,
+      "tag": "0006_reflective_bulldozer",
+      "breakpoints": true
     }
   ]
 }
