@@ -6,7 +6,17 @@ import { ProductShell } from "@/components/shared/ProductShell";
 
 type TranscriptData = {
   earnedCredits: number;
+  recognizedCredits: number;
   gpa: number;
+  recognitions: Array<{
+    id: string;
+    status: string;
+    targetTitle: string;
+    targetCode: string;
+    sourceTitle: string;
+    recognizedCredits: number;
+    remainingCredits: number;
+  }>;
   records: Array<{
     id: string;
     nodeSlug: string;
@@ -52,6 +62,10 @@ export default function TranscriptPage() {
             <span>
               <strong>{transcript.data?.gpa?.toFixed(2) ?? "—"}</strong>累计 GPA
             </span>
+            <span>
+              <strong>{transcript.data?.recognizedCredits ?? "—"}</strong>
+              互认学分
+            </span>
           </div>
         </header>
         {transcript.isError ? (
@@ -61,9 +75,11 @@ export default function TranscriptPage() {
               登录查看
             </Link>
           </div>
-        ) : transcript.data?.records.length ? (
-          <div className="transcript-records">
-            {transcript.data.records.map((record) => (
+        ) : transcript.data?.records.length ||
+          transcript.data?.recognitions.length ? (
+          <>
+            <div className="transcript-records">
+              {transcript.data.records.map((record) => (
               <article key={record.id}>
                 <div>
                   <span>{record.courseCode}</span>
@@ -90,8 +106,32 @@ export default function TranscriptPage() {
                   </div>
                 </dl>
               </article>
-            ))}
-          </div>
+              ))}
+            </div>
+            {!!transcript.data.recognitions.length && (
+              <section className="transcript-recognitions">
+                <div>
+                  <p className="eyebrow">CREDIT RECOGNITION</p>
+                  <h2>跨专业课程互认</h2>
+                </div>
+                {transcript.data.recognitions.map((record) => (
+                  <article key={record.id}>
+                    <div>
+                      <span>{record.targetCode}</span>
+                      <h3>{record.targetTitle}</h3>
+                      <p>依据已修《{record.sourceTitle}》认定</p>
+                    </div>
+                    <strong>
+                      {record.recognizedCredits} 已认定
+                      {record.remainingCredits
+                        ? ` · ${record.remainingCredits} 待补修`
+                        : " · 已完成"}
+                    </strong>
+                  </article>
+                ))}
+              </section>
+            )}
+          </>
         ) : (
           <div className="wallet-state">
             <h2>成绩单还在等待第一门课</h2>

@@ -47,7 +47,7 @@ export default async function CheckoutPage({
               </Link>
             </div>
           ) : (
-            <TestCheckout nodeSlug={course.slug} />
+            <TestCheckout credits={course.credits} nodeSlug={course.slug} />
           )}
         </div>
       </section>

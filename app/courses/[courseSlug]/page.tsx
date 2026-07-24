@@ -1,12 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  ArrowRight,
-  BriefcaseBusiness,
-  FlaskConical,
-  Gauge,
-  NotebookPen,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { CourseApplicationExplorer } from "@/components/features/university/CourseApplicationExplorer";
+import { CourseRecognitionPanel } from "@/components/features/university/CourseRecognitionPanel";
 import { ProductShell } from "@/components/shared/ProductShell";
 import { getUniversityCourse } from "@/lib/content/university";
 
@@ -54,35 +50,7 @@ export default async function CourseCatalogPage({
             <p className="eyebrow">这门课会在哪里派上用场</p>
             <h2>先看现实问题，再学习概念。</h2>
           </div>
-          <div className="course-application-grid">
-            <article>
-              <Gauge aria-hidden="true" />
-              <span>它帮助你判断</span>
-              {course.application.questions.map((item) => (
-                <p key={item}>{item}</p>
-              ))}
-            </article>
-            <article>
-              <BriefcaseBusiness aria-hidden="true" />
-              <span>在工作中</span>
-              {course.application.workScenes.map((item) => (
-                <p key={item}>{item}</p>
-              ))}
-            </article>
-            <article>
-              <FlaskConical aria-hidden="true" />
-              <span>在创业中</span>
-              {course.application.ventureScenes.map((item) => (
-                <p key={item}>{item}</p>
-              ))}
-            </article>
-            <article>
-              <NotebookPen aria-hidden="true" />
-              <span>你会带走</span>
-              <p>{course.application.deliverable}</p>
-              <small>{course.application.boundary}</small>
-            </article>
-          </div>
+          <CourseApplicationExplorer application={course.application} />
           <Link className="application-project-link" href="/projects">
             把这门课连接到我的实践项目
             <ArrowRight aria-hidden="true" size={16} />
@@ -163,6 +131,7 @@ export default async function CourseCatalogPage({
             )}
           </aside>
         </div>
+        <CourseRecognitionPanel courseSlug={course.slug} />
       </section>
     </ProductShell>
   );

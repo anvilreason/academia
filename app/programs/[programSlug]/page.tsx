@@ -8,6 +8,7 @@ import {
   NotebookTabs,
 } from "lucide-react";
 import { AddProgramButton } from "@/components/features/university/AddProgramButton";
+import { ProgramCreditAudit } from "@/components/features/university/ProgramCreditAudit";
 import { ProductShell } from "@/components/shared/ProductShell";
 import {
   getUniversityProgram,
@@ -70,6 +71,8 @@ export default async function ProgramPage({
             </div>
           </div>
         </header>
+
+        <ProgramCreditAudit programSlug={program.slug} />
 
         <section className="application-section program-application">
           <div className="university-section-heading compact">
@@ -174,9 +177,13 @@ export default async function ProgramPage({
             <b>学分校核通过 ✓</b>
           </div>
           <div className="course-groups">
-            {courseGroups.map(({ band, courses }) => (
-              <section className="course-group" key={band.label}>
-                <header>
+            {courseGroups.map(({ band, courses }, groupIndex) => (
+              <details
+                className="course-group"
+                key={band.label}
+                open={groupIndex === 0}
+              >
+                <summary>
                   <div>
                     <span>{band.label}</span>
                     <strong>{band.description}</strong>
@@ -185,7 +192,8 @@ export default async function ProgramPage({
                     <b>{courses.length} 门</b>
                     <b>{band.credits} 学分</b>
                   </div>
-                </header>
+                  <span className="course-group-toggle">展开</span>
+                </summary>
                 <div className="course-table">
                   {courses.map((course) => (
                     <Link
@@ -214,7 +222,7 @@ export default async function ProgramPage({
                     </Link>
                   ))}
                 </div>
-              </section>
+              </details>
             ))}
           </div>
         </section>

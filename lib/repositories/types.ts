@@ -72,6 +72,10 @@ export type UserCoursePlanRecord = {
   programSlug: string;
   courseSlug: string;
   status: string;
+  recognitionType: string | null;
+  sourceCourseSlug: string | null;
+  recognizedCredits: number;
+  remainingCredits: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -230,6 +234,15 @@ export interface AcademiaRepository {
     programSlug: string,
     courseSlug: string,
   ): Promise<UserCoursePlanRecord>;
+  recordCourseRecognition(input: {
+    userId: string;
+    programSlug: string;
+    courseSlug: string;
+    recognitionType: "full" | "bridge";
+    sourceCourseSlug: string;
+    recognizedCredits: number;
+    remainingCredits: number;
+  }): Promise<UserCoursePlanRecord>;
   getAcademicPlan(userId: string): Promise<{
     programs: UserProgramRecord[];
     courses: UserCoursePlanRecord[];

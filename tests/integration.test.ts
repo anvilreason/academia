@@ -64,7 +64,9 @@ async function registerAndSignIn(jar: CookieJar, email: string) {
     }),
   });
   assert.equal(registration.status, 201);
+  const registered = await json<{ data: { id: string } }>(registration);
   await signIn(jar, email);
+  return registered.data.id;
 }
 
 test(
@@ -81,7 +83,7 @@ test(
     const trial = await json<{ data: { id: string } }>(trialResponse);
 
     const email = `integration.${Date.now()}@example.com`;
-    await registerAndSignIn(jar, email);
+    const userId = await registerAndSignIn(jar, email);
     const duplicateRegistration = await jar.request("/api/auth/register", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -100,6 +102,78 @@ test(
       200,
       "a new browser session must be able to sign in to the persisted account",
     );
+
+    const seedCompletedCourse = (nodeSlug: string, credits: number) => {
+      const now = new Date().toISOString();
+      execFileSync(
+        "npx",
+        [
+          "wrangler",
+          "d1",
+          "execute",
+          "DB",
+          "--local",
+          "--persist-to",
+          ".wrangler/state",
+          "--command",
+          `INSERT INTO exam_attempts (id,user_id,session_id,node_slug,attempt_number,score,grade_point_hundredths,credits_attempted,credits_earned,passed,weak_topics_json,created_at,updated_at,deleted_at) VALUES ('${crypto.randomUUID()}','${userId}','${crypto.randomUUID()}','${nodeSlug}',1,92,400,${credits},${credits},1,'[]','${now}','${now}',NULL)`,
+        ],
+        { cwd: process.cwd(), stdio: "ignore" },
+      );
+    };
+    seedCompletedCourse("marketing-general-1", 3);
+    seedCompletedCourse("mathematics-foundation-1", 4);
+
+    const fullRecognition = await json<{
+      data: {
+        type: string;
+        recognizedCredits: number;
+        remainingCredits: number;
+      };
+    }>(
+      await jar.request(
+        "/api/me/courses/finance-general-1/recognition",
+      ),
+    );
+    assert.equal(fullRecognition.data.type, "full");
+    assert.equal(fullRecognition.data.recognizedCredits, 3);
+    assert.equal(fullRecognition.data.remainingCredits, 0);
+    assert.equal(
+      (
+        await jar.request(
+          "/api/me/courses/finance-general-1/recognition",
+          { method: "POST" },
+        )
+      ).status,
+      201,
+    );
+
+    const bridgeRecognition = await json<{
+      data: {
+        type: string;
+        recognizedCredits: number;
+        remainingCredits: number;
+      };
+    }>(
+      await jar.request(
+        "/api/me/courses/mathematics-3/recognition",
+      ),
+    );
+    assert.equal(bridgeRecognition.data.type, "bridge");
+    assert.equal(bridgeRecognition.data.remainingCredits > 0, true);
+    assert.equal(
+      (
+        await jar.request(
+          "/api/me/courses/mathematics-3/recognition",
+          { method: "POST" },
+        )
+      ).status,
+      201,
+    );
+    const financeAudit = await json<{
+      data: { recognizedCredits: number; remainingCredits: number };
+    }>(await jar.request("/api/me/programs/finance/audit"));
+    assert.equal(financeAudit.data.recognizedCredits >= 3, true);
 
     assert.equal(
       (await jar.request(`/api/learning-sessions/${trial.data.id}`)).status,
@@ -269,9 +343,14 @@ test(
       "top-up must not activate a membership level",
     );
     const transcript = await json<{
-      data: { earnedCredits: number; gpa: number };
+      data: {
+        earnedCredits: number;
+        recognizedCredits: number;
+        gpa: number;
+      };
     }>(await jar.request("/api/me/transcript"));
-    assert.equal(transcript.data.earnedCredits, 4);
+    assert.equal(transcript.data.earnedCredits, 11);
+    assert.equal(transcript.data.recognizedCredits, 6);
     assert.equal(transcript.data.gpa, 4);
     assert.equal((await jar.request("/api/me/programs")).status, 200);
     assert.equal((await jar.request("/api/me/dashboard")).status, 200);

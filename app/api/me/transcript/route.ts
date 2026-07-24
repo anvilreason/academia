@@ -7,7 +7,11 @@ import { apiData, apiError } from "@/lib/server/api";
 export async function GET(request: Request) {
   const actor = await getActor(request);
   if (!actor.userId) return apiError("UNAUTHORIZED", "请先进入学籍账户", 401);
-  const attempts = await getRepository().listExamAttempts(actor.userId);
+  const repository = getRepository();
+  const [attempts, plan] = await Promise.all([
+    repository.listExamAttempts(actor.userId),
+    repository.getAcademicPlan(actor.userId),
+  ]);
   const best = new Map<string, (typeof attempts)[number]>();
   for (const attempt of attempts) {
     const current = best.get(attempt.nodeSlug);
@@ -21,11 +25,31 @@ export async function GET(request: Request) {
       courseCode: academic?.course.code ?? record.nodeSlug,
     };
   });
+  const recognitions = plan.courses
+    .filter((record) => Boolean(record.recognitionType))
+    .map((record) => {
+      const target = getUniversityCourse(record.courseSlug);
+      const source = record.sourceCourseSlug
+        ? getUniversityCourse(record.sourceCourseSlug)
+        : null;
+      return {
+        ...record,
+        targetTitle: target?.course.title ?? record.courseSlug,
+        targetCode: target?.course.code ?? record.courseSlug,
+        sourceTitle:
+          source?.course.title ?? record.sourceCourseSlug ?? "既有课程",
+      };
+    });
   return apiData({
     attempts,
     records,
     earnedCredits: records.reduce(
       (sum, record) => sum + record.creditsEarned,
+      0,
+    ),
+    recognitions,
+    recognizedCredits: recognitions.reduce(
+      (sum, record) => sum + record.recognizedCredits,
       0,
     ),
     gpa: weightedGpa(

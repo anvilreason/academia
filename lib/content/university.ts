@@ -16,6 +16,9 @@ export type UniversityCourse = {
   code: string;
   title: string;
   credits: number;
+  identityKey: string;
+  rigorLevel: number;
+  curriculumVersion: string;
   category: CreditBandLabel;
   summary: string;
   application: CourseApplication;
@@ -75,6 +78,26 @@ type ProgramSeed = {
 type SchoolSeed = Omit<UniversitySchool, "programs"> & {
   programs: ProgramSeed[];
 };
+
+export function courseIdentityKey(title: string) {
+  return title
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[：:（）()·、，,\s]/g, "");
+}
+
+function courseRigorLevel(
+  category: CreditBandLabel,
+  discipline: string,
+) {
+  if (category === "大学通识") return 100;
+  if (category === "学院基础") {
+    return ["工学", "理学", "医学"].includes(discipline) ? 240 : 220;
+  }
+  if (category === "专业核心") return 320;
+  if (category === "方向选修") return 360;
+  return 400;
+}
 
 const generalEducationCourses = [
   { title: "学术写作与论证", credits: 3 },
@@ -433,7 +456,15 @@ function makeCourses(
 ): UniversityCourse[] {
   const plan = makeCreditPlan(program.credits, discipline);
   const definitions: Array<
-    Omit<UniversityCourse, "code" | "availability" | "application">
+    Omit<
+      UniversityCourse,
+      | "code"
+      | "availability"
+      | "application"
+      | "identityKey"
+      | "rigorLevel"
+      | "curriculumVersion"
+    >
   > = [];
   const pushCourses = (
     category: CreditBandLabel,
@@ -530,6 +561,9 @@ function makeCourses(
 
   return definitions.map((course, courseIndex) => ({
     ...course,
+    identityKey: courseIdentityKey(course.title),
+    rigorLevel: courseRigorLevel(course.category, discipline),
+    curriculumVersion: "2026",
     application: makeCourseApplication(
       course.title,
       course.category,
@@ -1558,6 +1592,8 @@ if (marketing) {
     code: "AC030201",
     title: "市场营销原理：4P 与 STP",
     credits: 3,
+    identityKey: courseIdentityKey("市场营销原理：4P 与 STP"),
+    rigorLevel: 320,
     availability: "open",
     summary: "从一个真实增长问题出发，辨认 Product、Price、Place 与 Promotion。",
   };
@@ -1567,6 +1603,8 @@ if (marketing) {
     code: "AC030203",
     title: "竞争战略：Porter 五力",
     credits: 4,
+    identityKey: courseIdentityKey("竞争战略：Porter 五力"),
+    rigorLevel: 320,
     availability: "open",
     summary: "判断产业结构如何分配利润，以及真正的竞争压力来自哪里。",
   };
@@ -1576,6 +1614,8 @@ if (marketing) {
     code: "AC030205",
     title: "创新管理：颠覆式创新",
     credits: 4,
+    identityKey: courseIdentityKey("创新管理：颠覆式创新"),
+    rigorLevel: 320,
     availability: "open",
     summary: "理解优秀企业为什么会在持续服务主流客户时错失变化。",
   };
@@ -1626,4 +1666,12 @@ export function getUniversityCourse(slug: string) {
     }
   }
   return null;
+}
+
+export function getAllUniversityCourses() {
+  return universitySchools.flatMap((school) =>
+    school.programs.flatMap((program) =>
+      program.courses.map((course) => ({ course, program, school })),
+    ),
+  );
 }

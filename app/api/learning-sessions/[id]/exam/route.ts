@@ -4,6 +4,7 @@ import { gradePointForScore } from "@/lib/domain/grading";
 import { getRepository } from "@/lib/repositories";
 import { getActor } from "@/lib/server/actor";
 import { apiData, apiError } from "@/lib/server/api";
+import { getCourseRecognitionQuote } from "@/lib/server/course-recognition";
 
 function buildNote(nodeTitle: string, score: number, weakTopics: string[]) {
   return {
@@ -36,7 +37,23 @@ async function getOwnedExam(request: Request, id: string) {
       error: apiError("CONFLICT", "完成课程学习后才能参加期末考试", 409),
     };
   }
-  return { actor, repository, session, questions, academic };
+  const recognition = await getCourseRecognitionQuote(
+    repository,
+    actor.userId,
+    session.nodeSlug,
+  );
+  const assessmentCredits =
+    recognition?.status === "bridge_required"
+      ? recognition.remainingCredits
+      : academic.course.credits;
+  return {
+    actor,
+    repository,
+    session,
+    questions,
+    academic,
+    assessmentCredits,
+  };
 }
 
 export async function GET(
@@ -49,7 +66,8 @@ export async function GET(
   return apiData({
     course: {
       title: result.academic.course.title,
-      credits: result.academic.course.credits,
+      credits: result.assessmentCredits,
+      curriculumCredits: result.academic.course.credits,
       passScore: 60,
       maxGradePoint: 4,
     },
@@ -90,14 +108,14 @@ export async function POST(
       (question, index) => body.answers?.[index] !== question.correctIndex,
     )
     .map((question) => question.topic);
-  const creditsEarned = passed ? result.academic.course.credits : 0;
+  const creditsEarned = passed ? result.assessmentCredits : 0;
   const attempt = await result.repository.recordExamAttempt({
     userId: result.actor.userId,
     sessionId: result.session.id,
     nodeSlug: result.session.nodeSlug,
     score,
     gradePoint,
-    creditsAttempted: result.academic.course.credits,
+    creditsAttempted: result.assessmentCredits,
     creditsEarned,
     passed,
     weakTopics,

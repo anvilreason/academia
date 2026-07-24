@@ -1,7 +1,9 @@
+import { getUniversityCourse } from "@/lib/content/university";
 import { nodePriceFen } from "@/lib/domain/orders";
 import { getRepository } from "@/lib/repositories";
 import { getActor } from "@/lib/server/actor";
 import { apiData, apiError } from "@/lib/server/api";
+import { getCourseRecognitionQuote } from "@/lib/server/course-recognition";
 
 export async function POST(request: Request) {
   const actor = await getActor(request);
@@ -13,8 +15,24 @@ export async function POST(request: Request) {
     idempotencyKey?: string;
   };
   const nodeSlug = body.nodeSlug ?? "";
-  const amountFen = nodePriceFen(nodeSlug);
+  const academic = getUniversityCourse(nodeSlug);
+  const quote = academic
+    ? await getCourseRecognitionQuote(
+        getRepository(),
+        actor.userId,
+        nodeSlug,
+      )
+    : null;
+  const amountFen = quote ? quote.priceFen : nodePriceFen(nodeSlug);
   if (!amountFen || !body.idempotencyKey) {
+    if (quote?.type === "full") {
+      return apiError(
+        "CONFLICT",
+        "这门课程可以直接互认，无需重复付费",
+        409,
+        quote,
+      );
+    }
     return apiError("BAD_REQUEST", "课程或请求标识无效", 400);
   }
   const order = await getRepository().createOrder({

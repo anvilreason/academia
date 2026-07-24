@@ -33,6 +33,10 @@ import {
   universityStats,
 } from "../lib/content/university.ts";
 import { rankMemories } from "../lib/memory/retrieve.ts";
+import {
+  CREDIT_PRICE_FEN,
+  evaluateCourseTransfer,
+} from "../lib/domain/course-transfer.ts";
 
 test("password policy rejects weak values and verifies derived hashes", async () => {
   assert.equal(validatePassword("short"), "密码至少需要 10 位");
@@ -67,6 +71,51 @@ test("test order state machine cannot be used as a production payment bypass", (
   assert.equal(canTransitionOrder("paid", "pending", "test"), false);
   assert.equal(canTransitionOrder("paid", "refunded", "production"), true);
   assert.equal(nodePriceFen("porter-five-forces"), 9_900);
+});
+
+test("course transfer grants full credit only when scope is covered", () => {
+  const target = {
+    slug: "target",
+    title: "概率论",
+    credits: 4,
+    identityKey: "概率论",
+    rigorLevel: 320,
+    curriculumVersion: "2026",
+  };
+  const identical = evaluateCourseTransfer(target, [
+    {
+      ...target,
+      slug: "source-identical",
+    },
+  ]);
+  assert.equal(identical.type, "full");
+  assert.equal(identical.recognizedCredits, 4);
+  assert.equal(identical.remainingCredits, 0);
+  assert.equal(identical.priceFen, 0);
+
+  const bridge = evaluateCourseTransfer(target, [
+    {
+      ...target,
+      slug: "source-foundation",
+      credits: 3,
+      rigorLevel: 220,
+    },
+  ]);
+  assert.equal(bridge.type, "bridge");
+  assert.equal(bridge.recognizedCredits > 0, true);
+  assert.equal(bridge.remainingCredits, 4 - bridge.recognizedCredits);
+  assert.equal(bridge.priceFen, bridge.remainingCredits * CREDIT_PRICE_FEN);
+
+  const unrelated = evaluateCourseTransfer(target, [
+    {
+      ...target,
+      slug: "source-unrelated",
+      title: "线性代数",
+      identityKey: "线性代数",
+    },
+  ]);
+  assert.equal(unrelated.type, "none");
+  assert.equal(unrelated.remainingCredits, 4);
 });
 
 test("node permission keeps paid nodes behind an authenticated entitlement", () => {
@@ -224,6 +273,9 @@ test("university catalog has broad, unique and credit-complete programs", () => 
         );
       }
       for (const course of program.courses) {
+        assert.equal(course.identityKey.length > 0, true);
+        assert.equal(course.rigorLevel >= 100, true);
+        assert.equal(course.curriculumVersion, "2026");
         assert.equal(course.application.questions.length, 2);
         assert.equal(course.application.workScenes.length, 2);
         assert.equal(course.application.ventureScenes.length, 2);

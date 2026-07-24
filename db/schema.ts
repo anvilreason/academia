@@ -219,6 +219,10 @@ export const userCoursePlans = sqliteTable(
     programSlug: text("program_slug").notNull(),
     courseSlug: text("course_slug").notNull(),
     status: text("status").notNull().default("planned"),
+    recognitionType: text("recognition_type"),
+    sourceCourseSlug: text("source_course_slug"),
+    recognizedCredits: integer("recognized_credits").notNull().default(0),
+    remainingCredits: integer("remaining_credits").notNull().default(0),
     ...lifecycle,
   },
   (table) => [

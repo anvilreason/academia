@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -34,10 +35,22 @@ export function ProductShell({
   context,
 }: ProductShellProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
   const { data: session } = useSession();
   const profileLabel =
     session?.user?.name || session?.user?.email || "建立学籍";
   const profileInitial = profileLabel.slice(0, 1).toUpperCase();
+  const routeKind = pathname.startsWith("/college/")
+    ? "school"
+    : pathname.startsWith("/programs/")
+      ? "program"
+      : pathname.startsWith("/courses/")
+        ? "course"
+        : pathname.startsWith("/learn/")
+          ? "learn"
+          : pathname === "/college"
+            ? "atlas"
+            : "workspace";
   const academicPlan = useQuery({
     queryKey: ["academic-plan", session?.user?.email],
     enabled: Boolean(session?.user),
@@ -221,7 +234,13 @@ export function ProductShell({
             </div>
           </header>
         )}
-        {children}
+        <div
+          className="route-stage"
+          data-route-kind={routeKind}
+          key={pathname}
+        >
+          {children}
+        </div>
       </main>
     </div>
   );

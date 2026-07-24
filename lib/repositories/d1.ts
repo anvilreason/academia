@@ -634,11 +634,58 @@ export class D1AcademiaRepository implements AcademiaRepository {
         programSlug,
         courseSlug,
         status: "active",
+        remainingCredits: 0,
         createdAt: now,
         updatedAt: now,
       })
       .returning();
     return asCoursePlan(created);
+  }
+
+  async recordCourseRecognition(input: {
+    userId: string;
+    programSlug: string;
+    courseSlug: string;
+    recognitionType: "full" | "bridge";
+    sourceCourseSlug: string;
+    recognizedCredits: number;
+    remainingCredits: number;
+  }) {
+    await this.enrollProgram(input.userId, input.programSlug);
+    const now = nowIso();
+    const [record] = await getDb()
+      .insert(userCoursePlans)
+      .values({
+        id: newId(),
+        userId: input.userId,
+        programSlug: input.programSlug,
+        courseSlug: input.courseSlug,
+        status:
+          input.recognitionType === "full" ? "recognized" : "bridge_required",
+        recognitionType: input.recognitionType,
+        sourceCourseSlug: input.sourceCourseSlug,
+        recognizedCredits: input.recognizedCredits,
+        remainingCredits: input.remainingCredits,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: [userCoursePlans.userId, userCoursePlans.courseSlug],
+        set: {
+          status:
+            input.recognitionType === "full"
+              ? "recognized"
+              : "bridge_required",
+          recognitionType: input.recognitionType,
+          sourceCourseSlug: input.sourceCourseSlug,
+          recognizedCredits: input.recognizedCredits,
+          remainingCredits: input.remainingCredits,
+          updatedAt: now,
+          deletedAt: null,
+        },
+      })
+      .returning();
+    return asCoursePlan(record);
   }
 
   async getAcademicPlan(userId: string) {
