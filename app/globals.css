@@ -817,12 +817,83 @@ a {
   font-size: 19px;
 }
 
+.composer button:disabled,
+.composer textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .composer-hint {
   width: min(760px, 100%);
   margin: 6px auto 0;
   color: var(--ink-faint);
   font-size: 10px;
   text-align: center;
+}
+
+.composer-error {
+  width: min(760px, 100%);
+  margin: 0 auto 8px;
+  padding: 9px 12px;
+  border: 1px solid #e7c6bd;
+  border-radius: 10px;
+  background: #fff2ef;
+  color: #8c3928;
+  font-size: 12px;
+}
+
+.workspace-state {
+  width: min(760px, calc(100% - 36px));
+  margin: 18vh auto 0;
+  color: var(--ink-faint);
+  text-align: center;
+}
+
+.workspace-state strong {
+  display: block;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 26px;
+  font-weight: 500;
+}
+
+.thinking-dot {
+  width: 9px;
+  height: 9px;
+  display: inline-block;
+  margin-right: 9px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 6px rgb(166 92 30 / 10%);
+  animation: breathe 1.3s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+}
+
+.registration-wall {
+  margin: 42px 0 20px 55px;
+  padding: 28px;
+  border: 1px solid #d9c29d;
+  border-radius: 18px;
+  background: #f8efdf;
+}
+
+.registration-wall h2 {
+  margin: 16px 0 8px;
+  font-family: var(--serif);
+  font-size: 25px;
+  font-weight: 500;
+}
+
+.registration-wall p {
+  margin: 0 0 20px;
+  color: var(--ink-soft);
+  font-size: 13px;
 }
 
 .map-page,
@@ -882,6 +953,32 @@ a {
 .auth-card > p {
   margin: 0 0 26px;
   color: var(--ink-faint);
+  font-size: 12px;
+}
+
+.auth-card small {
+  display: block;
+  margin-top: 18px;
+  color: var(--ink-faint);
+  line-height: 1.5;
+}
+
+.auth-switch {
+  width: 100%;
+  margin-top: 15px;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.form-error {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: #fff2ef;
+  color: #8c3928;
   font-size: 12px;
 }
 
@@ -1037,6 +1134,11 @@ a {
     min-height: 0;
     grid-template-columns: 36px 1fr;
     padding: 24px 8px;
+  }
+
+  .registration-wall {
+    margin-left: 0;
+    padding: 22px;
   }
 
   .course-row:hover {

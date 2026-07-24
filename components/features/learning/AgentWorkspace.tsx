@@ -1,41 +1,183 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect } from "react";
+import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
+import {
+  type LearningMessage,
+  useLearningStore,
+} from "@/lib/stores/learning";
 
-type Message = {
-  role: "assistant" | "user";
-  content: string;
+type SessionPayload = {
+  id: string;
+  progress: number;
+  turnCount: number;
+  messages: Array<{ id: string; role: string; content: string }>;
 };
 
-const opening: Message[] = [
-  {
-    role: "assistant",
-    content:
-      "在我们进 4P 之前，先说说你最近正在做的项目。哪怕一句话。我想知道你是从什么具体处境读这一节的。",
-  },
-];
+async function readJson(response: Response) {
+  const payload = (await response.json()) as {
+    data?: SessionPayload;
+    error?: { message?: string };
+  };
+  if (!response.ok || !payload.data) {
+    throw new Error(payload.error?.message || "暂时无法开始试听");
+  }
+  return payload.data;
+}
 
-const previewReplies = [
-  "好。先别急着解释全部背景——如果只能选一个，你直觉上认为卡住的是 Product、Price、Place 还是 Promotion？",
-  "你选择了它，说明你已经有一个隐含判断。现在给我一个最近两周发生的具体证据，别给结论。",
-];
+async function getOrCreateTrial() {
+  const stored = window.localStorage.getItem("academia-trial-session");
+  if (stored) {
+    const response = await fetch(`/api/learning-sessions/${stored}`);
+    if (response.ok) return readJson(response);
+    window.localStorage.removeItem("academia-trial-session");
+  }
+  const response = await fetch("/api/learning-sessions", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ nodeSlug: "4p-stp" }),
+  });
+  const session = await readJson(response);
+  window.localStorage.setItem("academia-trial-session", session.id);
+  return session;
+}
+
+function parseSseFrame(frame: string) {
+  const name = frame
+    .split("\n")
+    .find((line) => line.startsWith("event:"))
+    ?.slice(6)
+    .trim();
+  const data = frame
+    .split("\n")
+    .find((line) => line.startsWith("data:"))
+    ?.slice(5)
+    .trim();
+  if (!name || !data) return null;
+  return { name, data: JSON.parse(data) as Record<string, unknown> };
+}
 
 export function AgentWorkspace() {
-  const [messages, setMessages] = useState<Message[]>(opening);
-  const [draft, setDraft] = useState("");
+  const {
+    messages,
+    draft,
+    progress,
+    turnCount,
+    streaming,
+    registrationRequired,
+    error,
+    hydrate,
+    setDraft,
+    addUser,
+    startAssistant,
+    appendDelta,
+    setProgress,
+    setStreaming,
+    requireRegistration,
+    setError,
+  } = useLearningStore();
+  const sessionQuery = useQuery({
+    queryKey: ["trial-session"],
+    queryFn: getOrCreateTrial,
+  });
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    if (!sessionQuery.data) return;
+    hydrate({
+      messages: sessionQuery.data.messages.map(
+        (message) =>
+          ({
+            id: message.id,
+            role: message.role === "user" ? "user" : "assistant",
+            content: message.content,
+          }) satisfies LearningMessage,
+      ),
+      progress: sessionQuery.data.progress,
+      turnCount: sessionQuery.data.turnCount,
+    });
+  }, [hydrate, sessionQuery.data]);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const value = draft.trim();
-    if (!value) return;
-    const reply =
-      previewReplies[Math.min(messages.filter((m) => m.role === "user").length, 1)];
-    setMessages((current) => [
-      ...current,
-      { role: "user", content: value },
-      { role: "assistant", content: reply },
-    ]);
-    setDraft("");
+    const sessionId = sessionQuery.data?.id;
+    if (!value || !sessionId || streaming || registrationRequired) return;
+
+    const idempotencyKey = crypto.randomUUID();
+    const assistantId = `stream-${idempotencyKey}`;
+    addUser({ id: `user-${idempotencyKey}`, role: "user", content: value });
+    startAssistant(assistantId);
+    setStreaming(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `/api/learning-sessions/${sessionId}/messages`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ content: value, idempotencyKey }),
+        },
+      );
+      if (!response.body) throw new Error("导师暂时没有回应");
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { done, value: chunk } = await reader.read();
+        buffer += decoder.decode(chunk, { stream: !done });
+        const frames = buffer.split("\n\n");
+        buffer = frames.pop() ?? "";
+        for (const frame of frames) {
+          const parsed = parseSseFrame(frame);
+          if (!parsed) continue;
+          if (parsed.name === "delta") {
+            appendDelta(assistantId, String(parsed.data.text ?? ""));
+          } else if (parsed.name === "progress") {
+            setProgress(
+              Number(parsed.data.progress ?? progress),
+              Number(parsed.data.turnCount ?? turnCount),
+            );
+            if (parsed.data.registrationRequired) requireRegistration();
+          } else if (parsed.name === "error") {
+            if (parsed.data.code === "REGISTRATION_REQUIRED") {
+              requireRegistration();
+            }
+            throw new Error(String(parsed.data.message ?? "导师暂时没有回应"));
+          }
+        }
+        if (done) break;
+      }
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "导师暂时没有回应");
+    } finally {
+      setStreaming(false);
+    }
+  }
+
+  if (sessionQuery.isPending) {
+    return (
+      <div className="workspace-state" role="status">
+        <span className="thinking-dot" />
+        正在准备你的试听课堂…
+      </div>
+    );
+  }
+
+  if (sessionQuery.isError) {
+    return (
+      <div className="workspace-state error-state">
+        <strong>暂时无法开始试听</strong>
+        <p>{sessionQuery.error.message}</p>
+        <button
+          className="button button-dark"
+          onClick={() => sessionQuery.refetch()}
+          type="button"
+        >
+          再试一次
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -44,43 +186,71 @@ export function AgentWorkspace() {
         <div className="conversation-intro">
           <p className="eyebrow">免费试听 · 第 1 节</p>
           <h1>4P 与 STP：增长究竟卡在哪里</h1>
-          <p>Philip Kotler · Kellogg · 你的回答会决定对话往哪里走</p>
+          <p>
+            Philip Kotler · Kellogg · 已进行 {turnCount}/5 轮 · {progress}%
+          </p>
         </div>
-        {messages.map((message, index) =>
+        {messages.map((message) =>
           message.role === "assistant" ? (
-            <article className="chat-message" key={`${message.role}-${index}`}>
+            <article className="chat-message" key={message.id}>
               <span className="chat-avatar" aria-hidden="true">
                 A
               </span>
               <div className="chat-copy">
-                <p>{message.content}</p>
+                <p>
+                  {message.content ||
+                    (streaming ? "正在思考…" : "导师暂时没有完成这次回答")}
+                </p>
               </div>
             </article>
           ) : (
-            <article
-              className="chat-message user"
-              key={`${message.role}-${index}`}
-            >
+            <article className="chat-message user" key={message.id}>
               {message.content}
             </article>
           ),
         )}
+        {registrationRequired && (
+          <aside className="registration-wall">
+            <span className="test-badge">5 轮试听已完成</span>
+            <h2>把这段对话留在你的认知地图里</h2>
+            <p>
+              注册后会自动认领刚才的回答，不需要重新开始。预览账户不会发送验证邮件。
+            </p>
+            <Link
+              className="button button-accent"
+              href="/login?mode=register&continue=%2Flearn%2F4p-stp"
+            >
+              注册并保留会话 →
+            </Link>
+          </aside>
+        )}
       </section>
       <div className="composer-wrap">
+        {error && <div className="composer-error">{error}</div>}
         <form className="composer" onSubmit={submit}>
           <textarea
             aria-label="回答导师"
+            disabled={streaming || registrationRequired}
+            maxLength={2000}
             onChange={(event) => setDraft(event.target.value)}
-            placeholder="想清楚再答，Academia 不会催你"
+            placeholder={
+              registrationRequired
+                ? "注册后继续这段对话"
+                : "想清楚再答，Academia 不会催你"
+            }
             rows={1}
             value={draft}
           />
-          <button aria-label="发送回答" type="submit">
-            ↑
+          <button
+            aria-label="发送回答"
+            disabled={streaming || registrationRequired || !draft.trim()}
+            type="submit"
+          >
+            {streaming ? "…" : "↑"}
           </button>
         </form>
         <div className="composer-hint">
-          v0.2 交互预览 · 下一版本将连接真实 AI 导师
+          真实 AI 试听 · 单条最多 2,000 字 · 回答会保存在测试环境
         </div>
       </div>
     </>

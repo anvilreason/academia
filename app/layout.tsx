@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AppProviders } from "@/components/providers/AppProviders";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://academia-preview.openai.site"),
+  metadataBase: new URL("https://academia-agent.anvilreason.chatgpt.site"),
   title: {
     default: "Academia｜用对话长出自己的认知地图",
     template: "%s｜Academia",
@@ -30,7 +31,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="zh-CN">
-      <body>{children}</body>
+      <body>
+        <AppProviders>{children}</AppProviders>
+      </body>
     </html>
   );
 }

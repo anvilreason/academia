@@ -8,7 +8,13 @@ const { d1, r2 } = hostingConfig;
 
 const localBindingConfig = {
   main: "./worker/index.ts",
-  compatibility_flags: ["nodejs_compat"],
+  vars: {
+    AUTH_SECRET:
+      process.env.AUTH_SECRET || "academia-local-preview-secret-change-me",
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || "",
+    ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL || "claude-sonnet-5",
+    PAYMENT_MODE: "test",
+  },
   d1_databases: d1
     ? [
         {
