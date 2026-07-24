@@ -15,7 +15,7 @@
 - `PrismaAcademiaRepository` 是阿里云 RDS/PostgreSQL 的生产替换点；生产资源就绪后按相同接口完成实现。
 - Auth.js 使用 JWT 会话。密码在服务端通过 Web Crypto PBKDF2 派生，盐和摘要分开保存。
 - 所有模型请求只能经过 `lib/llm/router.ts`，业务只引用内部别名 `acad-pro`。Provider adapter 负责把统一消息转换为各模型厂商的流式协议。
-- `acad-pro` 可由环境变量映射到 OpenAI 或 Anthropic；OpenAI 默认使用 `gpt-5.6-sol`，Anthropic 默认使用 `claude-sonnet-5`。SSE 对前端只暴露 `meta`、`delta`、`progress`、`usage`、`done` 和 `error`。
+- `acad-pro` 可由环境变量映射到 Kimi、OpenAI 或 Anthropic；Kimi 默认使用中国区 `kimi-k3` 和 `high` 推理强度，OpenAI 默认使用 `gpt-5.6-sol`，Anthropic 默认使用 `claude-sonnet-5`。SSE 对前端只暴露 `meta`、`delta`、`progress`、`usage`、`done` 和 `error`。
 - 每日 AI 成本按 Asia/Shanghai 日期结算，全局硬上限为 ¥50；请求开始前预留，结束后按累计 usage 结算。
 - 课程对话、实践项目和总 Agent 的用户输入会写入统一长期记忆。检索层按相关性、显著性和时间排序，只把与当前问题有关的记忆送入模型；用户可以在 Agent 内查看和遗忘单条记忆。
 - 总 Agent 与课程对话使用独立线程，但共享同一用户记忆空间。模型不得虚构记忆，引用过往内容时必须说明来自哪门课或哪个项目。

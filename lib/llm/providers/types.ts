@@ -14,6 +14,7 @@ export type ProviderStreamInput = {
   systemPrompt: string;
   history: LlmMessage[];
   maxOutputTokens: number;
+  reasoningEffort?: "low" | "high" | "max";
   onDelta(text: string): Promise<void>;
 };
 

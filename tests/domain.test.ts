@@ -96,9 +96,24 @@ test("cost estimation and global budget remain conservative", () => {
   assert.equal(estimateTokens("一段中文内容"), 5);
   assert.equal(estimateCostFen(1_000, 800) > 0, true);
   assert.deepEqual(tokenPriceFor("openai", "gpt-5.6-sol"), {
-    inputUsdPerMillion: 5,
-    outputUsdPerMillion: 30,
+    currency: "usd",
+    inputPerMillion: 5,
+    outputPerMillion: 30,
   });
+  assert.deepEqual(tokenPriceFor("kimi", "kimi-k3"), {
+    currency: "cny",
+    inputPerMillion: 20,
+    outputPerMillion: 100,
+  });
+  assert.equal(
+    estimateCostFen(
+      1_000_000,
+      1_000_000,
+      99,
+      tokenPriceFor("kimi", "kimi-k3"),
+    ),
+    12_000,
+  );
   assert.equal(
     canReserveDailyBudget({
       reservedFen: 4_900,

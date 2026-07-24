@@ -1,24 +1,46 @@
 export const GLOBAL_DAILY_LIMIT_FEN = 5_000;
 export const MAX_OUTPUT_TOKENS = 800;
 export type TokenPrice = {
-  inputUsdPerMillion: number;
-  outputUsdPerMillion: number;
+  currency: "usd" | "cny";
+  inputPerMillion: number;
+  outputPerMillion: number;
 };
 
 const DEFAULT_TOKEN_PRICE: TokenPrice = {
-  inputUsdPerMillion: 3,
-  outputUsdPerMillion: 15,
+  currency: "usd",
+  inputPerMillion: 3,
+  outputPerMillion: 15,
 };
 
 export function tokenPriceFor(provider: string, model: string): TokenPrice {
+  if (provider === "kimi") {
+    return {
+      currency: "cny",
+      // Use the K3 uncached rate as a conservative ceiling for Kimi models.
+      inputPerMillion: 20,
+      outputPerMillion: 100,
+    };
+  }
   if (provider === "openai") {
     if (model.includes("terra")) {
-      return { inputUsdPerMillion: 2.5, outputUsdPerMillion: 15 };
+      return {
+        currency: "usd",
+        inputPerMillion: 2.5,
+        outputPerMillion: 15,
+      };
     }
     if (model.includes("luna")) {
-      return { inputUsdPerMillion: 1, outputUsdPerMillion: 6 };
+      return {
+        currency: "usd",
+        inputPerMillion: 1,
+        outputPerMillion: 6,
+      };
     }
-    return { inputUsdPerMillion: 5, outputUsdPerMillion: 30 };
+    return {
+      currency: "usd",
+      inputPerMillion: 5,
+      outputPerMillion: 30,
+    };
   }
   return DEFAULT_TOKEN_PRICE;
 }
@@ -33,11 +55,12 @@ export function estimateCostFen(
   usdCnyRate = 7.2,
   price = DEFAULT_TOKEN_PRICE,
 ) {
-  const usd =
-    (inputTokens * price.inputUsdPerMillion +
-      outputTokens * price.outputUsdPerMillion) /
+  const amount =
+    (inputTokens * price.inputPerMillion +
+      outputTokens * price.outputPerMillion) /
     1_000_000;
-  return Math.max(1, Math.ceil(usd * usdCnyRate * 100));
+  const cny = price.currency === "cny" ? amount : amount * usdCnyRate;
+  return Math.max(1, Math.ceil(cny * 100));
 }
 
 export function canReserveDailyBudget(input: {

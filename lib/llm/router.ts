@@ -15,6 +15,7 @@ import { tokenPriceFor } from "./pricing";
 import { academiaAgentPrompt } from "./prompts/academia-agent-zh-v1";
 import { promptForNode } from "./prompts/socratic-zh-v1";
 import { streamAnthropic } from "./providers/anthropic";
+import { streamKimi } from "./providers/kimi";
 import { streamOpenAi } from "./providers/openai";
 import type { LlmMessage } from "./providers/types";
 import {
@@ -38,9 +39,28 @@ type StreamCallbacks = {
   }): Promise<void>;
 };
 
+function kimiReasoningEffort(
+  value?: string,
+): "low" | "high" | "max" {
+  return value === "low" || value === "max" ? value : "high";
+}
+
 function providerConfig() {
   const config = runtimeEnv();
   const requested = config.LLM_PROVIDER?.toLowerCase();
+  if (requested === "kimi") {
+    if (!config.MOONSHOT_API_KEY) {
+      throw new LlmProviderError("MOONSHOT_API_KEY is unavailable");
+    }
+    return {
+      provider: "kimi" as const,
+      apiKey: config.MOONSHOT_API_KEY,
+      model: config.KIMI_MODEL || "kimi-k3",
+      reasoningEffort: kimiReasoningEffort(
+        config.KIMI_REASONING_EFFORT,
+      ),
+    };
+  }
   if (requested === "openai") {
     if (!config.OPENAI_API_KEY) {
       throw new LlmProviderError("OPENAI_API_KEY is unavailable");
@@ -66,6 +86,16 @@ function providerConfig() {
       provider: "openai" as const,
       apiKey: config.OPENAI_API_KEY,
       model: config.OPENAI_MODEL || "gpt-5.6-sol",
+    };
+  }
+  if (config.MOONSHOT_API_KEY) {
+    return {
+      provider: "kimi" as const,
+      apiKey: config.MOONSHOT_API_KEY,
+      model: config.KIMI_MODEL || "kimi-k3",
+      reasoningEffort: kimiReasoningEffort(
+        config.KIMI_REASONING_EFFORT,
+      ),
     };
   }
   if (config.ANTHROPIC_API_KEY) {
@@ -112,12 +142,18 @@ export async function streamAcadPro(input: {
       systemPrompt,
       history: input.history satisfies LlmMessage[],
       maxOutputTokens: MAX_OUTPUT_TOKENS,
+      reasoningEffort:
+        "reasoningEffort" in provider
+          ? provider.reasoningEffort
+          : undefined,
       onDelta: input.callbacks.onDelta,
     };
     const streamed =
       provider.provider === "openai"
         ? await streamOpenAi(providerInput)
-        : await streamAnthropic(providerInput);
+        : provider.provider === "kimi"
+          ? await streamKimi(providerInput)
+          : await streamAnthropic(providerInput);
     const inputTokens = streamed.inputTokens || estimatedInput;
     const outputTokens =
       streamed.outputTokens || estimateTokens(streamed.text);
