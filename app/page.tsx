@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { nodes } from "@/lib/content/nodes";
+import {
+  universitySchools,
+  universityStats,
+} from "@/lib/content/university";
 
 export default function LandingPage() {
   return (
@@ -13,7 +16,7 @@ export default function LandingPage() {
           Academia
         </Link>
         <nav className="marketing-nav" aria-label="主导航">
-          <Link href="/college/marketing">课程地图</Link>
+          <Link href="/college">学院地图</Link>
           <Link href="/login">登录</Link>
           <Link className="button button-dark button-small" href="/learn/4p-stp">
             免费试听
@@ -23,15 +26,15 @@ export default function LandingPage() {
 
       <section className="hero page-width">
         <div className="hero-copy">
-          <p className="eyebrow">个人 AI 研究生院</p>
+          <p className="eyebrow">一所围绕真实问题生长的 AI 大学</p>
           <h1>
             学会一个理论，
             <br />
             直到它改变你的判断。
           </h1>
           <p className="hero-lead">
-            不是录播课，也不是通用聊天机器人。带着一个真实问题进入，
-            让 AI 导师用苏格拉底式追问，陪你把经典理论推演到自己的工作里。
+            从学院、专业到课程建立完整培养路径。带着真实问题进入，
+            让 AI 导师用苏格拉底式追问陪你学习，并用考试、学分与重修检验掌握。
           </p>
           <div className="hero-actions">
             <Link className="button button-accent button-large" href="/learn/4p-stp">
@@ -94,38 +97,35 @@ export default function LandingPage() {
       <section className="curriculum page-width" id="curriculum">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">首发路径 · Marketing</p>
-            <h2>先从三个不会过时的问题开始</h2>
+          <p className="eyebrow">综合性大学 · 学院地图</p>
+            <h2>先选择你想进入的学科共同体</h2>
           </div>
-          <Link className="text-link" href="/college/marketing">
-            打开课程地图 →
+          <Link className="text-link" href="/college">
+            浏览全部 {universityStats.schools} 个学院 →
           </Link>
         </div>
-        <div className="node-list">
-          {nodes.map((node, index) => (
+        <div className="landing-school-grid">
+          {universitySchools.slice(0, 6).map((school, index) => (
             <Link
-              className={`course-row ${node.access === "free" ? "course-row-featured" : ""}`}
-              href={
-                node.access === "free"
-                  ? `/learn/${node.slug}`
-                  : `/nodes/${node.slug}`
-              }
-              key={node.slug}
+              className="landing-school-card"
+              href={`/college/${school.slug}`}
+              key={school.slug}
             >
               <span className="course-index">0{index + 1}</span>
-              <span className="course-main">
-                <span className="course-meta">
-                  {node.level} · {node.school}
-                </span>
-                <strong>{node.title}</strong>
-                <span>{node.question}</span>
+              <span>
+                <small>{school.englishName}</small>
+                <strong>{school.name}</strong>
+                <p>{school.description}</p>
               </span>
-              <span className="course-price">
-                {node.access === "free" ? "免费试听" : `¥${node.priceYuan}`}
-                <span aria-hidden="true">↗</span>
-              </span>
+              <b>{school.programs.length} 个专业 ↗</b>
             </Link>
           ))}
+        </div>
+        <div className="landing-university-stats">
+          <span><strong>{universityStats.schools}</strong>学院</span>
+          <span><strong>{universityStats.programs}</strong>专业</span>
+          <span><strong>{universityStats.courses}</strong>课程</span>
+          <span><strong>4.0</strong>最高绩点</span>
         </div>
       </section>
 

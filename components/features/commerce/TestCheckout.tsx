@@ -62,7 +62,7 @@ export function TestCheckout({
     return (
       <div className="checkout-success">
         <span className="test-badge">测试订单已确认 · ¥0 实际扣款</span>
-        <h3>Porter 五力已加入你的学院地图</h3>
+        <h3>这门课程已加入你的专业任务</h3>
         <p>订单和课程权限已经真实写入测试数据库。</p>
         <Link
           className="button button-accent button-large"
@@ -89,7 +89,7 @@ export function TestCheckout({
         <Link
           className="button button-dark button-block"
           href={`/login?mode=register&continue=${encodeURIComponent(
-            `/nodes/${nodeSlug}`,
+            `/checkout/${nodeSlug}`,
           )}`}
         >
           注册后继续测试购买

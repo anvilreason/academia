@@ -102,7 +102,7 @@ export function Dashboard() {
       {recommendation && (
         <Link
           className="recommendation-card"
-          href={`/nodes/${recommendation.slug}`}
+          href={`/courses/${recommendation.slug}`}
         >
           <span>下一节推荐</span>
           <strong>{recommendation.title}</strong>

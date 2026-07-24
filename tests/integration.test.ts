@@ -167,19 +167,90 @@ test(
       ],
       { cwd: process.cwd(), stdio: "ignore" },
     );
-    const completion = await jar.request(
+    const legacyCompletion = await jar.request(
       `/api/learning-sessions/${paid.data.id}/complete`,
       { method: "POST" },
     );
-    assert.equal(completion.status, 200);
+    assert.equal(legacyCompletion.status, 409);
+
+    const examSheet = await jar.request(
+      `/api/learning-sessions/${paid.data.id}/exam`,
+    );
+    assert.equal(examSheet.status, 200);
+
+    const failedExam = await jar.request(
+      `/api/learning-sessions/${paid.data.id}/exam`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ answers: [3, 3, 3, 3, 3] }),
+      },
+    );
+    assert.equal(failedExam.status, 200);
+    const failed = await json<{
+      data: { passed: boolean; creditsEarned: number; weakTopics: string[] };
+    }>(failedExam);
+    assert.equal(failed.data.passed, false);
+    assert.equal(failed.data.creditsEarned, 0);
+    assert.equal(failed.data.weakTopics.length, 5);
+
+    const passedExam = await jar.request(
+      `/api/learning-sessions/${paid.data.id}/exam`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ answers: [1, 0, 0, 0, 0] }),
+      },
+    );
+    assert.equal(passedExam.status, 200);
     const completed = await json<{
-      data: { note: { id: string }; recommendation: { slug: string } };
-    }>(completion);
+      data: {
+        passed: boolean;
+        score: number;
+        gradePoint: number;
+        creditsEarned: number;
+        attemptNumber: number;
+        note: { id: string };
+        recommendation: { slug: string };
+      };
+    }>(passedExam);
+    assert.equal(completed.data.passed, true);
+    assert.equal(completed.data.score, 100);
+    assert.equal(completed.data.gradePoint, 4);
+    assert.equal(completed.data.creditsEarned, 4);
+    assert.equal(completed.data.attemptNumber, 2);
     assert.ok(completed.data.note.id);
     assert.equal(
       completed.data.recommendation.slug,
       "disruptive-innovation",
     );
+
+    const topUp = await jar.request("/api/me/wallet/topup", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ amountFen: 1_000_000 }),
+    });
+    assert.equal(topUp.status, 200);
+    const wallet = await json<{
+      data: {
+        balanceFen: number;
+        completedSpendFen: number;
+        membership: { name: string };
+      };
+    }>(topUp);
+    assert.equal(wallet.data.balanceFen, 1_000_000);
+    assert.equal(wallet.data.completedSpendFen, 9_900);
+    assert.equal(
+      wallet.data.membership.name,
+      "新知",
+      "top-up must not activate a membership level",
+    );
+    const transcript = await json<{
+      data: { earnedCredits: number; gpa: number };
+    }>(await jar.request("/api/me/transcript"));
+    assert.equal(transcript.data.earnedCredits, 4);
+    assert.equal(transcript.data.gpa, 4);
+    assert.equal((await jar.request("/api/me/programs")).status, 200);
     assert.equal((await jar.request("/api/me/dashboard")).status, 200);
   },
 );

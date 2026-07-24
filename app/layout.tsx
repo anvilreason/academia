@@ -9,11 +9,11 @@ export const metadata: Metadata = {
     template: "%s｜Academia",
   },
   description:
-    "一所为认真思考者设计的个人 AI 研究生院。与经典理论对话，把知识变成你的判断力。",
+    "一所为认真思考者设计的 AI 大学。从学院、专业到课程，与 AI 导师对话，用考试、学分和重修把知识变成判断力。",
   openGraph: {
     title: "Academia｜用对话长出自己的认知地图",
     description:
-      "不是另一门录播课。选择一个真实问题，和 AI 导师一起把经典理论推演到你的工作里。",
+      "12 个学院、31 个专业与 248 门课程。和 AI 导师学习，用考试、学分和定向重修检验真正掌握。",
     type: "website",
     locale: "zh_CN",
     images: [{ url: "/og.png", width: 1731, height: 909, alt: "Academia" }],
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Academia｜用对话长出自己的认知地图",
-    description: "一所为认真思考者设计的个人 AI 研究生院。",
+    description: "从学院、专业到课程，建立一张可检验的个人学术地图。",
     images: ["/og.png"],
   },
 };

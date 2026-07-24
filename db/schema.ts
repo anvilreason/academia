@@ -164,3 +164,87 @@ export const guestTrialUsage = sqliteTable(
     ),
   ],
 );
+
+export const userPrograms = sqliteTable(
+  "user_programs",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    programSlug: text("program_slug").notNull(),
+    status: text("status").notNull().default("active"),
+    ...lifecycle,
+  },
+  (table) => [
+    uniqueIndex("user_programs_user_program_unique").on(
+      table.userId,
+      table.programSlug,
+    ),
+  ],
+);
+
+export const userCoursePlans = sqliteTable(
+  "user_course_plans",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    programSlug: text("program_slug").notNull(),
+    courseSlug: text("course_slug").notNull(),
+    status: text("status").notNull().default("planned"),
+    ...lifecycle,
+  },
+  (table) => [
+    uniqueIndex("user_course_plans_user_course_unique").on(
+      table.userId,
+      table.courseSlug,
+    ),
+  ],
+);
+
+export const examAttempts = sqliteTable("exam_attempts", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  sessionId: text("session_id").notNull(),
+  nodeSlug: text("node_slug").notNull(),
+  attemptNumber: integer("attempt_number").notNull(),
+  score: integer("score").notNull(),
+  gradePointHundredths: integer("grade_point_hundredths").notNull(),
+  creditsAttempted: integer("credits_attempted").notNull(),
+  creditsEarned: integer("credits_earned").notNull(),
+  passed: integer("passed", { mode: "boolean" }).notNull(),
+  weakTopicsJson: text("weak_topics_json").notNull(),
+  ...lifecycle,
+});
+
+export const walletAccounts = sqliteTable(
+  "wallet_accounts",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    balanceFen: integer("balance_fen").notNull().default(0),
+    completedSpendFen: integer("completed_spend_fen").notNull().default(0),
+    ...lifecycle,
+  },
+  (table) => [
+    uniqueIndex("wallet_accounts_user_unique").on(table.userId),
+  ],
+);
+
+export const walletTransactions = sqliteTable(
+  "wallet_transactions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    type: text("type").notNull(),
+    amountFen: integer("amount_fen").notNull(),
+    referenceId: text("reference_id"),
+    description: text("description").notNull(),
+    ...lifecycle,
+  },
+  (table) => [
+    uniqueIndex("wallet_transactions_completion_unique").on(
+      table.userId,
+      table.type,
+      table.referenceId,
+    ),
+  ],
+);

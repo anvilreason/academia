@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getUniversityCourse,
+  getUniversityProgram,
+} from "@/lib/content/university";
 
 type ProductShellProps = {
   children: React.ReactNode;
@@ -22,27 +27,76 @@ export function ProductShell({
   const profileLabel =
     session?.user?.name || session?.user?.email || "登录后保存进度";
   const profileInitial = profileLabel.slice(0, 1).toUpperCase();
+  const academicPlan = useQuery({
+    queryKey: ["academic-plan", session?.user?.email],
+    enabled: Boolean(session?.user),
+    queryFn: async () => {
+      const response = await fetch("/api/me/programs");
+      if (!response.ok) return { programs: [], courses: [] };
+      const payload = (await response.json()) as {
+        data: {
+          programs: Array<{ programSlug: string }>;
+          courses: Array<{ courseSlug: string; programSlug: string }>;
+        };
+      };
+      return payload.data;
+    },
+  });
 
   const navigation = (
     <>
-      <Link className="sidebar-action" href="/learn/4p-stp">
+      <Link
+        className={`sidebar-link sidebar-map-link ${
+          active === "college" ? "active" : ""
+        }`}
+        href="/college"
+      >
+        <span aria-hidden="true">▦</span>
+        学院地图
+      </Link>
+      <Link className="sidebar-action" href="/college">
         <span aria-hidden="true">＋</span>
-        开始学习
+        新增专业
       </Link>
       <Link
         className={`sidebar-link ${active === "home" ? "active" : ""}`}
         href="/home"
       >
         <span aria-hidden="true">⌂</span>
-        今天
+        今日学习
       </Link>
-      <Link
-        className={`sidebar-link ${active === "college" ? "active" : ""}`}
-        href="/college/marketing"
-      >
-        <span aria-hidden="true">◇</span>
-        学院地图
-      </Link>
+      {!!academicPlan.data?.programs.length && (
+        <div className="sidebar-section sidebar-projects">
+          <span className="sidebar-label">我的专业</span>
+          {academicPlan.data.programs.slice(0, 5).map(({ programSlug }) => {
+            const program = getUniversityProgram(programSlug);
+            if (!program) return null;
+            const courses = academicPlan.data.courses.filter(
+              (course) => course.programSlug === programSlug,
+            );
+            return (
+              <div className="sidebar-project" key={programSlug}>
+                <Link className="sidebar-link" href={`/programs/${programSlug}`}>
+                  <span aria-hidden="true">▱</span>
+                  {program.name}
+                </Link>
+                {courses.slice(0, 4).map(({ courseSlug }) => (
+                  <Link
+                    className="sidebar-task"
+                    href={`/courses/${courseSlug}`}
+                    key={courseSlug}
+                  >
+                    {getUniversityCourse(courseSlug)?.course.title ?? courseSlug}
+                  </Link>
+                ))}
+                {!courses.length && (
+                  <span className="sidebar-empty-task">尚未新增课程</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
       <div className="sidebar-section">
         <span className="sidebar-label">最近</span>
         <Link
@@ -63,6 +117,12 @@ export function ProductShell({
         </Link>
         {navigation}
         <div className="sidebar-spacer" />
+        {session && (
+          <div className="sidebar-account-links">
+            <Link href="/transcript">学籍与成绩</Link>
+            <Link href="/wallet">星图学籍卡</Link>
+          </div>
+        )}
         <Link className="sidebar-profile" href={session ? "/home" : "/login"}>
           <span className="profile-avatar">
             {session ? profileInitial : "访"}

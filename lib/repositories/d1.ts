@@ -2,22 +2,31 @@ import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
   guestTrialUsage,
+  examAttempts,
   learningNotes,
   learningSessions,
   llmCallLogs,
   messages,
   nodeEntitlements,
   orders,
+  userCoursePlans,
+  userPrograms,
   users,
+  walletAccounts,
+  walletTransactions,
 } from "@/db/schema";
 import { newId, nowIso } from "@/lib/server/api";
 import type {
   AcademiaRepository,
+  ExamAttemptRecord,
   LearningSessionRecord,
   MessageRecord,
   NoteRecord,
   OrderRecord,
+  UserCoursePlanRecord,
+  UserProgramRecord,
   UserRecord,
+  WalletRecord,
 } from "./types";
 
 function asUser(row: typeof users.$inferSelect): UserRecord {
@@ -72,6 +81,37 @@ function asNote(row: typeof learningNotes.$inferSelect): NoteRecord {
     content: row.content,
     createdAt: row.createdAt,
   };
+}
+
+function asProgram(row: typeof userPrograms.$inferSelect): UserProgramRecord {
+  return row;
+}
+
+function asCoursePlan(
+  row: typeof userCoursePlans.$inferSelect,
+): UserCoursePlanRecord {
+  return row;
+}
+
+function asExam(row: typeof examAttempts.$inferSelect): ExamAttemptRecord {
+  return {
+    id: row.id,
+    userId: row.userId,
+    sessionId: row.sessionId,
+    nodeSlug: row.nodeSlug,
+    attemptNumber: row.attemptNumber,
+    score: row.score,
+    gradePoint: row.gradePointHundredths / 100,
+    creditsAttempted: row.creditsAttempted,
+    creditsEarned: row.creditsEarned,
+    passed: row.passed,
+    weakTopics: JSON.parse(row.weakTopicsJson) as string[],
+    createdAt: row.createdAt,
+  };
+}
+
+function asWallet(row: typeof walletAccounts.$inferSelect): WalletRecord {
+  return row;
 }
 
 export class D1AcademiaRepository implements AcademiaRepository {
@@ -348,6 +388,23 @@ export class D1AcademiaRepository implements AcademiaRepository {
     return row ? asOrder(row) : null;
   }
 
+  async getPaidOrderAmount(userId: string, nodeSlug: string) {
+    const [row] = await getDb()
+      .select({ amountFen: orders.amountFen })
+      .from(orders)
+      .where(
+        and(
+          eq(orders.userId, userId),
+          eq(orders.nodeSlug, nodeSlug),
+          eq(orders.status, "paid"),
+          isNull(orders.deletedAt),
+        ),
+      )
+      .orderBy(desc(orders.confirmedAt))
+      .limit(1);
+    return row?.amountFen ?? 0;
+  }
+
   async confirmTestOrder(id: string, userId: string) {
     const order = await this.getOrder(id);
     if (!order || order.userId !== userId) {
@@ -428,6 +485,246 @@ export class D1AcademiaRepository implements AcademiaRepository {
       })
       .returning();
     return asNote(created);
+  }
+
+  async enrollProgram(userId: string, programSlug: string) {
+    const existing = await getDb()
+      .select()
+      .from(userPrograms)
+      .where(
+        and(
+          eq(userPrograms.userId, userId),
+          eq(userPrograms.programSlug, programSlug),
+          isNull(userPrograms.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (existing[0]) return asProgram(existing[0]);
+    const now = nowIso();
+    const [created] = await getDb()
+      .insert(userPrograms)
+      .values({
+        id: newId(),
+        userId,
+        programSlug,
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    return asProgram(created);
+  }
+
+  async enrollCourse(
+    userId: string,
+    programSlug: string,
+    courseSlug: string,
+  ) {
+    await this.enrollProgram(userId, programSlug);
+    const existing = await getDb()
+      .select()
+      .from(userCoursePlans)
+      .where(
+        and(
+          eq(userCoursePlans.userId, userId),
+          eq(userCoursePlans.courseSlug, courseSlug),
+          isNull(userCoursePlans.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (existing[0]) return asCoursePlan(existing[0]);
+    const now = nowIso();
+    const [created] = await getDb()
+      .insert(userCoursePlans)
+      .values({
+        id: newId(),
+        userId,
+        programSlug,
+        courseSlug,
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    return asCoursePlan(created);
+  }
+
+  async getAcademicPlan(userId: string) {
+    const [programRows, courseRows] = await Promise.all([
+      getDb()
+        .select()
+        .from(userPrograms)
+        .where(
+          and(
+            eq(userPrograms.userId, userId),
+            isNull(userPrograms.deletedAt),
+          ),
+        )
+        .orderBy(asc(userPrograms.createdAt)),
+      getDb()
+        .select()
+        .from(userCoursePlans)
+        .where(
+          and(
+            eq(userCoursePlans.userId, userId),
+            isNull(userCoursePlans.deletedAt),
+          ),
+        )
+        .orderBy(asc(userCoursePlans.createdAt)),
+    ]);
+    return {
+      programs: programRows.map(asProgram),
+      courses: courseRows.map(asCoursePlan),
+    };
+  }
+
+  async recordExamAttempt(input: {
+    userId: string;
+    sessionId: string;
+    nodeSlug: string;
+    score: number;
+    gradePoint: number;
+    creditsAttempted: number;
+    creditsEarned: number;
+    passed: boolean;
+    weakTopics: string[];
+  }) {
+    const previous = await getDb()
+      .select({ id: examAttempts.id })
+      .from(examAttempts)
+      .where(
+        and(
+          eq(examAttempts.userId, input.userId),
+          eq(examAttempts.sessionId, input.sessionId),
+          isNull(examAttempts.deletedAt),
+        ),
+      );
+    const now = nowIso();
+    const [created] = await getDb()
+      .insert(examAttempts)
+      .values({
+        id: newId(),
+        ...input,
+        attemptNumber: previous.length + 1,
+        gradePointHundredths: Math.round(input.gradePoint * 100),
+        weakTopicsJson: JSON.stringify(input.weakTopics),
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    if (input.passed) {
+      await getDb()
+        .update(userCoursePlans)
+        .set({ status: "completed", updatedAt: now })
+        .where(
+          and(
+            eq(userCoursePlans.userId, input.userId),
+            eq(userCoursePlans.courseSlug, input.nodeSlug),
+          ),
+        );
+    }
+    return asExam(created);
+  }
+
+  async listExamAttempts(userId: string) {
+    const rows = await getDb()
+      .select()
+      .from(examAttempts)
+      .where(
+        and(eq(examAttempts.userId, userId), isNull(examAttempts.deletedAt)),
+      )
+      .orderBy(desc(examAttempts.createdAt));
+    return rows.map(asExam);
+  }
+
+  async getWallet(userId: string) {
+    const [existing] = await getDb()
+      .select()
+      .from(walletAccounts)
+      .where(
+        and(
+          eq(walletAccounts.userId, userId),
+          isNull(walletAccounts.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (existing) return asWallet(existing);
+    const now = nowIso();
+    const [created] = await getDb()
+      .insert(walletAccounts)
+      .values({
+        id: newId(),
+        userId,
+        balanceFen: 0,
+        completedSpendFen: 0,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    return asWallet(created);
+  }
+
+  async topUpWallet(userId: string, amountFen: number) {
+    const wallet = await this.getWallet(userId);
+    const now = nowIso();
+    await getDb()
+      .update(walletAccounts)
+      .set({
+        balanceFen: wallet.balanceFen + amountFen,
+        updatedAt: now,
+      })
+      .where(eq(walletAccounts.id, wallet.id));
+    await getDb().insert(walletTransactions).values({
+      id: newId(),
+      userId,
+      type: "test_topup",
+      amountFen,
+      referenceId: null,
+      description: "星图学籍卡测试储值（不产生真实资金流）",
+      createdAt: now,
+      updatedAt: now,
+    });
+    return this.getWallet(userId);
+  }
+
+  async addCompletedCourseSpend(
+    userId: string,
+    amountFen: number,
+    sessionId: string,
+  ) {
+    const wallet = await this.getWallet(userId);
+    const [existing] = await getDb()
+      .select({ id: walletTransactions.id })
+      .from(walletTransactions)
+      .where(
+        and(
+          eq(walletTransactions.userId, userId),
+          eq(walletTransactions.type, "completed_course"),
+          eq(walletTransactions.referenceId, sessionId),
+          isNull(walletTransactions.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (existing) return wallet;
+    const now = nowIso();
+    await getDb()
+      .update(walletAccounts)
+      .set({
+        completedSpendFen: wallet.completedSpendFen + amountFen,
+        updatedAt: now,
+      })
+      .where(eq(walletAccounts.id, wallet.id));
+    await getDb().insert(walletTransactions).values({
+      id: newId(),
+      userId,
+      type: "completed_course",
+      amountFen,
+      referenceId: sessionId,
+      description: "完成课程计入学籍等级",
+      createdAt: now,
+      updatedAt: now,
+    });
+    return this.getWallet(userId);
   }
 
   async getDashboard(userId: string) {

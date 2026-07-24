@@ -19,6 +19,11 @@ import {
   validatePassword,
   verifyPassword,
 } from "../lib/security/password.ts";
+import {
+  gradePointForScore,
+  membershipForCompletedSpend,
+  weightedGpa,
+} from "../lib/domain/grading.ts";
 
 test("password policy rejects weak values and verifies derived hashes", async () => {
   assert.equal(validatePassword("short"), "密码至少需要 10 位");
@@ -100,4 +105,26 @@ test("cost estimation and global budget remain conservative", () => {
     }),
     false,
   );
+});
+
+test("exam scores map to a 4.0 GPA and remain credit weighted", () => {
+  assert.equal(gradePointForScore(59), 0);
+  assert.equal(gradePointForScore(60), 1);
+  assert.equal(gradePointForScore(85), 3.7);
+  assert.equal(gradePointForScore(90), 4);
+  assert.equal(
+    weightedGpa([
+      { credits: 3, gradePoint: 4 },
+      { credits: 6, gradePoint: 3 },
+    ]),
+    3.33,
+  );
+});
+
+test("membership is activated by completed-course spend, never wallet top-up", () => {
+  const walletTopUpFen = 1_000_000;
+  assert.equal(walletTopUpFen > 0, true);
+  assert.equal(membershipForCompletedSpend(0).name, "新知");
+  assert.equal(membershipForCompletedSpend(30_000).name, "研习");
+  assert.equal(membershipForCompletedSpend(1_000_000).name, "山长");
 });

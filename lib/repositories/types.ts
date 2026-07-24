@@ -52,6 +52,49 @@ export type NoteRecord = {
   createdAt: string;
 };
 
+export type UserProgramRecord = {
+  id: string;
+  userId: string;
+  programSlug: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type UserCoursePlanRecord = {
+  id: string;
+  userId: string;
+  programSlug: string;
+  courseSlug: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ExamAttemptRecord = {
+  id: string;
+  userId: string;
+  sessionId: string;
+  nodeSlug: string;
+  attemptNumber: number;
+  score: number;
+  gradePoint: number;
+  creditsAttempted: number;
+  creditsEarned: number;
+  passed: boolean;
+  weakTopics: string[];
+  createdAt: string;
+};
+
+export type WalletRecord = {
+  id: string;
+  userId: string;
+  balanceFen: number;
+  completedSpendFen: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export interface AcademiaRepository {
   findUserByEmail(email: string): Promise<UserRecord | null>;
   createUser(input: {
@@ -115,12 +158,42 @@ export interface AcademiaRepository {
     idempotencyKey: string;
   }): Promise<OrderRecord>;
   getOrder(id: string): Promise<OrderRecord | null>;
+  getPaidOrderAmount(userId: string, nodeSlug: string): Promise<number>;
   confirmTestOrder(id: string, userId: string): Promise<OrderRecord>;
   completeLearningSession(
     sessionId: string,
     userId: string,
     note: { title: string; content: string },
   ): Promise<NoteRecord>;
+  enrollProgram(userId: string, programSlug: string): Promise<UserProgramRecord>;
+  enrollCourse(
+    userId: string,
+    programSlug: string,
+    courseSlug: string,
+  ): Promise<UserCoursePlanRecord>;
+  getAcademicPlan(userId: string): Promise<{
+    programs: UserProgramRecord[];
+    courses: UserCoursePlanRecord[];
+  }>;
+  recordExamAttempt(input: {
+    userId: string;
+    sessionId: string;
+    nodeSlug: string;
+    score: number;
+    gradePoint: number;
+    creditsAttempted: number;
+    creditsEarned: number;
+    passed: boolean;
+    weakTopics: string[];
+  }): Promise<ExamAttemptRecord>;
+  listExamAttempts(userId: string): Promise<ExamAttemptRecord[]>;
+  getWallet(userId: string): Promise<WalletRecord>;
+  topUpWallet(userId: string, amountFen: number): Promise<WalletRecord>;
+  addCompletedCourseSpend(
+    userId: string,
+    amountFen: number,
+    sessionId: string,
+  ): Promise<WalletRecord>;
   getDashboard(userId: string): Promise<{
     sessions: LearningSessionRecord[];
     notes: NoteRecord[];

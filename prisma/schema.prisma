@@ -156,3 +156,77 @@ model GuestTrialUsage {
   @@unique([guestId, dateKey])
   @@map("guest_trial_usage")
 }
+
+model UserProgram {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  programSlug String    @map("program_slug")
+  status      String    @default("active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  @@unique([userId, programSlug])
+  @@map("user_programs")
+}
+
+model UserCoursePlan {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  programSlug String    @map("program_slug")
+  courseSlug  String    @map("course_slug")
+  status      String    @default("planned")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  @@unique([userId, courseSlug])
+  @@map("user_course_plans")
+}
+
+model ExamAttempt {
+  id                    String    @id @default(uuid())
+  userId                String    @map("user_id")
+  sessionId             String    @map("session_id")
+  nodeSlug              String    @map("node_slug")
+  attemptNumber         Int       @map("attempt_number")
+  score                 Int
+  gradePointHundredths  Int       @map("grade_point_hundredths")
+  creditsAttempted      Int       @map("credits_attempted")
+  creditsEarned         Int       @map("credits_earned")
+  passed                Boolean
+  weakTopicsJson        String    @map("weak_topics_json")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  deletedAt             DateTime? @map("deleted_at")
+
+  @@index([userId, nodeSlug])
+  @@map("exam_attempts")
+}
+
+model WalletAccount {
+  id                String    @id @default(uuid())
+  userId            String    @unique @map("user_id")
+  balanceFen        Int       @default(0) @map("balance_fen")
+  completedSpendFen Int       @default(0) @map("completed_spend_fen")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  @@map("wallet_accounts")
+}
+
+model WalletTransaction {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  type        String
+  amountFen   Int       @map("amount_fen")
+  referenceId String?   @map("reference_id")
+  description String
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  @@unique([userId, type, referenceId])
+  @@map("wallet_transactions")
+}

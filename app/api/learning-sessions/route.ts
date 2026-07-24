@@ -2,6 +2,7 @@ import { getActor, ensureGuestId } from "@/lib/server/actor";
 import { apiData, apiError, shanghaiDateKey } from "@/lib/server/api";
 import { getRepository } from "@/lib/repositories";
 import { mayAccessNode } from "@/lib/domain/learning";
+import { getUniversityCourse } from "@/lib/content/university";
 
 const OPENINGS: Record<string, string> = {
   "4p-stp":
@@ -44,6 +45,16 @@ export async function POST(request: Request) {
       userId: actor.userId,
       guestId,
     });
+    if (actor.userId) {
+      const academicCourse = getUniversityCourse(nodeSlug);
+      if (academicCourse) {
+        await repository.enrollCourse(
+          actor.userId,
+          academicCourse.program.slug,
+          nodeSlug,
+        );
+      }
+    }
     if (guestId) {
       const allowed = await repository.reserveGuestTrial(
         guestId,

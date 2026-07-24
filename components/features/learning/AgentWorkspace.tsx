@@ -1,12 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
   type LearningMessage,
   useLearningStore,
 } from "@/lib/stores/learning";
+import { FinalExam } from "./FinalExam";
 
 type SessionPayload = {
   id: string;
@@ -70,11 +71,6 @@ export function AgentWorkspace({
   professor: string;
   school: string;
 }) {
-  const [completion, setCompletion] = useState<null | {
-    note: { title: string; content: string };
-    recommendation: { slug: string; title: string };
-  }>(null);
-  const [completing, setCompleting] = useState(false);
   const {
     messages,
     draft,
@@ -171,35 +167,6 @@ export function AgentWorkspace({
     }
   }
 
-  async function completeNode() {
-    const sessionId = sessionQuery.data?.id;
-    if (!sessionId || completing) return;
-    setCompleting(true);
-    setError(null);
-    try {
-      const response = await fetch(
-        `/api/learning-sessions/${sessionId}/complete`,
-        { method: "POST" },
-      );
-      const payload = (await response.json()) as {
-        data?: {
-          note: { title: string; content: string };
-          recommendation: { slug: string; title: string };
-        };
-        error?: { message?: string };
-      };
-      if (!response.ok || !payload.data) {
-        throw new Error(payload.error?.message || "暂时无法完成课程");
-      }
-      setCompletion(payload.data);
-      window.localStorage.removeItem(`academia-session-${nodeSlug}`);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "暂时无法完成课程");
-    } finally {
-      setCompleting(false);
-    }
-  }
-
   if (sessionQuery.isPending) {
     return (
       <div className="workspace-state" role="status">
@@ -219,7 +186,7 @@ export function AgentWorkspace({
             注册或登录
           </Link>
           {nodeSlug !== "4p-stp" && (
-            <Link className="button button-dark" href={`/nodes/${nodeSlug}`}>
+            <Link className="button button-dark" href={`/courses/${nodeSlug}`}>
               返回课程详情
             </Link>
           )}
@@ -284,48 +251,23 @@ export function AgentWorkspace({
         )}
         {!registrationRequired &&
           progress >= 100 &&
-          nodeSlug === "porter-five-forces" &&
-          !completion && (
-            <aside className="completion-card">
-              <span className="test-badge">本节推演已完成</span>
-              <h2>把这次判断沉淀成一页笔记</h2>
-              <p>完成后会保存对话摘要，并为你推荐认知地图里的下一节。</p>
-              <button
-                className="button button-accent"
-                disabled={completing}
-                onClick={completeNode}
-                type="button"
-              >
-                {completing ? "正在生成笔记…" : "完成课程并生成笔记 →"}
-              </button>
-            </aside>
+          sessionQuery.data?.id && (
+            <FinalExam
+              nodeSlug={nodeSlug}
+              sessionId={sessionQuery.data.id}
+            />
           )}
-        {completion && (
-          <aside className="learning-note">
-            <span className="test-badge">已写入认知档案</span>
-            <h2>{completion.note.title}</h2>
-            <p>{completion.note.content}</p>
-            <div className="next-node">
-              <span>下一节推荐</span>
-              <Link href={`/nodes/${completion.recommendation.slug}`}>
-                {completion.recommendation.title} →
-              </Link>
-            </div>
-          </aside>
-        )}
       </section>
       <div className="composer-wrap">
         {error && <div className="composer-error">{error}</div>}
         <form className="composer" onSubmit={submit}>
           <textarea
             aria-label="回答导师"
-            disabled={streaming || registrationRequired || Boolean(completion)}
+            disabled={streaming || registrationRequired}
             maxLength={2000}
             onChange={(event) => setDraft(event.target.value)}
             placeholder={
-              completion
-                ? "本节已完成"
-                : registrationRequired
+              registrationRequired
                 ? "注册后继续这段对话"
                 : "想清楚再答，Academia 不会催你"
             }
@@ -335,7 +277,7 @@ export function AgentWorkspace({
           <button
             aria-label="发送回答"
             disabled={
-              streaming || registrationRequired || Boolean(completion) || !draft.trim()
+              streaming || registrationRequired || !draft.trim()
             }
             type="submit"
           >
