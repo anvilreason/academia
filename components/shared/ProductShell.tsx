@@ -15,7 +15,6 @@ import {
   House,
   Map,
   Menu,
-  Plus,
   SquarePen,
   WalletCards,
   X,
@@ -81,10 +80,6 @@ export function ProductShell({
       >
         <Map aria-hidden="true" />
         学院地图
-      </Link>
-      <Link className="sidebar-action" href="/college">
-        <Plus aria-hidden="true" />
-        选择专业
       </Link>
       <Link
         className={`sidebar-link ${active === "agent" ? "active" : ""}`}
