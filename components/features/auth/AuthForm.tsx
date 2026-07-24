@@ -52,12 +52,12 @@ export function AuthForm({
 
   return (
     <section className="auth-card">
-      <span className="test-badge">公开测试环境</span>
-      <h1>{mode === "register" ? "保存你的认知地图" : "继续你的学习"}</h1>
+      <span className="test-badge">先行校区</span>
+      <h1>{mode === "register" ? "建立你的学籍" : "回到你的书院"}</h1>
       <p>
         {mode === "register"
-          ? "创建预览账户后，刚才的匿名试听会话会自动保留。"
-          : "登录后继续最近的课程、笔记与进度。"}
+          ? "建立学籍后，刚才的课堂对话会留在你的学习记录中。"
+          : "课程、笔记和成绩都在原来的位置等你。"}
       </p>
       <form onSubmit={submit}>
         {mode === "register" && (
@@ -67,7 +67,7 @@ export function AuthForm({
               autoComplete="name"
               id="name"
               onChange={(event) => setName(event.target.value)}
-              placeholder="你希望导师怎么称呼你"
+              placeholder="你希望在书院里使用的称呼"
               value={name}
             />
           </div>
@@ -110,8 +110,8 @@ export function AuthForm({
           {busy
             ? "正在处理…"
             : mode === "register"
-              ? "注册并保存会话"
-              : "登录"}
+              ? "建立学籍"
+              : "进入书院"}
         </button>
       </form>
       <button
@@ -122,9 +122,9 @@ export function AuthForm({
         }}
         type="button"
       >
-        {mode === "register" ? "已有账户？直接登录" : "第一次来？创建预览账户"}
+        {mode === "register" ? "已有学籍？直接进入" : "第一次来？建立学籍"}
       </button>
-      <small>请勿使用重要密码；预览账户暂不发送验证邮件。</small>
+      <small>先行校区仍在建设中，请使用独立密码，不要提交敏感资料。</small>
     </section>
   );
 }

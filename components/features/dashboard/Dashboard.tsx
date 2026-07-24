@@ -51,7 +51,7 @@ export function Dashboard() {
       <div className="empty-state">
         <p>{query.error.message}</p>
         <Link className="button button-accent" href="/login">
-          登录或创建账户
+          进入学籍入口
         </Link>
       </div>
     );
@@ -79,9 +79,9 @@ export function Dashboard() {
           ))
         ) : (
           <div className="empty-state">
-            <p>你还没有保存的学习会话。</p>
+            <p>你的学习记录还是空白的。</p>
             <Link className="button button-accent" href="/learn/4p-stp">
-              开始第一节 →
+              进入第一堂课 →
             </Link>
           </div>
         )}
@@ -96,7 +96,7 @@ export function Dashboard() {
             </article>
           ))
         ) : (
-          <p className="muted-copy">完成一节课程后，这里会出现你的判断笔记。</p>
+          <p className="muted-copy">完成一门课程后，这里会留下你的判断与疑问。</p>
         )}
       </aside>
       {recommendation && (
@@ -104,9 +104,9 @@ export function Dashboard() {
           className="recommendation-card"
           href={`/courses/${recommendation.slug}`}
         >
-          <span>下一节推荐</span>
+          <span>继续阅读</span>
           <strong>{recommendation.title}</strong>
-          <em>打开节点 →</em>
+          <em>查看课程 →</em>
         </Link>
       )}
     </div>

@@ -52,9 +52,12 @@ export default async function SchoolPage({
         <div className="university-section-heading compact">
           <div>
             <p className="eyebrow">专业项目</p>
-            <h2>选择一个长期培养方向</h2>
+            <h2>选择一条值得长期走下去的路</h2>
           </div>
-          <p>加入专业后，它会像一个项目固定在左侧；其中的课程就是需要逐项完成的任务。</p>
+          <p>
+            专业不是身份标签，而是一组持续数年的问题、方法与实践。
+            你可以从这里建立主修，也可以把它作为穿行知识的入口。
+          </p>
         </div>
 
         <div className="program-grid">
@@ -75,7 +78,7 @@ export default async function SchoolPage({
                 <p>{program.description}</p>
                 <div className="program-meta">
                   <strong>{program.requiredCredits} 学分</strong>
-                  <span>{program.courses.length} 门核心课</span>
+                  <span>{program.courses.length} 门培养课程</span>
                 </div>
               </div>
               <span className="program-arrow">→</span>

@@ -6,7 +6,7 @@ import { apiData, apiError } from "@/lib/server/api";
 export async function POST(request: Request) {
   const actor = await getActor(request);
   if (!actor.userId) {
-    return apiError("UNAUTHORIZED", "请先注册或登录，再新增课程任务", 401);
+    return apiError("UNAUTHORIZED", "请先建立学籍，再选择课程", 401);
   }
   const body = (await request.json()) as { courseSlug?: string };
   const result = body.courseSlug

@@ -15,7 +15,7 @@ export default async function LearnPage({
   return (
     <ProductShell
       active="learn"
-      context={node.access === "free" ? "免费试听" : "已解锁课程"}
+      context={node.access === "free" ? "开放旁听" : "在修课程"}
       title={node.title.split("：")[0]}
     >
       <AgentWorkspace

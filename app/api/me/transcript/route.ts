@@ -6,7 +6,7 @@ import { apiData, apiError } from "@/lib/server/api";
 
 export async function GET(request: Request) {
   const actor = await getActor(request);
-  if (!actor.userId) return apiError("UNAUTHORIZED", "请先登录查看成绩", 401);
+  if (!actor.userId) return apiError("UNAUTHORIZED", "请先进入学籍账户", 401);
   const attempts = await getRepository().listExamAttempts(actor.userId);
   const best = new Map<string, (typeof attempts)[number]>();
   for (const attempt of attempts) {

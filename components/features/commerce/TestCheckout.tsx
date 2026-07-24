@@ -3,19 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 
-export function TestCheckout({
-  nodeSlug,
-  priceYuan,
-}: {
-  nodeSlug: string;
-  priceYuan: number;
-}) {
+export function TestCheckout({ nodeSlug }: { nodeSlug: string }) {
   const [busy, setBusy] = useState(false);
-  const [unlocked, setUnlocked] = useState(false);
+  const [enrolled, setEnrolled] = useState(false);
   const [needsLogin, setNeedsLogin] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function unlock() {
+  async function enrol() {
     if (busy) return;
     setBusy(true);
     setError(null);
@@ -35,10 +29,10 @@ export function TestCheckout({
       };
       if (orderResponse.status === 401) {
         setNeedsLogin(true);
-        throw new Error("请先注册或登录，再创建测试订单");
+        throw new Error("建立学籍后，这门课才能进入你的培养方案。");
       }
       if (!orderResponse.ok || !orderPayload.data) {
-        throw new Error(orderPayload.error?.message || "暂时无法创建订单");
+        throw new Error(orderPayload.error?.message || "暂时无法完成选课登记");
       }
       const confirmResponse = await fetch(
         `/api/orders/${orderPayload.data.id}/test-confirm`,
@@ -48,27 +42,27 @@ export function TestCheckout({
         error?: { message?: string };
       };
       if (!confirmResponse.ok) {
-        throw new Error(confirmPayload.error?.message || "测试确认失败");
+        throw new Error(confirmPayload.error?.message || "选课登记尚未完成");
       }
-      setUnlocked(true);
+      setEnrolled(true);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "测试解锁失败");
+      setError(caught instanceof Error ? caught.message : "暂时无法完成选课登记");
     } finally {
       setBusy(false);
     }
   }
 
-  if (unlocked) {
+  if (enrolled) {
     return (
       <div className="checkout-success">
-        <span className="test-badge">测试订单已确认 · ¥0 实际扣款</span>
-        <h3>这门课程已加入你的专业任务</h3>
-        <p>订单和课程权限已经真实写入测试数据库。</p>
+        <span className="test-badge">选课登记完成</span>
+        <h3>这门课已经进入你的培养方案</h3>
+        <p>课堂对话、考试与笔记都会写入你的学籍记录。</p>
         <Link
           className="button button-accent button-large"
           href={`/learn/${nodeSlug}`}
         >
-          进入课程 →
+          进入课堂 →
         </Link>
       </div>
     );
@@ -76,14 +70,9 @@ export function TestCheckout({
 
   return (
     <div className="checkout-panel">
-      <div className="checkout-price">
-        <span>测试标价</span>
-        <strong>¥{priceYuan}</strong>
-      </div>
-      <div className="checkout-warning">
-        <strong>不会真实扣款</strong>
-        <span>不要填写银行卡、支付密码或任何真实支付资料。</span>
-      </div>
+      <p className="enrolment-note">
+        加入后，你可以从左侧课程目录回到这里。课程完成前，学习进度会持续保留。
+      </p>
       {error && <div className="form-error">{error}</div>}
       {needsLogin ? (
         <Link
@@ -92,16 +81,16 @@ export function TestCheckout({
             `/checkout/${nodeSlug}`,
           )}`}
         >
-          注册后继续测试购买
+          建立学籍后继续
         </Link>
       ) : (
         <button
           className="button button-accent button-block"
           disabled={busy}
-          onClick={unlock}
+          onClick={enrol}
           type="button"
         >
-          {busy ? "正在创建测试订单…" : `确认测试订单 · 显示 ¥${priceYuan}`}
+          {busy ? "正在登记…" : "加入我的培养方案"}
         </button>
       )}
     </div>

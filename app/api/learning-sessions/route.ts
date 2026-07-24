@@ -31,8 +31,8 @@ export async function POST(request: Request) {
       return apiError(
         actor.userId ? "FORBIDDEN" : "UNAUTHORIZED",
         actor.userId
-          ? "请先完成测试订单，再进入这节课程"
-          : "请先注册或登录，再解锁付费课程",
+          ? "请先完成选课登记，再进入这门课"
+          : "请先建立学籍，再选择这门专业课程",
         actor.userId ? 403 : 401,
       );
     }
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       if (!allowed) {
         return apiError(
           "RATE_LIMITED",
-          "今天的免费试听已经使用过。注册后可以继续保存并学习。",
+          "今天的开放旁听已经结束。建立学籍后，可以继续保留学习记录。",
           429,
         );
       }
@@ -77,6 +77,6 @@ export async function POST(request: Request) {
     return apiData({ ...session, messages: [opening] }, { status: 201 });
   } catch (error) {
     console.error("create_learning_session_failed", error);
-    return apiError("INTERNAL_ERROR", "暂时无法开始试听，请稍后再试", 500);
+    return apiError("INTERNAL_ERROR", "课堂暂时无法进入，请稍后再试", 500);
   }
 }

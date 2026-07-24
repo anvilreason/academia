@@ -21,7 +21,7 @@ export function ProductShell({
   const [menuOpen, setMenuOpen] = useState(false);
   const { data: session } = useSession();
   const profileLabel =
-    session?.user?.name || session?.user?.email || "登录后保存进度";
+    session?.user?.name || session?.user?.email || "建立学籍";
   const profileInitial = profileLabel.slice(0, 1).toUpperCase();
   const academicPlan = useQuery({
     queryKey: ["academic-plan", session?.user?.email],
@@ -56,7 +56,7 @@ export function ProductShell({
       </Link>
       <Link className="sidebar-action" href="/college">
         <span aria-hidden="true">＋</span>
-        新增专业
+        选择专业
       </Link>
       <Link
         className={`sidebar-link ${active === "home" ? "active" : ""}`}
@@ -123,7 +123,7 @@ export function ProductShell({
         {session && (
           <div className="sidebar-account-links">
             <Link href="/transcript">学籍与成绩</Link>
-            <Link href="/wallet">星图学籍卡</Link>
+            <Link href="/wallet">学籍星图</Link>
           </div>
         )}
         <Link className="sidebar-profile" href={session ? "/home" : "/login"}>

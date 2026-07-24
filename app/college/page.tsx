@@ -12,10 +12,10 @@ export default function UniversityMapPage() {
         <header className="university-hero">
           <div>
             <p className="eyebrow">ACADEMIA UNIVERSITY</p>
-            <h1>先选择学院，再建立你的专业。</h1>
+            <h1>知识有门类，思想没有边界。</h1>
             <p>
-              这里不是一张课程促销页，而是一所综合性大学的学术地图。
-              从学院进入专业，再从培养方案选择课程；课程内容只在最后一层出现。
+              十七个学院构成 Academia 的知识地形。你可以从一个专业开始，
+              也可以沿着问题穿过不同学科；学院提供方向，不规定边界。
             </p>
           </div>
           <div className="university-stats" aria-label="学院地图规模">
@@ -58,10 +58,10 @@ export default function UniversityMapPage() {
         <div className="university-section-heading">
           <div>
             <p className="eyebrow">学院总览</p>
-            <h2>从基础学科到医学与可持续发展</h2>
+            <h2>从古老问题到尚未命名的问题</h2>
           </div>
           <p>
-            学院对应知识领域，专业对应你的长期项目，课程对应需要逐项完成的学习任务。
+            学院保存一门学科的传统，专业组织长期的训练，课程把训练落实到每一次阅读、对话与实践。
           </p>
         </div>
 
@@ -89,7 +89,7 @@ export default function UniversityMapPage() {
               </div>
               <div className="school-card-foot">
                 <span>{school.programs.length} 个专业</span>
-                <strong>进入学院 →</strong>
+                <strong>查看学院 →</strong>
               </div>
             </Link>
           ))}
@@ -98,9 +98,10 @@ export default function UniversityMapPage() {
         <section className="catalog-sources">
           <div>
             <p className="eyebrow">目录编制依据</p>
-            <h2>参考顶尖大学，但不复制任何一所大学。</h2>
+            <h2>向大学传统学习，也保留重新编排知识的自由。</h2>
             <p>
-              学院结构综合中国综合性研究型大学的学科门类，与斯坦福式跨学科项目组织方式；专业名称经过本产品统一整理。
+              这份目录借鉴综合性研究型大学的学科谱系，也容纳跨学科与自定义路径。
+              参考意味着看见来处，不意味着停止发明。
             </p>
           </div>
           <div className="catalog-source-links">

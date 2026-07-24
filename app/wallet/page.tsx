@@ -3,13 +3,14 @@ import { ProductShell } from "@/components/shared/ProductShell";
 
 export default function WalletPage() {
   return (
-    <ProductShell context="账户与会员" title="星图学籍卡">
+    <ProductShell context="书院身份" title="学籍星图">
       <main className="university-page wallet-page">
         <header className="wallet-hero">
-          <p className="eyebrow">ACADEMIA MEMBERSHIP</p>
-          <h1>储值是准备，完成才是等级。</h1>
+          <p className="eyebrow">ACADEMIA FELLOWSHIP</p>
+          <h1>身份来自走过的路，不来自拥有的标签。</h1>
           <p>
-            六档储值用于管理学习预算；会员等级严格按已经购买并完成的课程金额累计。
+            每一门完成的课程都会留在你的学籍星图上。书院称号记录学习的深度，
+            不是一套需要追逐的等级。
           </p>
         </header>
         <WalletCard />

@@ -64,7 +64,7 @@ export async function POST(
   if (!actor.userId && session.turnCount >= 5) {
     return streamError(
       "REGISTRATION_REQUIRED",
-      "五轮免费试听已经完成。注册后会保留这段对话，并可继续学习。",
+      "开放旁听的对话已经完成。建立学籍后，这段思考会被保留。",
       403,
     );
   }
@@ -179,7 +179,7 @@ export async function POST(
       if (error instanceof LlmBudgetError) {
         await write("error", {
           code: "BUDGET_EXCEEDED",
-          message: "今天的 AI 体验额度已经用完，请明天再来。",
+          message: "今天的开放课堂已经结束，请明天再来。",
         });
       } else {
         console.error("learning_stream_failed", error);

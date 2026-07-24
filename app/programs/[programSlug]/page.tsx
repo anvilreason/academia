@@ -68,9 +68,12 @@ export default async function ProgramPage({
           <div className="university-section-heading compact">
             <div>
               <p className="eyebrow">培养方案</p>
-              <h2>学分不是课程数量，而是培养结构</h2>
+              <h2>一份培养方案，也是一种思考的秩序</h2>
             </div>
-            <p>所有课程通过后获得固定学分；成绩决定 0–4.0 绩点，并按学分加权计算 GPA。</p>
+            <p>
+              通识拓宽视野，基础建立语言，核心形成判断，选修允许偏离，
+              实践要求你把所学带回现实。
+            </p>
           </div>
           <div className="credit-band-list">
             {program.creditPlan.map((band) => (
@@ -96,7 +99,7 @@ export default async function ProgramPage({
           <div className="university-section-heading compact">
             <div>
               <p className="eyebrow">完整培养课程表</p>
-              <h2>每一学分都落实到具体课程</h2>
+              <h2>每一学分，都对应一段真实的学习</h2>
             </div>
             <p>
               共 {program.courses.length} 门课，课程表合计 {curriculumTotal}{" "}
@@ -109,7 +112,7 @@ export default async function ProgramPage({
             <i>=</i>
             <span>毕业要求</span>
             <strong>{program.requiredCredits}</strong>
-            <b>已完整匹配 ✓</b>
+            <b>学分校核通过 ✓</b>
           </div>
           <div className="course-groups">
             {courseGroups.map(({ band, courses }) => (
@@ -146,7 +149,7 @@ export default async function ProgramPage({
                         {course.credits} 学分
                       </span>
                       <span className="course-state">
-                        {course.availability === "open" ? "可学习" : "筹备中"}
+                        {course.availability === "open" ? "已开课" : "编制中"}
                       </span>
                       <span aria-hidden="true">→</span>
                     </Link>

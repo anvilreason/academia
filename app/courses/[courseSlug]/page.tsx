@@ -45,20 +45,20 @@ export default async function CourseCatalogPage({
         <div className="course-detail-grid">
           <section className="course-syllabus">
             <p className="eyebrow">课程结构</p>
-            <h2>先学、再用、最后接受检验</h2>
+            <h2>理解、运用，然后接受检验</h2>
             <ol>
               <li>
                 <span>01</span>
                 <div>
                   <strong>概念与问题边界</strong>
-                  <p>通过 AI 导师追问，明确这门课程要解决的真实问题。</p>
+                  <p>从你的处境开始，澄清问题、前提，以及真正需要作出的判断。</p>
                 </div>
               </li>
               <li>
                 <span>02</span>
                 <div>
                   <strong>案例推演与知识点练习</strong>
-                  <p>用个人情境验证理论，系统记录已掌握与薄弱知识点。</p>
+                  <p>让理论进入案例和现实，在使用中辨认它的力量与限度。</p>
                 </div>
               </li>
               <li>
@@ -99,18 +99,18 @@ export default async function CourseCatalogPage({
               </div>
             </dl>
             <p className="assessment-note">
-              费用不会在课程地图中展示。只有当你决定开始学习时，才会进入独立确认页。
+              评价不是为了给学习画句号，而是帮助你找到仍需回去重做的部分。
             </p>
             {course.availability === "open" ? (
               <Link
                 className="button button-accent button-block"
                 href={`/checkout/${course.slug}`}
               >
-                决定开始学习 →
+                进入这门课 →
               </Link>
             ) : (
               <button className="button button-dark button-block" disabled>
-                加入待开放清单
+                课程正在编制
               </button>
             )}
           </aside>

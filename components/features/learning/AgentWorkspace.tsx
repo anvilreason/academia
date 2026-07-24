@@ -22,7 +22,7 @@ async function readJson(response: Response) {
     error?: { message?: string };
   };
   if (!response.ok || !payload.data) {
-    throw new Error(payload.error?.message || "暂时无法开始试听");
+    throw new Error(payload.error?.message || "课堂暂时无法进入");
   }
   return payload.data;
 }
@@ -171,7 +171,7 @@ export function AgentWorkspace({
     return (
       <div className="workspace-state" role="status">
         <span className="thinking-dot" />
-        正在准备你的试听课堂…
+        正在打开课堂…
       </div>
     );
   }
@@ -179,11 +179,11 @@ export function AgentWorkspace({
   if (sessionQuery.isError) {
     return (
       <div className="workspace-state error-state">
-        <strong>暂时无法开始试听</strong>
+        <strong>课堂暂时没有打开</strong>
         <p>{sessionQuery.error.message}</p>
         <div className="state-actions">
           <Link className="button button-accent" href="/login">
-            注册或登录
+            进入学籍入口
           </Link>
           {nodeSlug !== "4p-stp" && (
             <Link className="button button-dark" href={`/courses/${nodeSlug}`}>
@@ -207,7 +207,7 @@ export function AgentWorkspace({
       <section className="conversation" aria-live="polite">
         <div className="conversation-intro">
           <p className="eyebrow">
-            {nodeSlug === "4p-stp" ? "免费试听" : "MBA 深度"} · 第 1 节
+            {nodeSlug === "4p-stp" ? "开放旁听" : "专业研修"} · 第一讲
           </p>
           <h1>{title}</h1>
           <p>
@@ -236,16 +236,16 @@ export function AgentWorkspace({
         )}
         {registrationRequired && (
           <aside className="registration-wall">
-            <span className="test-badge">5 轮试听已完成</span>
-            <h2>把这段对话留在你的认知地图里</h2>
+            <span className="test-badge">旁听段落告一段落</span>
+            <h2>让这段思考留在你的学籍里</h2>
             <p>
-              注册后会自动认领刚才的回答，不需要重新开始。预览账户不会发送验证邮件。
+              建立学籍后，刚才的回答会原样保留。下次回来，可以从这个问题继续。
             </p>
             <Link
               className="button button-accent"
               href="/login?mode=register&continue=%2Flearn%2F4p-stp"
             >
-              注册并保留会话 →
+              建立学籍并继续 →
             </Link>
           </aside>
         )}
@@ -268,7 +268,7 @@ export function AgentWorkspace({
             onChange={(event) => setDraft(event.target.value)}
             placeholder={
               registrationRequired
-                ? "注册后继续这段对话"
+                ? "建立学籍后继续这段对话"
                 : "想清楚再答，Academia 不会催你"
             }
             rows={1}
@@ -285,8 +285,7 @@ export function AgentWorkspace({
           </button>
         </form>
         <div className="composer-hint">
-          真实 AI {nodeSlug === "4p-stp" ? "试听" : "课程"} · 单条最多
-          2,000 字 · 回答会保存在测试环境
+          Academia 对话课堂 · 单条最多 2,000 字 · 允许停顿，也允许改变答案
         </div>
       </div>
     </>

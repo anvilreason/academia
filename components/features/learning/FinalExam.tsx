@@ -100,11 +100,11 @@ export function FinalExam({
   if (phase === "intro" || phase === "loading") {
     return (
       <aside className="completion-card exam-intro">
-        <span className="test-badge">学习阶段已完成</span>
-        <h2>期末考试 · 学分由掌握程度决定</h2>
+        <span className="test-badge">课程研习已完成</span>
+        <h2>期末考试 · 看看哪些知识已经成为你的判断</h2>
         <p>
-          共 5 题，60 分通过；成绩换算为最高 4.0
-          绩点。未通过会定位薄弱知识点，可重修后再次考试。
+          共 5 题，60 分通过，成绩换算为最高 4.0 绩点。
+          没有掌握的部分会回到重修清单，你可以随时回来再答一次。
         </p>
         {error && <div className="form-error">{error}</div>}
         <button
@@ -138,7 +138,7 @@ export function FinalExam({
         <h2>
           {result.passed
             ? `已获得 ${result.creditsEarned} 学分`
-            : "这次不授予学分，但不会抹去你的学习"}
+            : "这次暂不授予学分，但你已经知道该回到哪里"}
         </h2>
         {result.weakTopics.length ? (
           <div className="weak-topics">
@@ -162,7 +162,7 @@ export function FinalExam({
               }}
               type="button"
             >
-              重修后再次考试
+              回到薄弱知识点
             </button>
           )}
           {result.passed && result.recommendation && (
@@ -174,7 +174,7 @@ export function FinalExam({
             </Link>
           )}
           <Link className="button button-dark" href="/transcript">
-            查看学籍与成绩
+            打开学籍记录
           </Link>
         </div>
       </aside>
@@ -227,7 +227,7 @@ export function FinalExam({
         onClick={submitExam}
         type="button"
       >
-        {phase === "submitting" ? "正在结算成绩…" : "交卷并结算学分"}
+        {phase === "submitting" ? "正在评阅…" : "交卷"}
       </button>
     </aside>
   );

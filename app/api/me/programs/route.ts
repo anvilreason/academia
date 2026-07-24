@@ -8,7 +8,7 @@ import { apiData, apiError } from "@/lib/server/api";
 
 export async function GET(request: Request) {
   const actor = await getActor(request);
-  if (!actor.userId) return apiError("UNAUTHORIZED", "请先登录查看学籍", 401);
+  if (!actor.userId) return apiError("UNAUTHORIZED", "请先进入学籍账户", 401);
   const plan = await getRepository().getAcademicPlan(actor.userId);
   return apiData({
     programs: plan.programs.map((record) => ({
@@ -28,7 +28,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const actor = await getActor(request);
   if (!actor.userId) {
-    return apiError("UNAUTHORIZED", "请先注册或登录，再新增专业", 401);
+    return apiError("UNAUTHORIZED", "请先建立学籍，再选择专业", 401);
   }
   const body = (await request.json()) as { programSlug?: string };
   if (!body.programSlug || !getUniversityProgram(body.programSlug)) {

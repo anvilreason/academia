@@ -27,7 +27,7 @@ export function AddProgramButton({ programSlug }: { programSlug: string }) {
           `/programs/${programSlug}`,
         )}`}
       >
-        登录后新增专业 →
+        建立学籍后选择专业 →
       </Link>
     );
   }
@@ -43,10 +43,10 @@ export function AddProgramButton({ programSlug }: { programSlug: string }) {
         {state === "busy"
           ? "正在加入…"
           : state === "done"
-            ? "已加入我的专业 ✓"
-            : "新增为我的专业 ＋"}
+            ? "已列入我的培养方案 ✓"
+            : "选择为我的专业 ＋"}
       </button>
-      {state === "error" && <span>暂时无法加入，请稍后再试。</span>}
+      {state === "error" && <span>暂时无法登记，请稍后再试。</span>}
     </div>
   );
 }

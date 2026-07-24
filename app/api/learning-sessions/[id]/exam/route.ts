@@ -19,7 +19,7 @@ function buildNote(nodeTitle: string, score: number, weakTopics: string[]) {
 async function getOwnedExam(request: Request, id: string) {
   const actor = await getActor(request);
   if (!actor.userId) {
-    return { error: apiError("UNAUTHORIZED", "注册后才能参加期末考试", 401) };
+    return { error: apiError("UNAUTHORIZED", "建立学籍后才能参加期末考试", 401) };
   }
   const repository = getRepository();
   const session = await repository.getLearningSession(id);

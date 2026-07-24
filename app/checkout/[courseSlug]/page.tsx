@@ -13,21 +13,21 @@ export default async function CheckoutPage({
   const result = getUniversityCourse(courseSlug);
   if (!result || result.course.availability !== "open") notFound();
   const { course, program } = result;
-  const priceYuan = course.slug === "4p-stp" ? 0 : 99;
+  const isOpenLecture = course.slug === "4p-stp";
 
   return (
-    <ProductShell active="college" context="学习确认" title={course.title}>
+    <ProductShell active="college" context="选课登记" title={course.title}>
       <section className="university-page checkout-page">
         <nav className="academic-breadcrumb" aria-label="面包屑">
           <Link href={`/programs/${program.slug}`}>{program.name}</Link>
           <span>／</span>
           <Link href={`/courses/${course.slug}`}>{course.title}</Link>
           <span>／</span>
-          <strong>开始学习</strong>
+          <strong>选课登记</strong>
         </nav>
         <div className="checkout-course-card">
           <div>
-            <p className="eyebrow">确认学习任务</p>
+            <p className="eyebrow">COURSE ENROLMENT</p>
             <h1>{course.title}</h1>
             <p>{course.summary}</p>
             <div className="checkout-course-meta">
@@ -36,16 +36,16 @@ export default async function CheckoutPage({
               <span>最高绩点 4.0</span>
             </div>
           </div>
-          {priceYuan === 0 ? (
+          {isOpenLecture ? (
             <div className="free-course-start">
-              <strong>免费课程</strong>
-              <p>无需使用储值余额。</p>
+              <strong>开放旁听</strong>
+              <p>这堂课向所有来访者开放，不计入正式学籍。</p>
               <Link className="button button-accent button-block" href="/learn/4p-stp">
-                进入课程 →
+                进入课堂 →
               </Link>
             </div>
           ) : (
-            <TestCheckout nodeSlug={course.slug} priceYuan={priceYuan} />
+            <TestCheckout nodeSlug={course.slug} />
           )}
         </div>
       </section>

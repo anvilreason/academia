@@ -43,7 +43,7 @@ export default function TranscriptPage() {
         <header className="transcript-hero">
           <div>
             <p className="eyebrow">ACADEMIC RECORD</p>
-            <h1>每一次考试，都指向下一次掌握。</h1>
+            <h1>成绩记录抵达，也记录仍未抵达。</h1>
           </div>
           <div className="transcript-summary">
             <span>
@@ -95,9 +95,9 @@ export default function TranscriptPage() {
         ) : (
           <div className="wallet-state">
             <h2>成绩单还在等待第一门课</h2>
-            <p>课程学习完成后参加期末考试，通过即可获得学分并计入 GPA。</p>
+            <p>完成课程并通过期末考试后，学分与绩点会写入这里。</p>
             <Link className="button button-accent" href="/college">
-              选择专业
+              前往学院
             </Link>
           </div>
         )}

@@ -4,11 +4,29 @@ import {
   universityStats,
 } from "@/lib/content/university";
 
+const principles = [
+  {
+    number: "01",
+    title: "不崇拜权威",
+    text: "名字可以被引用，结论必须重新推导。任何理论都要经得起你的问题。",
+  },
+  {
+    number: "02",
+    title: "不归顺主义",
+    text: "观点不是阵营。我们保留矛盾，也保留改变立场的自由。",
+  },
+  {
+    number: "03",
+    title: "不接受边界",
+    text: "学科是进入知识的门，不是阻止你穿行的墙。",
+  },
+];
+
 export default function LandingPage() {
   return (
     <main className="marketing-page">
       <div className="preview-notice">
-        公开测试环境 · 请勿填写敏感信息或真实支付资料
+        先行校区 · Academia 正在创建中，请勿在此留下敏感资料
       </div>
 
       <header className="marketing-header page-width">
@@ -16,92 +34,78 @@ export default function LandingPage() {
           Academia
         </Link>
         <nav className="marketing-nav" aria-label="主导航">
-          <Link href="/college">学院地图</Link>
-          <Link href="/login">登录</Link>
-          <Link className="button button-dark button-small" href="/learn/4p-stp">
-            免费试听
+          <Link href="/college">学院</Link>
+          <Link href="/login">学籍入口</Link>
+          <Link className="button button-light button-small" href="/learn/4p-stp">
+            进入课堂
           </Link>
         </nav>
       </header>
 
       <section className="hero page-width">
         <div className="hero-copy">
-          <p className="eyebrow">一所围绕真实问题生长的 AI 大学</p>
+          <p className="eyebrow">A UNIVERSITY WITHOUT BORDERS</p>
           <h1>
-            学会一个理论，
+            没有标准答案。
             <br />
-            直到它改变你的判断。
+            只有尚未抵达
+            <br />
+            的判断。
           </h1>
           <p className="hero-lead">
-            从学院、专业到课程建立完整培养路径。带着真实问题进入，
-            让 AI 导师用苏格拉底式追问陪你学习，并用考试、学分与重修检验掌握。
+            Academia
+            是一所生长在问题上的大学。你可以从任何学科进入，向任何结论发问，
+            直到知识不再是别人的话，而成为你自己的判断。
           </p>
           <div className="hero-actions">
-            <Link className="button button-accent button-large" href="/learn/4p-stp">
-              免费试听 4P 与 STP
-              <span aria-hidden="true">→</span>
+            <Link className="button button-signal button-large" href="/college">
+              展开学院地图 <span aria-hidden="true">↗</span>
             </Link>
-            <span className="microcopy">无需登录 · 约 8 分钟</span>
+            <Link className="hero-secondary-link" href="/learn/4p-stp">
+              旁听第一堂课 →
+            </Link>
           </div>
         </div>
 
-        <div className="agent-card" aria-label="Academia 对话体验示例">
-          <div className="agent-card-head">
-            <div>
-              <span className="status-dot" />
-              <span>Academia 导师</span>
-            </div>
-            <span>4P 与 STP · 试听</span>
+        <aside className="manifesto-board" aria-label="Academia 学术宣言">
+          <div className="manifesto-stamp">ACADEMIA / 2026</div>
+          <p>知识从来不是围墙。</p>
+          <div className="manifesto-crossed">
+            <span>权威</span>
+            <span>教条</span>
+            <span>唯一道路</span>
           </div>
-          <div className="agent-card-body">
-            <p className="agent-label">开始之前</p>
-            <p className="agent-question">
-              先别告诉我你想“学营销”。说一个你最近真的卡住的问题——最好是昨晚还在想的那种。
-            </p>
-            <div className="sample-answer">
-              我做一个年付 ¥699 的设计工具，产品口碑不错，但增长已经连续三个月停住了。
-            </div>
-            <div className="agent-response">
-              <span className="agent-mark">A</span>
-              <p>
-                好，我们先不背 4P。你直觉上认为卡住的是产品、价格、渠道，还是传播？只能选一个。
-              </p>
-            </div>
+          <blockquote>
+            “如果一门课不能改变你看待问题的方式，它就还没有结束。”
+          </blockquote>
+          <div className="manifesto-foot">
+            <span>17 学院</span>
+            <span>95 专业</span>
+            <span>4,192 课程</span>
           </div>
-          <div className="agent-composer">
-            <span>在这里回答导师的问题…</span>
-            <span className="send-mark" aria-hidden="true">
-              ↑
-            </span>
-          </div>
-        </div>
+        </aside>
       </section>
 
       <section className="proof-strip">
-        <div className="page-width proof-grid">
-          <div>
-            <strong>一节课，一个真实决策</strong>
-            <span>拒绝知识囤积，从你的问题出发</span>
-          </div>
-          <div>
-            <strong>对话，而不是播放</strong>
-            <span>导师根据你的回答继续追问</span>
-          </div>
-          <div>
-            <strong>学完，留下认知资产</strong>
-            <span>课程、笔记与连接永久进入地图</span>
-          </div>
+        <div className="page-width principle-grid">
+          {principles.map((principle) => (
+            <article key={principle.number}>
+              <span>{principle.number}</span>
+              <h2>{principle.title}</h2>
+              <p>{principle.text}</p>
+            </article>
+          ))}
         </div>
       </section>
 
       <section className="curriculum page-width" id="curriculum">
         <div className="section-heading">
           <div>
-          <p className="eyebrow">综合性大学 · 学院地图</p>
-            <h2>先选择你想进入的学科共同体</h2>
+            <p className="eyebrow">THE OPEN FACULTIES</p>
+            <h2>知识有门类，思想没有边界。</h2>
           </div>
           <Link className="text-link" href="/college">
-            浏览全部 {universityStats.schools} 个学院 →
+            查看全部 {universityStats.schools} 个学院 →
           </Link>
         </div>
         <div className="landing-school-grid">
@@ -111,7 +115,9 @@ export default function LandingPage() {
               href={`/college/${school.slug}`}
               key={school.slug}
             >
-              <span className="course-index">0{index + 1}</span>
+              <span className="course-index">
+                {String(index + 1).padStart(2, "0")}
+              </span>
               <span>
                 <small>{school.englishName}</small>
                 <strong>{school.name}</strong>
@@ -122,52 +128,69 @@ export default function LandingPage() {
           ))}
         </div>
         <div className="landing-university-stats">
-          <span><strong>{universityStats.schools}</strong>学院</span>
-          <span><strong>{universityStats.programs}</strong>专业</span>
-          <span><strong>{universityStats.courses}</strong>课程</span>
-          <span><strong>4.0</strong>最高绩点</span>
+          <span>
+            <strong>{universityStats.schools}</strong>学院
+          </span>
+          <span>
+            <strong>{universityStats.programs}</strong>专业
+          </span>
+          <span>
+            <strong>{universityStats.courses}</strong>课程
+          </span>
+          <span>
+            <strong>4.0</strong>学术评价
+          </span>
         </div>
       </section>
 
       <section className="method-section">
         <div className="page-width method-grid">
           <div>
-            <p className="eyebrow">为什么是对话</p>
-            <h2>真正的学习，从你无法含糊过去的那一问开始。</h2>
+            <p className="eyebrow">THE CLASS BEGINS WITH DISSENT</p>
+            <h2>课堂，从不同意开始。</h2>
           </div>
           <div className="method-copy">
             <p>
-              Academia 不会连续给你十屏答案。导师一次只推进一个判断：
-              先找到你的真实处境，再引入框架，最后要求你把它用回自己的业务。
+              你不必先接受一套理论。带着真实处境进入，导师会追问你的前提、
+              证据和选择；概念只在它能照亮问题时出现。
             </p>
             <p>
-              每节结束后，系统会根据对话生成反思笔记，并把新形成的概念连接保存在你的认知地图中。
+              学习不是记住一个人的答案。它是形成自己的判断，经受检验，
+              发现薄弱之处，再回来重做一次。
             </p>
           </div>
         </div>
       </section>
 
-      <section className="founder page-width">
-        <div className="founder-monogram" aria-hidden="true">
-          R
+      <section className="declaration page-width">
+        <p className="eyebrow">OUR ONLY DOCTRINE</p>
+        <div className="declaration-grid">
+          <h2>我们唯一坚持的，<br />是不要求你坚持什么。</h2>
+          <div>
+            <p>
+              在这里，保守与激进、科学与诗、技术与伦理可以坐在同一张桌前。
+              没有思想因为不合时宜而被拒绝，也没有结论因为足够流行而免于质疑。
+            </p>
+            <p>
+              你可以建立一个专业，也可以穿过十个学院。路径由问题决定，
+              不是由标签决定。
+            </p>
+          </div>
         </div>
-        <blockquote>
-          “我想做的不是一个更会回答问题的 AI，而是一位不允许你用漂亮话逃过思考的导师。”
-        </blockquote>
-        <p>— Reason，Academia 创始人</p>
       </section>
 
       <section className="final-cta page-width">
-        <p className="eyebrow">先试一节，再决定</p>
-        <h2>把你现在最棘手的问题带进来。</h2>
-        <Link className="button button-accent button-large" href="/learn/4p-stp">
-          开始免费对话 →
-        </Link>
+        <p className="eyebrow">BEGIN WITH A QUESTION</p>
+        <h2>校门不在这里。<br />它从你的第一个问题开始。</h2>
+        <div className="final-links">
+          <Link href="/college">去学院里走走 ↗</Link>
+          <Link href="/learn/4p-stp">进入对话课堂 →</Link>
+        </div>
       </section>
 
       <footer className="marketing-footer page-width">
         <span className="wordmark">Academia</span>
-        <span>认真思考，是一种长期主义。</span>
+        <span>Nullius in verba · 不以任何人的话为最终依据</span>
         <span>© 2026 Academia</span>
       </footer>
     </main>

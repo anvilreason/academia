@@ -5,23 +5,30 @@ import { AppProviders } from "@/components/providers/AppProviders";
 export const metadata: Metadata = {
   metadataBase: new URL("https://academia-agent.anvilreason.chatgpt.site"),
   title: {
-    default: "Academia｜用对话长出自己的认知地图",
+    default: "Academia｜一所没有边界的大学",
     template: "%s｜Academia",
   },
   description:
-    "一所为认真思考者设计的 AI 大学。从学院、专业到课程，与 AI 导师对话，用考试、学分和重修把知识变成判断力。",
+    "知识有门类，思想没有边界。进入学院，向任何结论发问，把知识变成自己的判断。",
   openGraph: {
-    title: "Academia｜用对话长出自己的认知地图",
+    title: "Academia｜一所没有边界的大学",
     description:
-      "17 个学院、95 个专业与 4,192 门完整培养课程。每一学分落实到课程，用考试和定向重修检验真正掌握。",
+      "不崇拜权威，不归顺主义，不接受知识的边界。17 个学院，95 个专业，4,192 门课程。",
     type: "website",
     locale: "zh_CN",
-    images: [{ url: "/og.png", width: 1731, height: 909, alt: "Academia" }],
+    images: [
+      {
+        url: "/og.png",
+        width: 1734,
+        height: 907,
+        alt: "Academia｜知识有门类，思想没有边界",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Academia｜用对话长出自己的认知地图",
-    description: "从学院、专业到课程，建立一张可检验的个人学术地图。",
+    title: "Academia｜一所没有边界的大学",
+    description: "知识有门类，思想没有边界。",
     images: ["/og.png"],
   },
 };
