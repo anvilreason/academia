@@ -80,9 +80,9 @@ export function Dashboard() {
           ))
         ) : (
           <div className="empty-state">
-            <p>你的学习记录还是空白的。</p>
-            <Link className="button button-accent" href="/learn/4p-stp">
-              进入第一堂课
+            <p>先从最接近你当前处境的问题开始。</p>
+            <Link className="button button-accent" href="/answers">
+              查看答案地图
               <ArrowRight aria-hidden="true" size={16} />
             </Link>
           </div>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Compass } from "lucide-react";
 import { ProductShell } from "@/components/shared/ProductShell";
 import {
   universitySchools,
@@ -30,10 +30,19 @@ export default function UniversityMapPage() {
             </div>
             <div>
               <strong>{universityStats.courses}</strong>
-              <span>培养课程</span>
+              <span>课程结构</span>
             </div>
           </div>
         </header>
+
+        <Link className="atlas-cross-entry" href="/answers">
+          <Compass aria-hidden="true" />
+          <span>
+            <strong>也可以从一个真实问题进入</strong>
+            答案地图会根据当前阶段调用不同学院，而不是要求你先选定专业。
+          </span>
+          <ArrowRight aria-hidden="true" size={17} />
+        </Link>
 
         <section className="academic-policy-strip">
           <div>

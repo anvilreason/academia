@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { ProductShell } from "@/components/shared/ProductShell";
+import { answerTopicsForSchool } from "@/lib/content/answer-paths";
 import { getUniversitySchool } from "@/lib/content/university";
 
 export default async function SchoolPage({
@@ -16,6 +17,7 @@ export default async function SchoolPage({
     (total, program) => total + program.courses.length,
     0,
   );
+  const relatedQuestions = answerTopicsForSchool(school.slug).slice(0, 4);
 
   return (
     <ProductShell active="college" context={school.discipline} title={school.name}>
@@ -40,7 +42,7 @@ export default async function SchoolPage({
               <dd>{school.programs.length}</dd>
             </div>
             <div>
-              <dt>培养课程</dt>
+              <dt>课程结构</dt>
               <dd>{courses}</dd>
             </div>
             <div>
@@ -49,6 +51,28 @@ export default async function SchoolPage({
             </div>
           </dl>
         </header>
+
+        {!!relatedQuestions.length && (
+          <section className="school-answer-links">
+            <header>
+              <p className="eyebrow">REAL QUESTIONS</p>
+              <h2>这个学院会参与回答哪些现实问题</h2>
+              <p>学科提供方法，但问题常常要求多个学院共同工作。</p>
+            </header>
+            <div>
+              {relatedQuestions.map((topic) => (
+                <Link href={`/answers/${topic.slug}`} key={topic.slug}>
+                  <span>
+                    {topic.flagship ? "旗舰路径 · 编制中" : "问题索引"}
+                  </span>
+                  <strong>{topic.title}</strong>
+                  <p>{topic.initialConclusion}</p>
+                  <ArrowRight aria-hidden="true" size={16} />
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         <div className="university-section-heading compact">
           <div>

@@ -4,6 +4,11 @@ import { ArrowRight } from "lucide-react";
 import { CourseApplicationExplorer } from "@/components/features/university/CourseApplicationExplorer";
 import { CourseRecognitionPanel } from "@/components/features/university/CourseRecognitionPanel";
 import { ProductShell } from "@/components/shared/ProductShell";
+import { answerTopicsForCourse } from "@/lib/content/answer-paths";
+import {
+  contentStatusLabels,
+  courseContentStatus,
+} from "@/lib/content/content-status";
 import { getUniversityCourse } from "@/lib/content/university";
 
 export default async function CourseCatalogPage({
@@ -15,6 +20,8 @@ export default async function CourseCatalogPage({
   const result = getUniversityCourse(courseSlug);
   if (!result) notFound();
   const { course, program, school } = result;
+  const contentStatus = courseContentStatus(course);
+  const relatedQuestions = answerTopicsForCourse(course.slug);
 
   return (
     <ProductShell active="college" context={`${course.credits} 学分`} title={course.title}>
@@ -35,6 +42,7 @@ export default async function CourseCatalogPage({
               <span>{course.code}</span>
               <span>{course.category}</span>
               <span>{course.credits} 学分</span>
+              <span>{contentStatusLabels[contentStatus]}</span>
             </div>
             <h1>{course.title}</h1>
             <p>{course.summary}</p>
@@ -44,6 +52,28 @@ export default async function CourseCatalogPage({
             <span>CREDITS</span>
           </div>
         </header>
+
+        {!!relatedQuestions.length && (
+          <section className="course-answer-links">
+            <header>
+              <p className="eyebrow">CONNECTED QUESTIONS</p>
+              <h2>把这门课用于一个真实问题</h2>
+              <p>
+                课程不是终点。选择一个问题，看看这门课在整条判断与行动路径中承担什么作用。
+              </p>
+            </header>
+            <div>
+              {relatedQuestions.map((topic) => (
+                <Link href={`/answers/${topic.slug}`} key={topic.slug}>
+                  <span>{topic.flagship ? "旗舰路径 · 编制中" : "问题索引"}</span>
+                  <strong>{topic.title}</strong>
+                  <p>{topic.artifact}</p>
+                  <ArrowRight aria-hidden="true" size={16} />
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="course-application">
           <div className="course-application-heading">
@@ -126,7 +156,7 @@ export default async function CourseCatalogPage({
               </Link>
             ) : (
               <button className="button button-dark button-block" disabled>
-                课程正在编制
+                教学内容尚未开放
               </button>
             )}
           </aside>

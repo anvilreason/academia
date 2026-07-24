@@ -14,6 +14,7 @@ import {
   GraduationCap,
   House,
   Map,
+  MapPinned,
   Menu,
   SquarePen,
   WalletCards,
@@ -22,7 +23,7 @@ import {
 
 type ProductShellProps = {
   children: React.ReactNode;
-  active?: "home" | "college" | "learn" | "projects" | "agent";
+  active?: "home" | "answers" | "college" | "learn" | "projects" | "agent";
   title?: string;
   context?: string;
 };
@@ -47,8 +48,12 @@ export function ProductShell({
         ? "course"
         : pathname.startsWith("/learn/")
           ? "learn"
-          : pathname === "/college"
-            ? "atlas"
+          : pathname.startsWith("/answers/")
+            ? "answer-path"
+            : pathname === "/answers"
+              ? "answers"
+              : pathname === "/college"
+                ? "atlas"
             : "workspace";
   const academicPlan = useQuery({
     queryKey: ["academic-plan", session?.user?.email],
@@ -82,18 +87,18 @@ export function ProductShell({
         学院地图
       </Link>
       <Link
-        className={`sidebar-link ${active === "agent" ? "active" : ""}`}
-        href="/agent"
+        className={`sidebar-link ${active === "answers" ? "active" : ""}`}
+        href="/answers"
       >
-        <BrainCircuit aria-hidden="true" />
-        Academia Agent
+        <MapPinned aria-hidden="true" />
+        答案地图
       </Link>
       <Link
         className={`sidebar-link ${active === "projects" ? "active" : ""}`}
         href="/projects"
       >
         <SquarePen aria-hidden="true" />
-        实践项目
+        我的课题
       </Link>
       <Link
         className={`sidebar-link ${active === "home" ? "active" : ""}`}
@@ -101,6 +106,13 @@ export function ProductShell({
       >
         <House aria-hidden="true" />
         今日学习
+      </Link>
+      <Link
+        className={`sidebar-link ${active === "agent" ? "active" : ""}`}
+        href="/agent"
+      >
+        <BrainCircuit aria-hidden="true" />
+        Academia Agent
       </Link>
       {!!academicPlan.data?.programs.length && (
         <div className="sidebar-section sidebar-projects">

@@ -86,6 +86,22 @@ test(
       }),
     });
     assert.equal(pageEvent.status, 202);
+    const answerMapEvent = await jar.request("/api/analytics/events", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        eventId: crypto.randomUUID(),
+        eventName: "answer_map_viewed",
+        analyticsSessionId: crypto.randomUUID(),
+        path: "/answers",
+        properties: {
+          pathVersion: "2026.07-v1",
+          contentVersion: "2026.07-v1",
+          evaluationVersion: "rubric-v1",
+        },
+      }),
+    });
+    assert.equal(answerMapEvent.status, 202);
     const trialResponse = await jar.request("/api/learning-sessions", {
       method: "POST",
       headers: { "content-type": "application/json" },

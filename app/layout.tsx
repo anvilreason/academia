@@ -6,15 +6,15 @@ import { AppProviders } from "@/components/providers/AppProviders";
 export const metadata: Metadata = {
   metadataBase: new URL("https://academia-agent.anvilreason.chatgpt.site"),
   title: {
-    default: "Academia｜一所没有边界的大学",
+    default: "Academia｜为第一次创造真实事物的人而建",
     template: "%s｜Academia",
   },
   description:
-    "知识有门类，思想没有边界。进入学院，向任何结论发问，把知识变成自己的判断。",
+    "从真实问题出发，找到必要的学科，完成必须亲自完成的行动，再让现实检验你的判断。",
   openGraph: {
-    title: "Academia｜一所没有边界的大学",
+    title: "Academia｜为第一次创造真实事物的人而建",
     description:
-      "不崇拜权威，不归顺主义，不接受知识的边界。17 个学院，95 个专业，4,192 门课程。",
+      "答案不从提问开始，而从发现真正的问题开始。",
     type: "website",
     locale: "zh_CN",
     images: [
@@ -22,14 +22,14 @@ export const metadata: Metadata = {
         url: "/og.png",
         width: 1734,
         height: 907,
-        alt: "Academia｜知识有门类，思想没有边界",
+        alt: "Academia｜答案不从提问开始",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Academia｜一所没有边界的大学",
-    description: "知识有门类，思想没有边界。",
+    title: "Academia｜为第一次创造真实事物的人而建",
+    description: "答案不从提问开始，而从发现真正的问题开始。",
     images: ["/og.png"],
   },
 };

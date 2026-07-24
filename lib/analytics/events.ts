@@ -24,11 +24,27 @@ import {
 export const CLIENT_ANALYTICS_EVENTS = new Set([
   "page_view",
   "page_engaged",
+  "answer_map_viewed",
+  "answer_path_viewed",
 ]);
 
 export type AnalyticsEventName =
   | "page_view"
   | "page_engaged"
+  | "answer_map_viewed"
+  | "answer_path_viewed"
+  | "answer_path_started"
+  | "baseline_completed"
+  | "knowledge_node_opened"
+  | "action_started"
+  | "evidence_submitted"
+  | "artifact_submitted"
+  | "artifact_reviewed"
+  | "revision_submitted"
+  | "milestone_validated"
+  | "real_world_outcome_recorded"
+  | "capability_updated"
+  | "next_path_started"
   | "tracking_link_clicked"
   | "signup_completed"
   | "login_succeeded"

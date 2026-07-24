@@ -47,6 +47,14 @@ import {
   serializeAttributionCookie,
 } from "../lib/analytics/attribution.ts";
 import { calculateRevenueMetrics } from "../lib/analytics/revenue-math.ts";
+import {
+  answerTopics,
+  creationStages,
+  flagshipAnswerTopics,
+} from "../lib/content/answer-paths.ts";
+import {
+  courseContentStatus,
+} from "../lib/content/content-status.ts";
 
 test("password policy rejects weak values and verifies derived hashes", async () => {
   assert.equal(validatePassword("short"), "密码至少需要 10 位");
@@ -359,6 +367,37 @@ test("university catalog has broad, unique and credit-complete programs", () => 
       }
     }
   }
+});
+
+test("answer atlas exposes 30 versioned questions without pretending paths are open", () => {
+  assert.equal(answerTopics.length, 30);
+  assert.equal(new Set(answerTopics.map((topic) => topic.slug)).size, 30);
+  assert.equal(flagshipAnswerTopics.length, 6);
+  for (const stage of creationStages) {
+    assert.equal(
+      answerTopics.filter((topic) => topic.stage === stage.slug).length,
+      5,
+    );
+  }
+  for (const topic of answerTopics) {
+    assert.equal(topic.title.length > 8, true);
+    assert.equal(topic.initialConclusion.length > 10, true);
+    assert.equal(topic.artifact.length > 2, true);
+    assert.equal(topic.knowledgeLinks.length > 0, true);
+    assert.equal(
+      ["flagship-building", "question-index"].includes(topic.status),
+      true,
+    );
+  }
+  for (const topic of flagshipAnswerTopics) {
+    assert.ok(topic.preview);
+    assert.equal(topic.preview.misconceptions.length >= 3, true);
+  }
+});
+
+test("course status distinguishes formally open teaching from planned study paths", () => {
+  assert.equal(courseContentStatus({ availability: "open" }), "formally-open");
+  assert.equal(courseContentStatus({ availability: "planned" }), "study-path");
 });
 
 test("long-term memory retrieval favors relevant and recent user evidence", () => {

@@ -11,6 +11,10 @@ import { AddProgramButton } from "@/components/features/university/AddProgramBut
 import { ProgramCreditAudit } from "@/components/features/university/ProgramCreditAudit";
 import { ProductShell } from "@/components/shared/ProductShell";
 import {
+  contentStatusLabels,
+  courseContentStatus,
+} from "@/lib/content/content-status";
+import {
   getUniversityProgram,
   getUniversitySchool,
 } from "@/lib/content/university";
@@ -216,7 +220,7 @@ export default async function ProgramPage({
                         {course.credits} 学分
                       </span>
                       <span className="course-state">
-                        {course.availability === "open" ? "已开课" : "编制中"}
+                        {contentStatusLabels[courseContentStatus(course)]}
                       </span>
                       <ArrowRight aria-hidden="true" size={16} />
                     </Link>
