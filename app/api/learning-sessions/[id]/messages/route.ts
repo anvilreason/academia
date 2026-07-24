@@ -6,6 +6,7 @@ import {
   streamAcadPro,
 } from "@/lib/llm/router";
 import { getRepository } from "@/lib/repositories";
+import { progressForTurn } from "@/lib/domain/learning";
 
 type ClientEvent =
   | "meta"
@@ -105,7 +106,7 @@ export async function POST(
   }
   const history = await repository.listMessages(id);
   const nextTurn = session.turnCount + 1;
-  const nextProgress = Math.min(100, nextTurn * 20);
+  const nextProgress = progressForTurn(session.nodeSlug, nextTurn);
   const callId = newId();
   let callReserved = false;
 
@@ -122,7 +123,7 @@ export async function POST(
         model: "acad-pro",
         promptVersion: session.promptVersion,
       });
-      const result = await streamAcadPro(history, {
+      const result = await streamAcadPro(history, session.nodeSlug, {
         async onReserved(reservation) {
           callReserved = true;
           await repository.createLlmCall({

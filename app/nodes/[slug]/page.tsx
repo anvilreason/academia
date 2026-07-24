@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductShell } from "@/components/shared/ProductShell";
 import { getNode } from "@/lib/content/nodes";
+import { TestCheckout } from "@/components/features/commerce/TestCheckout";
 
 export default async function NodeDetailPage({
   params,
@@ -28,13 +29,25 @@ export default async function NodeDetailPage({
             <p style={{ color: "var(--ink-faint)", margin: "28px 0 0" }}>
               {node.duration} · 永久保留学习记录 · 测试环境不产生真实扣款
             </p>
-            <Link
-              className="button button-accent button-large"
-              href="/login"
-              style={{ marginTop: 28 }}
-            >
-              测试解锁 ¥{node.priceYuan} →
-            </Link>
+            {node.slug === "porter-five-forces" ? (
+              <TestCheckout
+                nodeSlug={node.slug}
+                priceYuan={node.priceYuan}
+              />
+            ) : node.slug === "4p-stp" ? (
+              <Link
+                className="button button-accent button-large"
+                href="/learn/4p-stp"
+                style={{ marginTop: 28 }}
+              >
+                免费试听 →
+              </Link>
+            ) : (
+              <div className="checkout-warning" style={{ marginTop: 28 }}>
+                <strong>建议先完成 Porter 五力</strong>
+                <span>完成上一节后，这个节点会出现在你的下一节推荐中。</span>
+              </div>
+            )}
           </div>
         </div>
       </section>

@@ -7,7 +7,7 @@ import {
   reserveBudget,
   settleBudget,
 } from "./cost-tracker";
-import { SOCRATIC_ZH_V1, toClaudeMessages } from "./prompts/socratic-zh-v1";
+import { promptForNode, toClaudeMessages } from "./prompts/socratic-zh-v1";
 
 export type LlmUsage = { inputTokens: number; outputTokens: number };
 
@@ -25,15 +25,17 @@ export class LlmProviderError extends Error {}
 
 export async function streamAcadPro(
   history: MessageRecord[],
+  nodeSlug: string,
   callbacks: StreamCallbacks,
 ) {
   const config = runtimeEnv();
   if (!config.ANTHROPIC_API_KEY) {
     throw new LlmProviderError("ANTHROPIC_API_KEY is unavailable");
   }
+  const systemPrompt = promptForNode(nodeSlug);
   const providerModel = config.ANTHROPIC_MODEL || "claude-sonnet-5";
   const estimatedInput = estimateTokens(
-    SOCRATIC_ZH_V1 + history.map((message) => message.content).join("\n"),
+    systemPrompt + history.map((message) => message.content).join("\n"),
   );
   const reservation = await reserveBudget(estimatedInput);
   if (!reservation) throw new LlmBudgetError("daily budget exhausted");
@@ -56,7 +58,7 @@ export async function streamAcadPro(
         max_tokens: MAX_OUTPUT_TOKENS,
         stream: true,
         thinking: { type: "disabled" },
-        system: SOCRATIC_ZH_V1,
+        system: systemPrompt,
         messages: toClaudeMessages(history),
       }),
     });

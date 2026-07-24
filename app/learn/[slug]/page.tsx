@@ -10,15 +10,20 @@ export default async function LearnPage({
 }) {
   const { slug } = await params;
   const node = getNode(slug);
-  if (!node || slug !== "4p-stp") notFound();
+  if (!node || slug === "disruptive-innovation") notFound();
 
   return (
     <ProductShell
       active="learn"
-      context="试听 · 0%"
-      title="4P 与 STP"
+      context={node.access === "free" ? "免费试听" : "已解锁课程"}
+      title={node.title.split("：")[0]}
     >
-      <AgentWorkspace />
+      <AgentWorkspace
+        nodeSlug={node.slug}
+        professor={node.professor}
+        school={node.school}
+        title={node.title}
+      />
     </ProductShell>
   );
 }

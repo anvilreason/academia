@@ -1,4 +1,5 @@
 import type { AcademiaRepository } from "./types";
+import type { PrismaClient } from "@prisma/client";
 
 /**
  * Production adapter boundary for Alibaba Cloud PostgreSQL.
@@ -8,7 +9,8 @@ import type { AcademiaRepository } from "./types";
  * routes, permissions and the LLM gateway unchanged.
  */
 export class PrismaAcademiaRepository {
-  static create(): AcademiaRepository {
+  static create(client: PrismaClient): AcademiaRepository {
+    void client;
     throw new Error(
       "PostgreSQL/Prisma production adapter is not enabled in preview.",
     );

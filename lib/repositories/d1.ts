@@ -1,10 +1,13 @@
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
   guestTrialUsage,
+  learningNotes,
   learningSessions,
   llmCallLogs,
   messages,
+  nodeEntitlements,
+  orders,
   users,
 } from "@/db/schema";
 import { newId, nowIso } from "@/lib/server/api";
@@ -12,6 +15,8 @@ import type {
   AcademiaRepository,
   LearningSessionRecord,
   MessageRecord,
+  NoteRecord,
+  OrderRecord,
   UserRecord,
 } from "./types";
 
@@ -40,6 +45,31 @@ function asMessage(row: typeof messages.$inferSelect): MessageRecord {
     idempotencyKey: row.idempotencyKey,
     inputTokens: row.inputTokens,
     outputTokens: row.outputTokens,
+    createdAt: row.createdAt,
+  };
+}
+
+function asOrder(row: typeof orders.$inferSelect): OrderRecord {
+  return {
+    id: row.id,
+    userId: row.userId,
+    nodeSlug: row.nodeSlug,
+    amountFen: row.amountFen,
+    status: row.status,
+    idempotencyKey: row.idempotencyKey,
+    confirmedAt: row.confirmedAt,
+    createdAt: row.createdAt,
+  };
+}
+
+function asNote(row: typeof learningNotes.$inferSelect): NoteRecord {
+  return {
+    id: row.id,
+    userId: row.userId,
+    sessionId: row.sessionId,
+    nodeSlug: row.nodeSlug,
+    title: row.title,
+    content: row.content,
     createdAt: row.createdAt,
   };
 }
@@ -256,5 +286,189 @@ export class D1AcademiaRepository implements AcademiaRepository {
         updatedAt: nowIso(),
       })
       .where(eq(llmCallLogs.id, input.id));
+  }
+
+  async hasEntitlement(userId: string, nodeSlug: string) {
+    const [row] = await getDb()
+      .select({ id: nodeEntitlements.id })
+      .from(nodeEntitlements)
+      .where(
+        and(
+          eq(nodeEntitlements.userId, userId),
+          eq(nodeEntitlements.nodeSlug, nodeSlug),
+          eq(nodeEntitlements.status, "active"),
+          isNull(nodeEntitlements.deletedAt),
+        ),
+      )
+      .limit(1);
+    return Boolean(row);
+  }
+
+  async createOrder(input: {
+    userId: string;
+    nodeSlug: string;
+    amountFen: number;
+    idempotencyKey: string;
+  }) {
+    const existing = await getDb()
+      .select()
+      .from(orders)
+      .where(
+        and(
+          eq(orders.userId, input.userId),
+          eq(orders.idempotencyKey, input.idempotencyKey),
+          isNull(orders.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (existing[0]) return asOrder(existing[0]);
+    const now = nowIso();
+    const [row] = await getDb()
+      .insert(orders)
+      .values({
+        id: newId(),
+        userId: input.userId,
+        nodeSlug: input.nodeSlug,
+        amountFen: input.amountFen,
+        status: "pending",
+        idempotencyKey: input.idempotencyKey,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    return asOrder(row);
+  }
+
+  async getOrder(id: string) {
+    const [row] = await getDb()
+      .select()
+      .from(orders)
+      .where(and(eq(orders.id, id), isNull(orders.deletedAt)))
+      .limit(1);
+    return row ? asOrder(row) : null;
+  }
+
+  async confirmTestOrder(id: string, userId: string) {
+    const order = await this.getOrder(id);
+    if (!order || order.userId !== userId) {
+      throw new Error("ORDER_NOT_FOUND");
+    }
+    if (order.status !== "paid") {
+      const now = nowIso();
+      await getDb()
+        .update(orders)
+        .set({ status: "paid", confirmedAt: now, updatedAt: now })
+        .where(
+          and(
+            eq(orders.id, id),
+            eq(orders.userId, userId),
+            eq(orders.status, "pending"),
+          ),
+        );
+      await getDb()
+        .insert(nodeEntitlements)
+        .values({
+          id: newId(),
+          userId,
+          nodeSlug: order.nodeSlug,
+          sourceOrderId: id,
+          status: "active",
+          createdAt: now,
+          updatedAt: now,
+        })
+        .onConflictDoNothing();
+    }
+    const confirmed = await this.getOrder(id);
+    if (!confirmed) throw new Error("ORDER_NOT_FOUND");
+    return confirmed;
+  }
+
+  async completeLearningSession(
+    sessionId: string,
+    userId: string,
+    note: { title: string; content: string },
+  ) {
+    const session = await this.getLearningSession(sessionId);
+    if (!session || session.userId !== userId) {
+      throw new Error("SESSION_NOT_FOUND");
+    }
+    const existing = await getDb()
+      .select()
+      .from(learningNotes)
+      .where(
+        and(
+          eq(learningNotes.sessionId, sessionId),
+          eq(learningNotes.userId, userId),
+          isNull(learningNotes.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (existing[0]) return asNote(existing[0]);
+    const now = nowIso();
+    await getDb()
+      .update(learningSessions)
+      .set({
+        status: "completed",
+        progress: 100,
+        completedAt: now,
+        updatedAt: now,
+      })
+      .where(eq(learningSessions.id, sessionId));
+    const [created] = await getDb()
+      .insert(learningNotes)
+      .values({
+        id: newId(),
+        userId,
+        sessionId,
+        nodeSlug: session.nodeSlug,
+        title: note.title,
+        content: note.content,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    return asNote(created);
+  }
+
+  async getDashboard(userId: string) {
+    const [sessionRows, noteRows, entitlementRows] = await Promise.all([
+      getDb()
+        .select()
+        .from(learningSessions)
+        .where(
+          and(
+            eq(learningSessions.userId, userId),
+            isNull(learningSessions.deletedAt),
+          ),
+        )
+        .orderBy(desc(learningSessions.updatedAt))
+        .limit(6),
+      getDb()
+        .select()
+        .from(learningNotes)
+        .where(
+          and(
+            eq(learningNotes.userId, userId),
+            isNull(learningNotes.deletedAt),
+          ),
+        )
+        .orderBy(desc(learningNotes.createdAt))
+        .limit(6),
+      getDb()
+        .select({ nodeSlug: nodeEntitlements.nodeSlug })
+        .from(nodeEntitlements)
+        .where(
+          and(
+            eq(nodeEntitlements.userId, userId),
+            eq(nodeEntitlements.status, "active"),
+            isNull(nodeEntitlements.deletedAt),
+          ),
+        ),
+    ]);
+    return {
+      sessions: sessionRows.map(asSession),
+      notes: noteRows.map(asNote),
+      entitlements: entitlementRows.map((row) => row.nodeSlug),
+    };
   }
 }

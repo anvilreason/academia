@@ -31,6 +31,27 @@ export type MessageRecord = {
   createdAt: string;
 };
 
+export type OrderRecord = {
+  id: string;
+  userId: string;
+  nodeSlug: string;
+  amountFen: number;
+  status: string;
+  idempotencyKey: string;
+  confirmedAt: string | null;
+  createdAt: string;
+};
+
+export type NoteRecord = {
+  id: string;
+  userId: string;
+  sessionId: string;
+  nodeSlug: string;
+  title: string;
+  content: string;
+  createdAt: string;
+};
+
 export interface AcademiaRepository {
   findUserByEmail(email: string): Promise<UserRecord | null>;
   createUser(input: {
@@ -86,4 +107,23 @@ export interface AcademiaRepository {
     actualFen: number;
     errorCode?: string | null;
   }): Promise<void>;
+  hasEntitlement(userId: string, nodeSlug: string): Promise<boolean>;
+  createOrder(input: {
+    userId: string;
+    nodeSlug: string;
+    amountFen: number;
+    idempotencyKey: string;
+  }): Promise<OrderRecord>;
+  getOrder(id: string): Promise<OrderRecord | null>;
+  confirmTestOrder(id: string, userId: string): Promise<OrderRecord>;
+  completeLearningSession(
+    sessionId: string,
+    userId: string,
+    note: { title: string; content: string },
+  ): Promise<NoteRecord>;
+  getDashboard(userId: string): Promise<{
+    sessions: LearningSessionRecord[];
+    notes: NoteRecord[];
+    entitlements: string[];
+  }>;
 }

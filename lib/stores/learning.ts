@@ -37,7 +37,8 @@ export const useLearningStore = create<LearningState>((set) => ({
   streaming: false,
   registrationRequired: false,
   error: null,
-  hydrate: (input) => set(input),
+  hydrate: (input) =>
+    set({ ...input, registrationRequired: false, error: null }),
   setDraft: (draft) => set({ draft }),
   addUser: (message) =>
     set((state) => ({ messages: [...state.messages, message], draft: "" })),

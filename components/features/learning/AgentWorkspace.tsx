@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -26,20 +26,21 @@ async function readJson(response: Response) {
   return payload.data;
 }
 
-async function getOrCreateTrial() {
-  const stored = window.localStorage.getItem("academia-trial-session");
+async function getOrCreateSession(nodeSlug: string) {
+  const storageKey = `academia-session-${nodeSlug}`;
+  const stored = window.localStorage.getItem(storageKey);
   if (stored) {
     const response = await fetch(`/api/learning-sessions/${stored}`);
     if (response.ok) return readJson(response);
-    window.localStorage.removeItem("academia-trial-session");
+    window.localStorage.removeItem(storageKey);
   }
   const response = await fetch("/api/learning-sessions", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ nodeSlug: "4p-stp" }),
+    body: JSON.stringify({ nodeSlug }),
   });
   const session = await readJson(response);
-  window.localStorage.setItem("academia-trial-session", session.id);
+  window.localStorage.setItem(storageKey, session.id);
   return session;
 }
 
@@ -58,7 +59,22 @@ function parseSseFrame(frame: string) {
   return { name, data: JSON.parse(data) as Record<string, unknown> };
 }
 
-export function AgentWorkspace() {
+export function AgentWorkspace({
+  nodeSlug,
+  title,
+  professor,
+  school,
+}: {
+  nodeSlug: string;
+  title: string;
+  professor: string;
+  school: string;
+}) {
+  const [completion, setCompletion] = useState<null | {
+    note: { title: string; content: string };
+    recommendation: { slug: string; title: string };
+  }>(null);
+  const [completing, setCompleting] = useState(false);
   const {
     messages,
     draft,
@@ -78,8 +94,8 @@ export function AgentWorkspace() {
     setError,
   } = useLearningStore();
   const sessionQuery = useQuery({
-    queryKey: ["trial-session"],
-    queryFn: getOrCreateTrial,
+    queryKey: ["learning-session", nodeSlug],
+    queryFn: () => getOrCreateSession(nodeSlug),
   });
 
   useEffect(() => {
@@ -155,6 +171,35 @@ export function AgentWorkspace() {
     }
   }
 
+  async function completeNode() {
+    const sessionId = sessionQuery.data?.id;
+    if (!sessionId || completing) return;
+    setCompleting(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `/api/learning-sessions/${sessionId}/complete`,
+        { method: "POST" },
+      );
+      const payload = (await response.json()) as {
+        data?: {
+          note: { title: string; content: string };
+          recommendation: { slug: string; title: string };
+        };
+        error?: { message?: string };
+      };
+      if (!response.ok || !payload.data) {
+        throw new Error(payload.error?.message || "暂时无法完成课程");
+      }
+      setCompletion(payload.data);
+      window.localStorage.removeItem(`academia-session-${nodeSlug}`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "暂时无法完成课程");
+    } finally {
+      setCompleting(false);
+    }
+  }
+
   if (sessionQuery.isPending) {
     return (
       <div className="workspace-state" role="status">
@@ -169,8 +214,18 @@ export function AgentWorkspace() {
       <div className="workspace-state error-state">
         <strong>暂时无法开始试听</strong>
         <p>{sessionQuery.error.message}</p>
+        <div className="state-actions">
+          <Link className="button button-accent" href="/login">
+            注册或登录
+          </Link>
+          {nodeSlug !== "4p-stp" && (
+            <Link className="button button-dark" href={`/nodes/${nodeSlug}`}>
+              返回课程详情
+            </Link>
+          )}
+        </div>
         <button
-          className="button button-dark"
+          className="text-link retry-link"
           onClick={() => sessionQuery.refetch()}
           type="button"
         >
@@ -184,10 +239,13 @@ export function AgentWorkspace() {
     <>
       <section className="conversation" aria-live="polite">
         <div className="conversation-intro">
-          <p className="eyebrow">免费试听 · 第 1 节</p>
-          <h1>4P 与 STP：增长究竟卡在哪里</h1>
+          <p className="eyebrow">
+            {nodeSlug === "4p-stp" ? "免费试听" : "MBA 深度"} · 第 1 节
+          </p>
+          <h1>{title}</h1>
           <p>
-            Philip Kotler · Kellogg · 已进行 {turnCount}/5 轮 · {progress}%
+            {professor} · {school} · 已进行 {turnCount}/
+            {nodeSlug === "porter-five-forces" ? 4 : 5} 轮 · {progress}%
           </p>
         </div>
         {messages.map((message) =>
@@ -224,17 +282,50 @@ export function AgentWorkspace() {
             </Link>
           </aside>
         )}
+        {!registrationRequired &&
+          progress >= 100 &&
+          nodeSlug === "porter-five-forces" &&
+          !completion && (
+            <aside className="completion-card">
+              <span className="test-badge">本节推演已完成</span>
+              <h2>把这次判断沉淀成一页笔记</h2>
+              <p>完成后会保存对话摘要，并为你推荐认知地图里的下一节。</p>
+              <button
+                className="button button-accent"
+                disabled={completing}
+                onClick={completeNode}
+                type="button"
+              >
+                {completing ? "正在生成笔记…" : "完成课程并生成笔记 →"}
+              </button>
+            </aside>
+          )}
+        {completion && (
+          <aside className="learning-note">
+            <span className="test-badge">已写入认知档案</span>
+            <h2>{completion.note.title}</h2>
+            <p>{completion.note.content}</p>
+            <div className="next-node">
+              <span>下一节推荐</span>
+              <Link href={`/nodes/${completion.recommendation.slug}`}>
+                {completion.recommendation.title} →
+              </Link>
+            </div>
+          </aside>
+        )}
       </section>
       <div className="composer-wrap">
         {error && <div className="composer-error">{error}</div>}
         <form className="composer" onSubmit={submit}>
           <textarea
             aria-label="回答导师"
-            disabled={streaming || registrationRequired}
+            disabled={streaming || registrationRequired || Boolean(completion)}
             maxLength={2000}
             onChange={(event) => setDraft(event.target.value)}
             placeholder={
-              registrationRequired
+              completion
+                ? "本节已完成"
+                : registrationRequired
                 ? "注册后继续这段对话"
                 : "想清楚再答，Academia 不会催你"
             }
@@ -243,14 +334,17 @@ export function AgentWorkspace() {
           />
           <button
             aria-label="发送回答"
-            disabled={streaming || registrationRequired || !draft.trim()}
+            disabled={
+              streaming || registrationRequired || Boolean(completion) || !draft.trim()
+            }
             type="submit"
           >
             {streaming ? "…" : "↑"}
           </button>
         </form>
         <div className="composer-hint">
-          真实 AI 试听 · 单条最多 2,000 字 · 回答会保存在测试环境
+          真实 AI {nodeSlug === "4p-stp" ? "试听" : "课程"} · 单条最多
+          2,000 字 · 回答会保存在测试环境
         </div>
       </div>
     </>

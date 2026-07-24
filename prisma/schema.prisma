@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  passwordSalt String   @map("password_salt")
+  name         String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  @@map("users")
+}
+
+model LearningNode {
+  id        String    @id @default(uuid())
+  slug      String    @unique
+  title     String
+  priceFen  Int       @default(0) @map("price_fen")
+  sortOrder Int       @default(0) @map("sort_order")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@map("learning_nodes")
+}
+
+model LearningSession {
+  id            String    @id @default(uuid())
+  nodeSlug      String    @map("node_slug")
+  userId        String?   @map("user_id")
+  guestId       String?   @map("guest_id")
+  status        String    @default("active")
+  turnCount     Int       @default(0) @map("turn_count")
+  progress      Int       @default(0)
+  promptVersion String    @default("socratic-zh-v1") @map("prompt_version")
+  completedAt   DateTime? @map("completed_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  @@index([userId, updatedAt])
+  @@index([guestId])
+  @@map("learning_sessions")
+}
+
+model Message {
+  id             String    @id @default(uuid())
+  sessionId      String    @map("session_id")
+  role           String
+  content        String
+  idempotencyKey String?   @map("idempotency_key")
+  inputTokens    Int?      @map("input_tokens")
+  outputTokens   Int?      @map("output_tokens")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  @@unique([sessionId, idempotencyKey, role])
+  @@map("messages")
+}
+
+model Order {
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  nodeSlug       String    @map("node_slug")
+  amountFen      Int       @map("amount_fen")
+  status         String    @default("pending")
+  idempotencyKey String    @map("idempotency_key")
+  confirmedAt    DateTime? @map("confirmed_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  @@unique([userId, idempotencyKey])
+  @@map("orders")
+}
+
+model NodeEntitlement {
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  nodeSlug      String    @map("node_slug")
+  sourceOrderId String?   @map("source_order_id")
+  status        String    @default("active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  @@unique([userId, nodeSlug])
+  @@map("node_entitlements")
+}
+
+model LearningNote {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  sessionId String    @map("session_id")
+  nodeSlug  String    @map("node_slug")
+  title     String
+  content   String
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@map("learning_notes")
+}
+
+model LlmCallLog {
+  id            String    @id @default(uuid())
+  sessionId     String?   @map("session_id")
+  userId        String?   @map("user_id")
+  guestId       String?   @map("guest_id")
+  modelAlias    String    @map("model_alias")
+  providerModel String    @map("provider_model")
+  status        String
+  inputTokens   Int       @default(0) @map("input_tokens")
+  outputTokens  Int       @default(0) @map("output_tokens")
+  reservedFen   Int       @default(0) @map("reserved_fen")
+  actualFen     Int       @default(0) @map("actual_fen")
+  errorCode     String?   @map("error_code")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  @@map("llm_call_logs")
+}
+
+model DailyCostQuota {
+  id          String    @id @default(uuid())
+  dateKey     String    @unique @map("date_key")
+  reservedFen Int       @default(0) @map("reserved_fen")
+  actualFen   Int       @default(0) @map("actual_fen")
+  limitFen    Int       @default(5000) @map("limit_fen")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  @@map("daily_cost_quotas")
+}
+
+model GuestTrialUsage {
+  id        String    @id @default(uuid())
+  guestId   String    @map("guest_id")
+  dateKey   String    @map("date_key")
+  sessionId String    @map("session_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@unique([guestId, dateKey])
+  @@map("guest_trial_usage")
+}
