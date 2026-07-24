@@ -330,6 +330,10 @@ model AnalyticsEvent {
   schoolSlug          String?  @map("school_slug")
   programSlug         String?  @map("program_slug")
   courseSlug          String?  @map("course_slug")
+  trackingLinkId      String?  @map("tracking_link_id")
+  acquisitionSource   String?  @map("acquisition_source")
+  acquisitionMedium   String?  @map("acquisition_medium")
+  acquisitionCampaign String?  @map("acquisition_campaign")
   country             String?
   region              String?
   city                String?
@@ -347,6 +351,7 @@ model AnalyticsEvent {
   @@index([userId, occurredAt])
   @@index([guestId, occurredAt])
   @@index([programSlug, occurredAt])
+  @@index([acquisitionCampaign, occurredAt])
   @@map("analytics_events")
 }
 
@@ -375,6 +380,24 @@ model AdminMember {
   deletedAt    DateTime? @map("deleted_at")
 
   @@map("admin_members")
+}
+
+model TrackingLink {
+  id         String    @id @default(uuid())
+  code       String    @unique
+  name       String
+  targetPath String    @map("target_path")
+  source     String
+  medium     String
+  campaign   String
+  ownerEmail String    @map("owner_email")
+  status     String    @default("active")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  @@index([campaign, createdAt])
+  @@map("tracking_links")
 }
 
 model AdminAuditLog {

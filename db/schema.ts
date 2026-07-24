@@ -375,6 +375,10 @@ export const analyticsEvents = sqliteTable(
     schoolSlug: text("school_slug"),
     programSlug: text("program_slug"),
     courseSlug: text("course_slug"),
+    trackingLinkId: text("tracking_link_id"),
+    acquisitionSource: text("acquisition_source"),
+    acquisitionMedium: text("acquisition_medium"),
+    acquisitionCampaign: text("acquisition_campaign"),
     country: text("country"),
     region: text("region"),
     city: text("city"),
@@ -403,6 +407,10 @@ export const analyticsEvents = sqliteTable(
     ),
     index("analytics_events_program_time_idx").on(
       table.programSlug,
+      table.occurredAt,
+    ),
+    index("analytics_events_campaign_time_idx").on(
+      table.acquisitionCampaign,
       table.occurredAt,
     ),
   ],
@@ -437,6 +445,29 @@ export const adminMembers = sqliteTable(
     ...lifecycle,
   },
   (table) => [uniqueIndex("admin_members_email_unique").on(table.email)],
+);
+
+export const trackingLinks = sqliteTable(
+  "tracking_links",
+  {
+    id: text("id").primaryKey(),
+    code: text("code").notNull(),
+    name: text("name").notNull(),
+    targetPath: text("target_path").notNull(),
+    source: text("source").notNull(),
+    medium: text("medium").notNull(),
+    campaign: text("campaign").notNull(),
+    ownerEmail: text("owner_email").notNull(),
+    status: text("status").notNull().default("active"),
+    ...lifecycle,
+  },
+  (table) => [
+    uniqueIndex("tracking_links_code_unique").on(table.code),
+    index("tracking_links_campaign_created_idx").on(
+      table.campaign,
+      table.createdAt,
+    ),
+  ],
 );
 
 export const adminAuditLogs = sqliteTable(

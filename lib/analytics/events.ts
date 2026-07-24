@@ -16,6 +16,10 @@ import {
   nowIso,
   shanghaiDateKey,
 } from "@/lib/server/api";
+import {
+  parseAttributionCookie,
+  type Attribution,
+} from "@/lib/analytics/attribution";
 
 export const CLIENT_ANALYTICS_EVENTS = new Set([
   "page_view",
@@ -25,6 +29,7 @@ export const CLIENT_ANALYTICS_EVENTS = new Set([
 export type AnalyticsEventName =
   | "page_view"
   | "page_engaged"
+  | "tracking_link_clicked"
   | "signup_completed"
   | "login_succeeded"
   | "trial_started"
@@ -61,6 +66,7 @@ type RecordEventInput = {
   referrer?: string | null;
   engagementMs?: number | null;
   properties?: EventProperties;
+  attribution?: Attribution | null;
   occurredAt?: Date;
   isTest?: boolean;
 };
@@ -173,6 +179,11 @@ export async function recordAnalyticsEvent(input: RecordEventInput) {
   const path = cleanSegment(input.path, 500);
   const context = pathContext(path);
   const location = geo(input.request);
+  const attribution =
+    input.attribution ??
+    parseAttributionCookie(
+      input.request?.headers.get("cookie") ?? null,
+    );
   const propertyProgramSlug =
     typeof input.properties?.programSlug === "string"
       ? input.properties.programSlug
@@ -203,6 +214,10 @@ export async function recordAnalyticsEvent(input: RecordEventInput) {
       courseSlug:
         cleanSegment(propertyCourseSlug, 120) ??
         context.courseSlug,
+      trackingLinkId: attribution?.trackingLinkId ?? null,
+      acquisitionSource: attribution?.source ?? null,
+      acquisitionMedium: attribution?.medium ?? null,
+      acquisitionCampaign: attribution?.campaign ?? null,
       country: location.country,
       region: location.region,
       city: location.city,

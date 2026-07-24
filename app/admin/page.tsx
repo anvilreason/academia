@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
 import {
   Activity,
   ArrowUpRight,
@@ -9,10 +7,10 @@ import {
   Clock3,
   GraduationCap,
   MapPinned,
-  ShieldAlert,
   UsersRound,
 } from "lucide-react";
-import { getAdminAccess } from "@/lib/analytics/admin";
+import { AdminDenied } from "@/components/admin/AdminStates";
+import { loadAdminSection } from "@/lib/analytics/admin-page";
 import { getAdminSummary } from "@/lib/analytics/summary";
 
 export const dynamic = "force-dynamic";
@@ -56,23 +54,16 @@ function Metric({
 }
 
 export default async function AdminPage() {
-  const access = await getAdminAccess();
-  if (access.status === "signed_out") {
-    redirect("/login?continue=%2Fadmin");
-  }
-  if (access.status === "forbidden") {
+  const gate = await loadAdminSection("overview");
+  if (!gate.allowed) {
     return (
-      <section className="observatory-access-state">
-        <ShieldAlert aria-hidden="true" size={28} />
-        <p className="observatory-kicker">ACCESS CONTROL</p>
-        <h1>这个账户尚未加入校务观测台</h1>
-        <p>
-          当前登录账户为 {access.email}。请由所有者在团队权限中发出邀请。
-        </p>
-        <Link href="/">返回 Academia</Link>
-      </section>
+      <AdminDenied
+        email={gate.access.email}
+        section={gate.access.status === "allowed"}
+      />
     );
   }
+  const { access } = gate;
 
   const summary = await getAdminSummary();
   const maxTrend = Math.max(
@@ -91,7 +82,7 @@ export default async function AdminPage() {
     <>
       <header className="observatory-header">
         <div>
-          <p className="observatory-kicker">ACADEMIA OBSERVATORY · V0.10</p>
+          <p className="observatory-kicker">ACADEMIA OBSERVATORY</p>
           <h1>校务总览</h1>
           <p>从访问到学习完成，观察真实发生的事情。</p>
         </div>

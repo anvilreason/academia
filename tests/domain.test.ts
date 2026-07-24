@@ -37,6 +37,15 @@ import {
   CREDIT_PRICE_FEN,
   evaluateCourseTransfer,
 } from "../lib/domain/course-transfer.ts";
+import {
+  canAccessAdminSection,
+  adminRoleLabel,
+} from "../lib/analytics/admin-permissions.ts";
+import {
+  isSafeTrackingTarget,
+  parseAttributionCookie,
+  serializeAttributionCookie,
+} from "../lib/analytics/attribution.ts";
 
 test("password policy rejects weak values and verifies derived hashes", async () => {
   assert.equal(validatePassword("short"), "密码至少需要 10 位");
@@ -63,6 +72,32 @@ test("auth helpers enforce fixed windows and same-origin redirects", () => {
   assert.equal(safeInternalPath("/learn/4p-stp"), "/learn/4p-stp");
   assert.equal(safeInternalPath("https://example.com"), "/home");
   assert.equal(safeInternalPath("//example.com"), "/home");
+});
+
+test("admin roles expose only their assigned operational sections", () => {
+  assert.equal(canAccessAdminSection("owner", "team"), true);
+  assert.equal(canAccessAdminSection("growth", "tracking"), true);
+  assert.equal(canAccessAdminSection("growth", "users"), false);
+  assert.equal(canAccessAdminSection("operations", "academics"), true);
+  assert.equal(canAccessAdminSection("viewer", "overview"), true);
+  assert.equal(canAccessAdminSection("viewer", "growth"), false);
+  assert.equal(adminRoleLabel("analyst"), "数据分析");
+});
+
+test("tracking attribution accepts only internal targets and round trips cookies", () => {
+  assert.equal(isSafeTrackingTarget("/college"), true);
+  assert.equal(isSafeTrackingTarget("/programs/marketing?from=launch"), true);
+  assert.equal(isSafeTrackingTarget("//evil.example"), false);
+  assert.equal(isSafeTrackingTarget("https://evil.example"), false);
+  assert.equal(isSafeTrackingTarget("/r/recursive"), false);
+  const attribution = {
+    trackingLinkId: "link-1",
+    source: "xiaohongshu",
+    medium: "social",
+    campaign: "launch-01",
+  };
+  const serialized = serializeAttributionCookie(attribution, false);
+  assert.deepEqual(parseAttributionCookie(serialized), attribution);
 });
 
 test("test order state machine cannot be used as a production payment bypass", () => {

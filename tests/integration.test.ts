@@ -99,6 +99,22 @@ test(
     const forbiddenAdmin = await jar.request("/admin");
     assert.equal(forbiddenAdmin.status, 200);
     assert.match(await forbiddenAdmin.text(), /尚未加入校务观测台/);
+    assert.equal(
+      (
+        await jar.request("/api/admin/tracking-links", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            name: "越权链接",
+            targetPath: "/",
+            source: "test",
+            medium: "test",
+            campaign: "forbidden",
+          }),
+        })
+      ).status,
+      403,
+    );
     const duplicateRegistration = await jar.request("/api/auth/register", {
       method: "POST",
       headers: { "content-type": "application/json" },
