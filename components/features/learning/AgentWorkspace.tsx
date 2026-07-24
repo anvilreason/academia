@@ -3,6 +3,7 @@
 import { FormEvent, useEffect } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import { ArrowUp } from "lucide-react";
 import {
   type LearningMessage,
   useLearningStore,
@@ -281,7 +282,7 @@ export function AgentWorkspace({
             }
             type="submit"
           >
-            {streaming ? "…" : "↑"}
+            {streaming ? "…" : <ArrowUp aria-hidden="true" size={18} />}
           </button>
         </form>
         <div className="composer-hint">

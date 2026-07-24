@@ -252,5 +252,26 @@ test(
     assert.equal(transcript.data.gpa, 4);
     assert.equal((await jar.request("/api/me/programs")).status, 200);
     assert.equal((await jar.request("/api/me/dashboard")).status, 200);
+    const projectResponse = await jar.request("/api/me/projects", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        title: "集成测试实践项目",
+        context: "一家早期产品正在验证第一批真实用户的核心需求。",
+        goal: "形成一套可以被团队执行并用数据复盘的验证方案。",
+      }),
+    });
+    assert.equal(projectResponse.status, 201);
+    const project = await json<{ data: { id: string; title: string } }>(
+      projectResponse,
+    );
+    assert.ok(project.data.id);
+    const projectList = await json<{ data: Array<{ id: string }> }>(
+      await jar.request("/api/me/projects"),
+    );
+    assert.equal(
+      projectList.data.some((item) => item.id === project.data.id),
+      true,
+    );
   },
 );

@@ -95,6 +95,17 @@ export type WalletRecord = {
   updatedAt: string;
 };
 
+export type PracticeProjectRecord = {
+  id: string;
+  userId: string;
+  title: string;
+  context: string;
+  goal: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export interface AcademiaRepository {
   findUserByEmail(email: string): Promise<UserRecord | null>;
   createUser(input: {
@@ -175,6 +186,13 @@ export interface AcademiaRepository {
     programs: UserProgramRecord[];
     courses: UserCoursePlanRecord[];
   }>;
+  listPracticeProjects(userId: string): Promise<PracticeProjectRecord[]>;
+  createPracticeProject(input: {
+    userId: string;
+    title: string;
+    context: string;
+    goal: string;
+  }): Promise<PracticeProjectRecord>;
   recordExamAttempt(input: {
     userId: string;
     sessionId: string;

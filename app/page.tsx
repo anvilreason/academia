@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRight, ArrowUpRight, BookOpenText } from "lucide-react";
 import {
   universitySchools,
   universityStats,
@@ -44,44 +45,47 @@ export default function LandingPage() {
 
       <section className="hero page-width">
         <div className="hero-copy">
-          <p className="eyebrow">A UNIVERSITY WITHOUT BORDERS</p>
+          <p className="eyebrow">ACADEMIA · A UNIVERSITY WITHOUT BORDERS</p>
           <h1>
-            没有标准答案。
+            从真实问题出发，
             <br />
-            只有尚未抵达
-            <br />
-            的判断。
+            形成自己的判断。
           </h1>
           <p className="hero-lead">
-            Academia
-            是一所生长在问题上的大学。你可以从任何学科进入，向任何结论发问，
-            直到知识不再是别人的话，而成为你自己的判断。
+            Academia 是一所生长在问题上的大学。我们不把知识陈列在你面前，
+            而是与你一起把它带进工作、创业与生活，直到它成为可以使用、可以质疑、
+            也可以由你继续改写的判断。
           </p>
           <div className="hero-actions">
             <Link className="button button-signal button-large" href="/college">
-              展开学院地图 <span aria-hidden="true">↗</span>
+              展开学院地图
+              <ArrowUpRight aria-hidden="true" size={16} />
             </Link>
             <Link className="hero-secondary-link" href="/learn/4p-stp">
-              旁听第一堂课 →
+              旁听第一堂课
+              <ArrowRight aria-hidden="true" size={15} />
             </Link>
           </div>
         </div>
 
-        <aside className="manifesto-board" aria-label="Academia 学术宣言">
-          <div className="manifesto-stamp">ACADEMIA / 2026</div>
-          <p>知识从来不是围墙。</p>
-          <div className="manifesto-crossed">
-            <span>权威</span>
-            <span>教条</span>
-            <span>唯一道路</span>
+        <aside className="manifesto-board" aria-label="Academia 学术札记">
+          <div className="manifesto-stamp">
+            <BookOpenText aria-hidden="true" size={16} />
+            FOUNDING NOTE / 2026
           </div>
           <blockquote>
-            “如果一门课不能改变你看待问题的方式，它就还没有结束。”
+            Nullius in verba
+            <strong>不以任何人的话为最终依据。</strong>
           </blockquote>
+          <div className="manifesto-crossed">
+            <span>一门课，回应一个真实问题。</span>
+            <span>一种方法，必须说明自己的边界。</span>
+            <span>一次学习，留下可以被检验的成果。</span>
+          </div>
           <div className="manifesto-foot">
-            <span>17 学院</span>
-            <span>95 专业</span>
-            <span>4,192 课程</span>
+            <span>{universityStats.schools} 学院</span>
+            <span>{universityStats.programs} 专业</span>
+            <span>{universityStats.courses.toLocaleString("zh-CN")} 课程</span>
           </div>
         </aside>
       </section>
@@ -105,7 +109,8 @@ export default function LandingPage() {
             <h2>知识有门类，思想没有边界。</h2>
           </div>
           <Link className="text-link" href="/college">
-            查看全部 {universityStats.schools} 个学院 →
+            查看全部 {universityStats.schools} 个学院
+            <ArrowRight aria-hidden="true" size={15} />
           </Link>
         </div>
         <div className="landing-school-grid">
@@ -123,7 +128,10 @@ export default function LandingPage() {
                 <strong>{school.name}</strong>
                 <p>{school.description}</p>
               </span>
-              <b>{school.programs.length} 个专业 ↗</b>
+              <b>
+                {school.programs.length} 个专业
+                <ArrowUpRight aria-hidden="true" size={14} />
+              </b>
             </Link>
           ))}
         </div>
@@ -183,8 +191,14 @@ export default function LandingPage() {
         <p className="eyebrow">BEGIN WITH A QUESTION</p>
         <h2>校门不在这里。<br />它从你的第一个问题开始。</h2>
         <div className="final-links">
-          <Link href="/college">去学院里走走 ↗</Link>
-          <Link href="/learn/4p-stp">进入对话课堂 →</Link>
+          <Link href="/college">
+            去学院里走走
+            <ArrowUpRight aria-hidden="true" size={16} />
+          </Link>
+          <Link href="/learn/4p-stp">
+            进入对话课堂
+            <ArrowRight aria-hidden="true" size={16} />
+          </Link>
         </div>
       </section>
 

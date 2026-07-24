@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 type DashboardData = {
   sessions: Array<{
@@ -81,7 +82,8 @@ export function Dashboard() {
           <div className="empty-state">
             <p>你的学习记录还是空白的。</p>
             <Link className="button button-accent" href="/learn/4p-stp">
-              进入第一堂课 →
+              进入第一堂课
+              <ArrowRight aria-hidden="true" size={16} />
             </Link>
           </div>
         )}
@@ -106,7 +108,10 @@ export function Dashboard() {
         >
           <span>继续阅读</span>
           <strong>{recommendation.title}</strong>
-          <em>查看课程 →</em>
+          <em>
+            查看课程
+            <ArrowRight aria-hidden="true" size={15} />
+          </em>
         </Link>
       )}
     </div>

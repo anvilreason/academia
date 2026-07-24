@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowRight } from "lucide-react";
 import { ProductShell } from "@/components/shared/ProductShell";
 import { getUniversitySchool } from "@/lib/content/university";
 
@@ -81,7 +82,9 @@ export default async function SchoolPage({
                   <span>{program.courses.length} 门培养课程</span>
                 </div>
               </div>
-              <span className="program-arrow">→</span>
+              <span className="program-arrow">
+                <ArrowRight aria-hidden="true" size={17} />
+              </span>
             </Link>
           ))}
         </div>

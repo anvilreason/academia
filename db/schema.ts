@@ -1,4 +1,5 @@
 import {
+  index,
   integer,
   sqliteTable,
   text,
@@ -196,6 +197,25 @@ export const userCoursePlans = sqliteTable(
     uniqueIndex("user_course_plans_user_course_unique").on(
       table.userId,
       table.courseSlug,
+    ),
+  ],
+);
+
+export const practiceProjects = sqliteTable(
+  "practice_projects",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    title: text("title").notNull(),
+    context: text("context").notNull(),
+    goal: text("goal").notNull(),
+    status: text("status").notNull().default("active"),
+    ...lifecycle,
+  },
+  (table) => [
+    index("practice_projects_user_updated_idx").on(
+      table.userId,
+      table.updatedAt,
     ),
   ],
 );

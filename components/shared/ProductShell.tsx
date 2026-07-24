@@ -4,10 +4,24 @@ import Link from "next/link";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
+import {
+  BookOpenText,
+  ChartNoAxesColumnIncreasing,
+  Clock3,
+  FolderKanban,
+  GraduationCap,
+  House,
+  Map,
+  Menu,
+  Plus,
+  SquarePen,
+  WalletCards,
+  X,
+} from "lucide-react";
 
 type ProductShellProps = {
   children: React.ReactNode;
-  active?: "home" | "college" | "learn";
+  active?: "home" | "college" | "learn" | "projects";
   title?: string;
   context?: string;
 };
@@ -51,18 +65,25 @@ export function ProductShell({
         }`}
         href="/college"
       >
-        <span aria-hidden="true">▦</span>
+        <Map aria-hidden="true" />
         学院地图
       </Link>
       <Link className="sidebar-action" href="/college">
-        <span aria-hidden="true">＋</span>
+        <Plus aria-hidden="true" />
         选择专业
+      </Link>
+      <Link
+        className={`sidebar-link ${active === "projects" ? "active" : ""}`}
+        href="/projects"
+      >
+        <SquarePen aria-hidden="true" />
+        实践项目
       </Link>
       <Link
         className={`sidebar-link ${active === "home" ? "active" : ""}`}
         href="/home"
       >
-        <span aria-hidden="true">⌂</span>
+        <House aria-hidden="true" />
         今日学习
       </Link>
       {!!academicPlan.data?.programs.length && (
@@ -80,7 +101,7 @@ export function ProductShell({
                     className="sidebar-link"
                     href={`/programs/${programSlug}`}
                   >
-                    <span aria-hidden="true">▱</span>
+                    <FolderKanban aria-hidden="true" />
                     {name}
                   </Link>
                   {courses.slice(0, 4).map(({ courseSlug, title }) => (
@@ -106,6 +127,7 @@ export function ProductShell({
           className={`sidebar-link ${active === "learn" ? "active" : ""}`}
           href="/learn/4p-stp"
         >
+          <Clock3 aria-hidden="true" />
           4P 与 STP
         </Link>
       </div>
@@ -122,8 +144,14 @@ export function ProductShell({
         <div className="sidebar-spacer" />
         {session && (
           <div className="sidebar-account-links">
-            <Link href="/transcript">学籍与成绩</Link>
-            <Link href="/wallet">学籍星图</Link>
+            <Link href="/transcript">
+              <GraduationCap aria-hidden="true" />
+              学籍与成绩
+            </Link>
+            <Link href="/wallet">
+              <WalletCards aria-hidden="true" />
+              学籍星图
+            </Link>
           </div>
         )}
         <Link className="sidebar-profile" href={session ? "/home" : "/login"}>
@@ -145,7 +173,11 @@ export function ProductShell({
             onClick={() => setMenuOpen((value) => !value)}
             type="button"
           >
-            {menuOpen ? "×" : "☰"}
+            {menuOpen ? (
+              <X aria-hidden="true" />
+            ) : (
+              <Menu aria-hidden="true" />
+            )}
           </button>
         </div>
         {menuOpen && (
@@ -171,9 +203,11 @@ export function ProductShell({
             </div>
             <div className="workspace-actions">
               <button className="ghost-control" type="button">
+                <BookOpenText aria-hidden="true" />
                 讲义
               </button>
               <button className="ghost-control" type="button">
+                <ChartNoAxesColumnIncreasing aria-hidden="true" />
                 进度
               </button>
             </div>

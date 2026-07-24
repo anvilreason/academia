@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { ArrowRight, Check, Plus } from "lucide-react";
 
 export function AddProgramButton({ programSlug }: { programSlug: string }) {
   const [state, setState] = useState<
@@ -27,7 +28,8 @@ export function AddProgramButton({ programSlug }: { programSlug: string }) {
           `/programs/${programSlug}`,
         )}`}
       >
-        建立学籍后选择专业 →
+        建立学籍后选择专业
+        <ArrowRight aria-hidden="true" size={16} />
       </Link>
     );
   }
@@ -40,11 +42,19 @@ export function AddProgramButton({ programSlug }: { programSlug: string }) {
         onClick={addProgram}
         type="button"
       >
-        {state === "busy"
-          ? "正在加入…"
-          : state === "done"
-            ? "已列入我的培养方案 ✓"
-            : "选择为我的专业 ＋"}
+        {state === "busy" ? (
+          "正在加入…"
+        ) : state === "done" ? (
+          <>
+            已列入我的培养方案
+            <Check aria-hidden="true" size={16} />
+          </>
+        ) : (
+          <>
+            选择为我的专业
+            <Plus aria-hidden="true" size={16} />
+          </>
+        )}
       </button>
       {state === "error" && <span>暂时无法登记，请稍后再试。</span>}
     </div>

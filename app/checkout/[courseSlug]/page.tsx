@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowRight } from "lucide-react";
 import { ProductShell } from "@/components/shared/ProductShell";
 import { TestCheckout } from "@/components/features/commerce/TestCheckout";
 import { getUniversityCourse } from "@/lib/content/university";
@@ -41,7 +42,8 @@ export default async function CheckoutPage({
               <strong>开放旁听</strong>
               <p>这堂课向所有来访者开放，不计入正式学籍。</p>
               <Link className="button button-accent button-block" href="/learn/4p-stp">
-                进入课堂 →
+                进入课堂
+                <ArrowRight aria-hidden="true" size={16} />
               </Link>
             </div>
           ) : (

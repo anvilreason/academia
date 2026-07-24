@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 export function TestCheckout({ nodeSlug }: { nodeSlug: string }) {
   const [busy, setBusy] = useState(false);
@@ -62,7 +63,8 @@ export function TestCheckout({ nodeSlug }: { nodeSlug: string }) {
           className="button button-accent button-large"
           href={`/learn/${nodeSlug}`}
         >
-          进入课堂 →
+          进入课堂
+          <ArrowRight aria-hidden="true" size={16} />
         </Link>
       </div>
     );

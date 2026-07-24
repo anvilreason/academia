@@ -1,5 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  FlaskConical,
+  Lightbulb,
+  NotebookTabs,
+} from "lucide-react";
 import { AddProgramButton } from "@/components/features/university/AddProgramButton";
 import { ProductShell } from "@/components/shared/ProductShell";
 import {
@@ -63,6 +70,58 @@ export default async function ProgramPage({
             </div>
           </div>
         </header>
+
+        <section className="application-section program-application">
+          <div className="university-section-heading compact">
+            <div>
+              <p className="eyebrow">学习之后，能够做什么</p>
+              <h2>把专业能力带进真实世界</h2>
+            </div>
+            <p>{program.application.boundary}</p>
+          </div>
+          <div className="application-grid">
+            <article>
+              <Lightbulb aria-hidden="true" />
+              <span>形成的能力</span>
+              <ul>
+                {program.application.capabilities.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </article>
+            <article>
+              <BriefcaseBusiness aria-hidden="true" />
+              <span>工作与生产实践</span>
+              <ul>
+                {program.application.workFields.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </article>
+            <article>
+              <FlaskConical aria-hidden="true" />
+              <span>创业与新事物</span>
+              <ul>
+                {program.application.ventureFields.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </article>
+            <article>
+              <NotebookTabs aria-hidden="true" />
+              <span>毕业时留下的成果</span>
+              <ul>
+                {program.application.portfolio.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </article>
+          </div>
+          <Link className="application-project-link" href="/projects">
+            用一个真实项目贯穿这个专业
+            <ArrowRight aria-hidden="true" size={16} />
+          </Link>
+        </section>
 
         <section className="credit-plan">
           <div className="university-section-heading compact">
@@ -151,7 +210,7 @@ export default async function ProgramPage({
                       <span className="course-state">
                         {course.availability === "open" ? "已开课" : "编制中"}
                       </span>
-                      <span aria-hidden="true">→</span>
+                      <ArrowRight aria-hidden="true" size={16} />
                     </Link>
                   ))}
                 </div>

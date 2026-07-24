@@ -15,6 +15,13 @@
       "when": 1784871721186,
       "tag": "0001_wild_supreme_intelligence",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1784881685071,
+      "tag": "0002_moaning_epoch",
+      "breakpoints": true
     }
   ]
 }

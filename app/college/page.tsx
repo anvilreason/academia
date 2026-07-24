@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { ProductShell } from "@/components/shared/ProductShell";
 import {
   universitySchools,
@@ -89,7 +90,10 @@ export default function UniversityMapPage() {
               </div>
               <div className="school-card-foot">
                 <span>{school.programs.length} 个专业</span>
-                <strong>查看学院 →</strong>
+                <strong>
+                  查看学院
+                  <ArrowRight aria-hidden="true" size={15} />
+                </strong>
               </div>
             </Link>
           ))}
@@ -112,7 +116,10 @@ export default function UniversityMapPage() {
             >
               <span>清华大学</span>
               <strong>2026 本科专业设置</strong>
-              <em>工程、医学、建筑与双学士项目 ↗</em>
+              <em>
+                工程、医学、建筑与双学士项目
+                <ArrowUpRight aria-hidden="true" size={14} />
+              </em>
             </a>
             <a
               href="https://dean.pku.edu.cn/web/about.php"
@@ -121,7 +128,10 @@ export default function UniversityMapPage() {
             >
               <span>北京大学</span>
               <strong>本科教学与交叉培养</strong>
-              <em>134 个本科专业及跨学科培养 ↗</em>
+              <em>
+                134 个本科专业及跨学科培养
+                <ArrowUpRight aria-hidden="true" size={14} />
+              </em>
             </a>
             <a
               href="https://majors.stanford.edu/majors"
@@ -130,7 +140,10 @@ export default function UniversityMapPage() {
             >
               <span>Stanford University</span>
               <strong>Undergraduate Majors</strong>
-              <em>跨学院与个性化专业路径 ↗</em>
+              <em>
+                跨学院与个性化专业路径
+                <ArrowUpRight aria-hidden="true" size={14} />
+              </em>
             </a>
           </div>
         </section>

@@ -9,6 +9,7 @@ import {
   messages,
   nodeEntitlements,
   orders,
+  practiceProjects,
   userCoursePlans,
   userPrograms,
   users,
@@ -23,6 +24,7 @@ import type {
   MessageRecord,
   NoteRecord,
   OrderRecord,
+  PracticeProjectRecord,
   UserCoursePlanRecord,
   UserProgramRecord,
   UserRecord,
@@ -111,6 +113,12 @@ function asExam(row: typeof examAttempts.$inferSelect): ExamAttemptRecord {
 }
 
 function asWallet(row: typeof walletAccounts.$inferSelect): WalletRecord {
+  return row;
+}
+
+function asPracticeProject(
+  row: typeof practiceProjects.$inferSelect,
+): PracticeProjectRecord {
   return row;
 }
 
@@ -576,6 +584,43 @@ export class D1AcademiaRepository implements AcademiaRepository {
       programs: programRows.map(asProgram),
       courses: courseRows.map(asCoursePlan),
     };
+  }
+
+  async listPracticeProjects(userId: string) {
+    const rows = await getDb()
+      .select()
+      .from(practiceProjects)
+      .where(
+        and(
+          eq(practiceProjects.userId, userId),
+          isNull(practiceProjects.deletedAt),
+        ),
+      )
+      .orderBy(desc(practiceProjects.updatedAt));
+    return rows.map(asPracticeProject);
+  }
+
+  async createPracticeProject(input: {
+    userId: string;
+    title: string;
+    context: string;
+    goal: string;
+  }) {
+    const now = nowIso();
+    const [created] = await getDb()
+      .insert(practiceProjects)
+      .values({
+        id: newId(),
+        userId: input.userId,
+        title: input.title.trim(),
+        context: input.context.trim(),
+        goal: input.goal.trim(),
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    return asPracticeProject(created);
   }
 
   async recordExamAttempt(input: {

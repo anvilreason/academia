@@ -166,6 +166,15 @@ test("university catalog has broad, unique and credit-complete programs", () => 
         program.courses.reduce((sum, course) => sum + course.credits, 0),
         program.requiredCredits,
       );
+      assert.equal(
+        program.application.capabilities.every((item) => item.length > 8),
+        true,
+      );
+      assert.equal(
+        program.application.workFields.every((item) => item.length > 1),
+        true,
+      );
+      assert.equal(program.application.portfolio.length, 3);
       for (const band of program.creditPlan) {
         const courses = program.courses.filter(
           (course) => course.category === band.label,
@@ -175,6 +184,13 @@ test("university catalog has broad, unique and credit-complete programs", () => 
           courses.reduce((sum, course) => sum + course.credits, 0),
           band.credits,
         );
+      }
+      for (const course of program.courses) {
+        assert.equal(course.application.questions.length, 2);
+        assert.equal(course.application.workScenes.length, 2);
+        assert.equal(course.application.ventureScenes.length, 2);
+        assert.equal(course.application.deliverable.length > 8, true);
+        assert.equal(course.application.boundary.length > 18, true);
       }
     }
   }

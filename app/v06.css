@@ -1,0 +1,193 @@
+/* Final cascade for the v0.6 visual system. */
+body {
+  font-size: 15px;
+  line-height: 1.68;
+  letter-spacing: 0;
+}
+
+.marketing-header {
+  min-height: 76px;
+}
+
+.marketing-header .wordmark {
+  font-size: 24px;
+}
+
+.marketing-page .hero {
+  min-height: 640px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 390px);
+  gap: clamp(54px, 7vw, 96px);
+  padding-block: 76px 92px;
+}
+
+.marketing-page .hero-copy {
+  max-width: 720px;
+}
+
+.marketing-page .hero h1 {
+  max-width: 720px;
+  margin: 0;
+  font-size: clamp(44px, 5.1vw, 72px);
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 1.12;
+}
+
+.marketing-page .hero-lead {
+  max-width: 630px;
+  margin-top: 28px;
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.9;
+}
+
+.manifesto-board {
+  min-height: 350px;
+  align-self: stretch;
+  padding: 30px;
+  border: 1px solid rgb(244 239 228 / 19%);
+  background: #20201e;
+  color: #f3eee3;
+  transform: none;
+}
+
+.manifesto-board blockquote {
+  display: grid;
+  gap: 10px;
+  margin: 48px 0 38px;
+  font-family: var(--serif);
+  font-size: 15px;
+}
+
+.manifesto-board blockquote strong {
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.manifesto-crossed {
+  gap: 9px;
+  margin: 0 0 auto;
+  color: #a9a59c;
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 1.65;
+  text-decoration: none;
+}
+
+.principle-grid article {
+  min-height: 250px;
+  padding: 34px 30px;
+}
+
+.principle-grid h2 {
+  margin-top: 48px;
+  font-size: 28px;
+}
+
+.curriculum,
+.declaration {
+  padding-block: 112px;
+}
+
+.declaration h2 {
+  font-size: clamp(36px, 4.4vw, 60px);
+}
+
+.final-cta {
+  min-height: 470px;
+}
+
+.final-cta h2 {
+  font-size: clamp(36px, 4.8vw, 62px);
+}
+
+.product-shell {
+  grid-template-columns: 224px minmax(0, 1fr);
+}
+
+.product-sidebar {
+  padding: 20px 12px 14px;
+}
+
+.product-sidebar .wordmark {
+  padding: 0 10px 26px;
+  font-size: 22px;
+}
+
+.sidebar-action,
+.sidebar-link,
+.ghost-control {
+  border-radius: 7px;
+}
+
+.sidebar-action,
+.sidebar-link {
+  min-height: 38px;
+  gap: 10px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+}
+
+.sidebar-action {
+  margin: 0;
+  color: #d3cfc6;
+  font-weight: 450;
+}
+
+.workspace-topbar {
+  min-height: 58px;
+}
+
+.workspace-title strong {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.composer-wrap {
+  left: 224px;
+}
+
+.university-hero h1,
+.school-hero h1,
+.program-hero h1,
+.course-catalog-hero h1,
+.content-page h1 {
+  font-size: clamp(36px, 4.3vw, 58px);
+  letter-spacing: -0.035em;
+  line-height: 1.16;
+}
+
+@media (max-width: 900px) {
+  .marketing-page .hero {
+    min-height: auto;
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .marketing-page .hero {
+    padding: 54px 18px 66px;
+  }
+
+  .marketing-page .hero h1 {
+    font-size: clamp(38px, 11.2vw, 50px);
+    line-height: 1.16;
+  }
+
+  .curriculum,
+  .declaration {
+    padding-block: 80px;
+  }
+
+  .final-cta {
+    min-height: 410px;
+  }
+
+  .composer-wrap {
+    left: 0;
+  }
+}

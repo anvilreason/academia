@@ -18,8 +18,25 @@ export type UniversityCourse = {
   credits: number;
   category: CreditBandLabel;
   summary: string;
+  application: CourseApplication;
   examWeight: number;
   availability: "open" | "planned";
+};
+
+export type CourseApplication = {
+  questions: [string, string];
+  workScenes: [string, string];
+  ventureScenes: [string, string];
+  deliverable: string;
+  boundary: string;
+};
+
+export type ProgramApplication = {
+  capabilities: [string, string, string, string];
+  workFields: [string, string, string, string];
+  ventureFields: [string, string, string];
+  portfolio: [string, string, string];
+  boundary: string;
 };
 
 export type UniversityProgram = {
@@ -30,6 +47,7 @@ export type UniversityProgram = {
   duration: string;
   requiredCredits: number;
   description: string;
+  application: ProgramApplication;
   creditPlan: CreditBand[];
   courses: UniversityCourse[];
 };
@@ -224,6 +242,144 @@ const medicalPracticeTitles = [
   "医学科研训练",
 ];
 
+const applicationProfiles: Record<
+  string,
+  {
+    workFields: [string, string, string, string];
+    ventureFields: [string, string, string];
+    context: string;
+  }
+> = {
+  文学: {
+    workFields: ["研究与知识编辑", "文化内容与出版", "公共叙事与品牌", "博物馆与文化机构"],
+    ventureFields: ["知识产品", "文化内容品牌", "公共文化服务"],
+    context: "文本、历史材料与公共叙事",
+  },
+  法学: {
+    workFields: ["法律与合规", "公共政策与研究", "组织治理", "国际事务与社会创新"],
+    ventureFields: ["合规科技", "公共服务创新", "社会影响力组织"],
+    context: "制度、利益相关者与公共选择",
+  },
+  管理学: {
+    workFields: ["产品与增长", "战略与经营分析", "组织与人才", "投资与商业运营"],
+    ventureFields: ["新产品验证", "商业模式设计", "组织规模化"],
+    context: "顾客、组织、资本与竞争环境",
+  },
+  教育学: {
+    workFields: ["学习产品设计", "课程与教学", "人才发展", "教育研究与政策"],
+    ventureFields: ["教育科技", "职业学习服务", "学习型组织"],
+    context: "学习者、教学活动与评价证据",
+  },
+  理学: {
+    workFields: ["科学研究", "数据建模与分析", "量化决策", "科研工程与技术咨询"],
+    ventureFields: ["科学计算工具", "深科技研发", "数据密集型产品"],
+    context: "可测量现象、模型与实验数据",
+  },
+  医学: {
+    workFields: ["生命科学研究", "临床与健康服务", "公共卫生", "医药与健康科技"],
+    ventureFields: ["数字健康", "生物技术", "健康服务创新"],
+    context: "生命过程、健康风险与临床证据",
+  },
+  工学: {
+    workFields: ["产品研发", "系统工程", "制造与交付", "技术管理与安全"],
+    ventureFields: ["工程技术产品", "产业数字化", "硬科技创业"],
+    context: "需求、约束、材料与可验证系统",
+  },
+  艺术学: {
+    workFields: ["视觉与交互设计", "内容创作", "品牌与体验", "文化艺术机构"],
+    ventureFields: ["创意工作室", "数字内容产品", "文化体验品牌"],
+    context: "受众、媒介、形式与体验",
+  },
+  交叉学科: {
+    workFields: ["复杂问题研究", "跨职能产品", "创新战略", "技术与社会治理"],
+    ventureFields: ["跨学科新产品", "前沿技术转化", "社会创新"],
+    context: "多学科证据、系统关系与现实约束",
+  },
+};
+
+function getApplicationProfile(discipline: string) {
+  return applicationProfiles[discipline] ?? applicationProfiles["交叉学科"];
+}
+
+function makeProgramApplication(
+  program: ProgramSeed,
+  discipline: string,
+): ProgramApplication {
+  const profile = getApplicationProfile(discipline);
+  return {
+    capabilities: [
+      `用${program.topics[0]}识别问题的关键结构`,
+      `把${program.topics[1]}转化为可检验的分析`,
+      `运用${program.topics[2]}比较方案并作出选择`,
+      `以${program.topics[3]}完成跨情境的综合判断`,
+    ],
+    workFields: profile.workFields,
+    ventureFields: profile.ventureFields,
+    portfolio: [
+      `一份围绕真实问题的${program.name}研究报告`,
+      `一个可以被他人使用或验证的${program.name}实践成果`,
+      `一套记录假设、证据、决策与复盘的专业档案`,
+    ],
+    boundary: `它不会替你提供唯一职业答案；它训练你在${profile.context}中提出更好的问题、寻找证据并承担判断的后果。`,
+  };
+}
+
+function makeCourseApplication(
+  title: string,
+  category: CreditBandLabel,
+  program: ProgramSeed,
+  discipline: string,
+): CourseApplication {
+  const profile = getApplicationProfile(discipline);
+  const categoryIntent: Record<
+    CreditBandLabel,
+    { action: string; artifact: string; boundary: string }
+  > = {
+    大学通识: {
+      action: "建立跨专业都能使用的基础判断",
+      artifact: "一份可以复用的问题分析备忘录",
+      boundary: "通识方法用于照亮问题，不应替代具体领域的事实核查与专业责任。",
+    },
+    学院基础: {
+      action: `读懂${discipline}共同体使用的语言和证据`,
+      artifact: `一份${discipline}方法分析报告`,
+      boundary: "基础方法能提高判断质量，但不能把复杂现实压缩成一个公式或单一指标。",
+    },
+    专业核心: {
+      action: `形成${program.name}中可迁移的专业判断`,
+      artifact: `一份围绕“${title}”的专业决策方案`,
+      boundary: "框架是思考的脚手架；当情境、证据或利益相关者改变时，结论必须重新推导。",
+    },
+    方向选修: {
+      action: "深入一个具体方向并与主修能力连接",
+      artifact: `一份“${title}”方向研究或原型`,
+      boundary: "专题知识更新很快，需要持续校验资料来源、适用时间和具体场景。",
+    },
+    实践与毕业: {
+      action: "把知识放进真实约束并接受外部检验",
+      artifact: `一个可展示、可复盘的${program.name}实践成果`,
+      boundary: "作品完成不是学习终点；必须保留失败记录、反馈证据与下一轮改进计划。",
+    },
+  };
+  const intent = categoryIntent[category];
+  return {
+    questions: [
+      `面对与“${title}”有关的现实问题，哪些信息真正影响判断？`,
+      `如何把${program.name}知识转化为可验证的行动，而不只停留在概念上？`,
+    ],
+    workScenes: [
+      `在${profile.workFields[0]}中，用它${intent.action}`,
+      `在${profile.workFields[1]}中，比较方案、解释证据并与他人协作`,
+    ],
+    ventureScenes: [
+      `在${profile.ventureFields[0]}中验证需求、假设或技术路线`,
+      `在${profile.ventureFields[1]}中识别风险、资源约束与下一步实验`,
+    ],
+    deliverable: intent.artifact,
+    boundary: intent.boundary,
+  };
+}
+
 function splitCredits(total: number, count: number) {
   const base = Math.floor(total / count);
   const remainder = total % count;
@@ -277,7 +433,7 @@ function makeCourses(
 ): UniversityCourse[] {
   const plan = makeCreditPlan(program.credits, discipline);
   const definitions: Array<
-    Omit<UniversityCourse, "code" | "availability">
+    Omit<UniversityCourse, "code" | "availability" | "application">
   > = [];
   const pushCourses = (
     category: CreditBandLabel,
@@ -374,6 +530,12 @@ function makeCourses(
 
   return definitions.map((course, courseIndex) => ({
     ...course,
+    application: makeCourseApplication(
+      course.title,
+      course.category,
+      program,
+      discipline,
+    ),
     code: `AC${String(schoolIndex + 1).padStart(2, "0")}${String(
       programIndex + 1,
     ).padStart(2, "0")}${String(courseIndex + 1).padStart(2, "0")}`,
@@ -1364,6 +1526,7 @@ export const universitySchools: UniversitySchool[] = schoolSeeds.map(
       duration: program.duration ?? "4 年制",
       requiredCredits: program.credits,
       description: program.description,
+      application: makeProgramApplication(program, school.discipline),
       creditPlan: makeCreditPlan(program.credits, school.discipline),
       courses: makeCourses(
         schoolIndex,
