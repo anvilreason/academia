@@ -14,6 +14,13 @@ const DEFAULT_TOKEN_PRICE: TokenPrice = {
 
 export function tokenPriceFor(provider: string, model: string): TokenPrice {
   if (provider === "kimi") {
+    if (model.includes("k2.6")) {
+      return {
+        currency: "cny",
+        inputPerMillion: 6.5,
+        outputPerMillion: 27,
+      };
+    }
     return {
       currency: "cny",
       // Use the K3 uncached rate as a conservative ceiling for Kimi models.

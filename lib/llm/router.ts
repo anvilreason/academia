@@ -42,7 +42,7 @@ type StreamCallbacks = {
 function kimiReasoningEffort(
   value?: string,
 ): "low" | "high" | "max" {
-  return value === "low" || value === "max" ? value : "high";
+  return value === "high" || value === "max" ? value : "low";
 }
 
 function providerConfig() {
@@ -55,7 +55,7 @@ function providerConfig() {
     return {
       provider: "kimi" as const,
       apiKey: config.MOONSHOT_API_KEY,
-      model: config.KIMI_MODEL || "kimi-k3",
+      model: config.KIMI_MODEL || "kimi-k2.6",
       reasoningEffort: kimiReasoningEffort(
         config.KIMI_REASONING_EFFORT,
       ),
@@ -92,7 +92,7 @@ function providerConfig() {
     return {
       provider: "kimi" as const,
       apiKey: config.MOONSHOT_API_KEY,
-      model: config.KIMI_MODEL || "kimi-k3",
+      model: config.KIMI_MODEL || "kimi-k2.6",
       reasoningEffort: kimiReasoningEffort(
         config.KIMI_REASONING_EFFORT,
       ),

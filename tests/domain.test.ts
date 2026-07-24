@@ -105,6 +105,11 @@ test("cost estimation and global budget remain conservative", () => {
     inputPerMillion: 20,
     outputPerMillion: 100,
   });
+  assert.deepEqual(tokenPriceFor("kimi", "kimi-k2.6"), {
+    currency: "cny",
+    inputPerMillion: 6.5,
+    outputPerMillion: 27,
+  });
   assert.equal(
     estimateCostFen(
       1_000_000,

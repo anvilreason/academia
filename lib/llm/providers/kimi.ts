@@ -24,40 +24,80 @@ type KimiChunk = {
   };
 };
 
-export async function streamKimi(
+const KIMI_ENDPOINT =
+  "https://api.moonshot.cn/v1/chat/completions";
+
+function retryDelayMs(response: Response, attempt: number) {
+  const retryAfter = Number(response.headers.get("retry-after"));
+  if (Number.isFinite(retryAfter) && retryAfter > 0) {
+    return Math.min(retryAfter * 1_000, 5_000);
+  }
+  return 1_200 * 2 ** attempt;
+}
+
+async function createKimiStream(
   input: ProviderStreamInput,
-): Promise<ProviderStreamResult> {
-  const response = await fetch(
-    "https://api.moonshot.cn/v1/chat/completions",
-    {
+): Promise<Response & { body: ReadableStream<Uint8Array> }> {
+  const modelOptions =
+    input.model === "kimi-k3"
+      ? {
+          reasoning_effort: input.reasoningEffort ?? "low",
+        }
+      : input.model === "kimi-k2.6"
+        ? {
+            thinking: { type: "disabled" },
+          }
+        : {};
+  const requestBody = JSON.stringify({
+    model: input.model,
+    stream: true,
+    stream_options: { include_usage: true },
+    max_completion_tokens: input.maxOutputTokens,
+    ...modelOptions,
+    messages: [
+      { role: "system", content: input.systemPrompt },
+      ...input.history.slice(-16).map((message) => ({
+        role: message.role === "assistant" ? "assistant" : "user",
+        content: message.content,
+      })),
+    ],
+  });
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const response = await fetch(KIMI_ENDPOINT, {
       method: "POST",
       headers: {
         authorization: `Bearer ${input.apiKey}`,
         "content-type": "application/json",
       },
-      body: JSON.stringify({
-        model: input.model,
-        stream: true,
-        stream_options: { include_usage: true },
-        max_completion_tokens: input.maxOutputTokens,
-        reasoning_effort: input.reasoningEffort ?? "high",
-        messages: [
-          { role: "system", content: input.systemPrompt },
-          ...input.history.slice(-16).map((message) => ({
-            role: message.role === "assistant" ? "assistant" : "user",
-            content: message.content,
-          })),
-        ],
-      }),
-    },
-  );
-  if (!response.ok || !response.body) {
+      body: requestBody,
+    });
+    if (response.ok && response.body) {
+      return response as Response & {
+        body: ReadableStream<Uint8Array>;
+      };
+    }
+
+    const retryable =
+      response.status === 429 || response.status === 503;
     const detail = await response.text();
-    throw new LlmProviderError(
-      `Kimi ${response.status}: ${detail.slice(0, 240)}`,
+    if (!retryable || attempt === 2) {
+      throw new LlmProviderError(
+        `Kimi ${response.status}: ${detail.slice(0, 240)}`,
+      );
+    }
+    await new Promise((resolve) =>
+      setTimeout(resolve, retryDelayMs(response, attempt)),
     );
   }
 
+  throw new LlmProviderError("Kimi stream is unavailable");
+}
+
+export async function streamKimi(
+  input: ProviderStreamInput,
+): Promise<ProviderStreamResult> {
+  const response = await createKimiStream(input);
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
