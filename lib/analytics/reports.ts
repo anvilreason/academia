@@ -5,11 +5,17 @@ import {
   adminMembers,
   analyticsEvents,
   analyticsIdentityLinks,
+  answerPathArtifacts,
+  answerPathEnrollments,
+  baselineDiagnoses,
+  evidenceSubmissions,
   examAttempts,
   learningSessions,
   llmCallLogs,
   memoryItems,
   orders,
+  realWorldOutcomes,
+  rubricEvaluations,
   trackingLinks,
   userCoursePlans,
   userPrograms,
@@ -414,7 +420,19 @@ export type AcademicsReport = Awaited<
 
 export async function getAcademicsReport() {
   const since = new Date(Date.now() - 180 * DAY).toISOString();
-  const [{ testUserIds }, programs, plans, sessions, attempts] =
+  const [
+    { testUserIds },
+    programs,
+    plans,
+    sessions,
+    attempts,
+    pathEnrollments,
+    baselines,
+    pathEvidence,
+    pathArtifacts,
+    pathEvaluations,
+    outcomes,
+  ] =
     await Promise.all([
       identityContext(),
       getDb()
@@ -443,6 +461,30 @@ export async function getAcademicsReport() {
             isNull(examAttempts.deletedAt),
           ),
         ),
+      getDb()
+        .select()
+        .from(answerPathEnrollments)
+        .where(isNull(answerPathEnrollments.deletedAt)),
+      getDb()
+        .select()
+        .from(baselineDiagnoses)
+        .where(isNull(baselineDiagnoses.deletedAt)),
+      getDb()
+        .select()
+        .from(evidenceSubmissions)
+        .where(isNull(evidenceSubmissions.deletedAt)),
+      getDb()
+        .select()
+        .from(answerPathArtifacts)
+        .where(isNull(answerPathArtifacts.deletedAt)),
+      getDb()
+        .select()
+        .from(rubricEvaluations)
+        .where(isNull(rubricEvaluations.deletedAt)),
+      getDb()
+        .select()
+        .from(realWorldOutcomes)
+        .where(isNull(realWorldOutcomes.deletedAt)),
     ]);
   const realPrograms = programs.filter(
     (row) => !testUserIds.has(row.userId),
@@ -454,6 +496,45 @@ export async function getAcademicsReport() {
   const realAttempts = attempts.filter(
     (row) => !testUserIds.has(row.userId),
   );
+  const realPathEnrollments = pathEnrollments.filter(
+    (row) => !testUserIds.has(row.userId),
+  );
+  const realBaselines = baselines.filter(
+    (row) => !testUserIds.has(row.userId),
+  );
+  const realPathEvidence = pathEvidence.filter(
+    (row) => !testUserIds.has(row.userId),
+  );
+  const realPathArtifacts = pathArtifacts.filter(
+    (row) => !testUserIds.has(row.userId),
+  );
+  const realOutcomes = outcomes.filter(
+    (row) => !testUserIds.has(row.userId),
+  );
+  const realArtifactIds = new Set(realPathArtifacts.map((row) => row.id));
+  const realPathEvaluations = pathEvaluations.filter((row) =>
+    realArtifactIds.has(row.artifactId),
+  );
+  const artifactUsers = new Map(
+    realPathArtifacts.map((row) => [row.id, row.userId]),
+  );
+  const pathActorSets = {
+    started: new Set(realPathEnrollments.map((row) => row.userId)),
+    baseline: new Set(realBaselines.map((row) => row.userId)),
+    evidence: new Set(realPathEvidence.map((row) => row.userId)),
+    artifact: new Set(realPathArtifacts.map((row) => row.userId)),
+    reviewed: new Set(
+      realPathEvaluations
+        .map((row) => artifactUsers.get(row.artifactId))
+        .filter((value): value is string => Boolean(value)),
+    ),
+    revised: new Set(
+      realPathArtifacts
+        .filter((row) => row.version > 1)
+        .map((row) => row.userId),
+    ),
+    outcome: new Set(realOutcomes.map((row) => row.userId)),
+  };
 
   const programRows = universitySchools.flatMap((school) =>
     school.programs.map((program) => {
@@ -649,6 +730,25 @@ export async function getAcademicsReport() {
       .sort((a, b) => b.enrolled - a.enrolled)
       .slice(0, 30),
     courses,
+    answerPaths: {
+      funnel: [
+        { label: "开始路径", value: pathActorSets.started.size },
+        { label: "完成基线", value: pathActorSets.baseline.size },
+        { label: "提交证据", value: pathActorSets.evidence.size },
+        { label: "提交产物", value: pathActorSets.artifact.size },
+        { label: "完成审阅", value: pathActorSets.reviewed.size },
+        { label: "提交修订", value: pathActorSets.revised.size },
+        { label: "记录结果", value: pathActorSets.outcome.size },
+      ],
+      evidenceCount: realPathEvidence.length,
+      artifacts: realPathArtifacts.length,
+      revisions: realPathArtifacts.filter((row) => row.version > 1).length,
+      reviews: realPathEvaluations.length,
+      revisionRequired: realPathEvaluations.filter(
+        (row) => row.requiredRevision,
+      ).length,
+      completed: realOutcomes.length,
+    },
   };
 }
 

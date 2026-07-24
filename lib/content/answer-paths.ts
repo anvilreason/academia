@@ -51,7 +51,10 @@ export const capabilityDomains = [
 
 export type CreationStageSlug = (typeof creationStages)[number]["slug"];
 export type CapabilityDomain = (typeof capabilityDomains)[number];
-export type AnswerPathStatus = "flagship-building" | "question-index";
+export type AnswerPathStatus =
+  | "flagship-open"
+  | "flagship-building"
+  | "question-index";
 
 export type KnowledgeLink = {
   label: string;
@@ -145,7 +148,7 @@ export const answerTopics: AnswerTopic[] = [
     duration: "7—10 天",
     artifact: "需求证据表与继续／停止判断",
     disciplines: ["用户研究", "行为经济学", "市场营销"],
-    status: "flagship-building",
+    status: "flagship-open",
     flagship: true,
     links: [
       schoolLinks.social,

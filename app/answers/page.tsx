@@ -39,6 +39,10 @@ export default function AnswerMapPage() {
             旗舰路径 · 编制中
           </span>
           <span>
+            <i data-status="flagship-open" />
+            正式路径 · 已开放
+          </span>
+          <span>
             <i data-status="question-index" />
             问题索引
           </span>
@@ -66,7 +70,11 @@ export default function AnswerMapPage() {
                     <div>
                       <span>{topic.capabilityDomain}</span>
                       <i>
-                        {topic.flagship ? "旗舰 · 编制中" : "问题索引"}
+                        {topic.status === "flagship-open"
+                          ? "正式路径 · 已开放"
+                          : topic.flagship
+                            ? "旗舰 · 编制中"
+                            : "问题索引"}
                       </i>
                     </div>
                     <h3>{topic.title}</h3>

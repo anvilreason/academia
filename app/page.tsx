@@ -153,7 +153,11 @@ export default function LandingPage() {
               </dl>
               <footer>
                 <span>
-                  {topic.flagship ? "旗舰路径 · 编制中" : "问题索引"}
+                  {topic.status === "flagship-open"
+                    ? "正式路径 · 已开放"
+                    : topic.flagship
+                      ? "旗舰路径 · 编制中"
+                      : "问题索引"}
                 </span>
                 <ArrowUpRight aria-hidden="true" size={16} />
               </footer>
@@ -174,8 +178,8 @@ export default function LandingPage() {
               <h2>六条路径，不许用阅读代替完成。</h2>
             </div>
             <p>
-              路径必须要求真实行动、证据、产物和修订。当前版本先公开结构与编制状态，
-              不把未完成内容伪装成正式课程。
+              路径必须要求真实行动、证据、产物和修订。第一条路径已经开放，
+              其余仍保留真实编制状态。
             </p>
           </header>
           <div className="v1-flagship-list">
@@ -184,7 +188,9 @@ export default function LandingPage() {
                 <span>{String(index + 1).padStart(2, "0")}</span>
                 <strong>{topic.title}</strong>
                 <em>{topic.artifact}</em>
-                <small>编制中</small>
+                <small>
+                  {topic.status === "flagship-open" ? "已开放" : "编制中"}
+                </small>
                 <ArrowRight aria-hidden="true" size={17} />
               </Link>
             ))}

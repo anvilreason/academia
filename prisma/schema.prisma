@@ -416,3 +416,132 @@ model AdminAuditLog {
   @@index([adminEmail, createdAt])
   @@map("admin_audit_logs")
 }
+
+model AnswerPathEnrollment {
+  id                String    @id @default(uuid())
+  userId            String    @map("user_id")
+  pathSlug          String    @map("path_slug")
+  pathVersion       String    @map("path_version")
+  contentVersion    String    @map("content_version")
+  evaluationVersion String    @map("evaluation_version")
+  currentStep       String    @default("baseline") @map("current_step")
+  status            String    @default("active")
+  outcomeStatus     String?   @map("outcome_status")
+  startedAt         DateTime  @map("started_at")
+  completedAt       DateTime? @map("completed_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  @@unique([userId, pathSlug])
+  @@index([userId, updatedAt])
+  @@map("answer_path_enrollments")
+}
+
+model BaselineDiagnosis {
+  id                 String    @id @default(uuid())
+  enrollmentId       String    @unique @map("enrollment_id")
+  userId             String    @map("user_id")
+  projectTitle       String    @map("project_title")
+  ideaSummary        String    @map("idea_summary")
+  targetUser         String    @map("target_user")
+  currentEvidence    String    @map("current_evidence")
+  biggestUncertainty String    @map("biggest_uncertainty")
+  confidence         Int
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+
+  @@map("baseline_diagnoses")
+}
+
+model EvidenceSubmission {
+  id                 String    @id @default(uuid())
+  enrollmentId       String    @map("enrollment_id")
+  userId             String    @map("user_id")
+  stepKey            String    @map("step_key")
+  evidenceType       String    @map("evidence_type")
+  subjectLabel       String    @map("subject_label")
+  content            String
+  provenance         String
+  observedAt         DateTime? @map("observed_at")
+  verificationStatus String    @default("user_attested") @map("verification_status")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+
+  @@index([enrollmentId, createdAt])
+  @@map("evidence_submissions")
+}
+
+model AnswerPathArtifact {
+  id                String    @id @default(uuid())
+  userId            String    @map("user_id")
+  enrollmentId      String    @map("enrollment_id")
+  title             String
+  artifactType      String    @map("artifact_type")
+  version           Int       @default(1)
+  content           String
+  userContribution  String    @map("user_contribution")
+  agentContribution String    @map("agent_contribution")
+  visibility        String    @default("private")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  @@unique([enrollmentId, version])
+  @@map("answer_path_artifacts")
+}
+
+model RubricEvaluation {
+  id               String    @id @default(uuid())
+  enrollmentId     String    @map("enrollment_id")
+  artifactId       String    @map("artifact_id")
+  rubricVersion    String    @map("rubric_version")
+  evaluatorType    String    @default("agent") @map("evaluator_type")
+  scoreDetailJson  String    @map("score_detail_json")
+  strengths        String
+  weaknesses       String
+  feedback         String
+  requiredRevision Boolean   @default(true) @map("required_revision")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  @@index([enrollmentId, createdAt])
+  @@map("rubric_evaluations")
+}
+
+model RealWorldOutcome {
+  id             String    @id @default(uuid())
+  enrollmentId   String    @unique @map("enrollment_id")
+  userId         String    @map("user_id")
+  decision       String
+  observedResult String    @map("observed_result")
+  nextAction     String    @map("next_action")
+  uncertainty    String
+  happenedAt     DateTime  @map("happened_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  @@map("real_world_outcomes")
+}
+
+model CapabilityEvidence {
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  enrollmentId   String    @map("enrollment_id")
+  capabilityId   String    @map("capability_id")
+  level          Int
+  sourceType     String    @map("source_type")
+  sourceId       String    @map("source_id")
+  confidence     Int
+  verifiedAt     DateTime  @map("verified_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  @@unique([userId, capabilityId, sourceType, sourceId])
+  @@map("capability_evidence")
+}

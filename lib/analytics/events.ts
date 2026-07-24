@@ -26,6 +26,7 @@ export const CLIENT_ANALYTICS_EVENTS = new Set([
   "page_engaged",
   "answer_map_viewed",
   "answer_path_viewed",
+  "knowledge_node_opened",
 ]);
 
 export type AnalyticsEventName =

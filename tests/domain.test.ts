@@ -55,6 +55,12 @@ import {
 import {
   courseContentStatus,
 } from "../lib/content/content-status.ts";
+import {
+  completionProgress,
+  scoreFalseDemandArtifact,
+  validateBaseline,
+  validateEvidence,
+} from "../lib/domain/answer-path.ts";
 
 test("password policy rejects weak values and verifies derived hashes", async () => {
   assert.equal(validatePassword("short"), "密码至少需要 10 位");
@@ -369,7 +375,7 @@ test("university catalog has broad, unique and credit-complete programs", () => 
   }
 });
 
-test("answer atlas exposes 30 versioned questions without pretending paths are open", () => {
+test("answer atlas exposes 30 versioned questions and only one formal path", () => {
   assert.equal(answerTopics.length, 30);
   assert.equal(new Set(answerTopics.map((topic) => topic.slug)).size, 30);
   assert.equal(flagshipAnswerTopics.length, 6);
@@ -385,14 +391,104 @@ test("answer atlas exposes 30 versioned questions without pretending paths are o
     assert.equal(topic.artifact.length > 2, true);
     assert.equal(topic.knowledgeLinks.length > 0, true);
     assert.equal(
-      ["flagship-building", "question-index"].includes(topic.status),
+      ["flagship-open", "flagship-building", "question-index"].includes(topic.status),
       true,
     );
   }
+  assert.equal(
+    answerTopics.filter((topic) => topic.status === "flagship-open").length,
+    1,
+  );
   for (const topic of flagshipAnswerTopics) {
     assert.ok(topic.preview);
     assert.equal(topic.preview.misconceptions.length >= 3, true);
   }
+});
+
+test("false-demand path requires traceable reality evidence and can demand revision", () => {
+  assert.equal(
+    validateBaseline({
+      projectTitle: "报价助手",
+      ideaSummary: "帮助独立设计师更快判断项目范围并形成报价。",
+      targetUser: "最近三个月独立接单且需要自己报价的设计师。",
+      currentEvidence: "目前只有两位朋友表示感兴趣，还没有行为证据。",
+      biggestUncertainty: "他们是否真的会为减少报价时间改变现在的工作方式。",
+      confidence: 35,
+    }).ok,
+    true,
+  );
+  assert.equal(
+    validateEvidence({
+      evidenceType: "interview",
+      subjectLabel: "受访者 01",
+      content: "上周为一个新项目手工整理报价表，前后花了两个小时。",
+      provenance: "7 月 24 日访谈录音 08:30",
+    }).ok,
+    true,
+  );
+  const now = new Date().toISOString();
+  const baseline = {
+    id: "baseline",
+    enrollmentId: "enrollment",
+    userId: "user",
+    projectTitle: "报价助手",
+    ideaSummary: "帮助设计师报价",
+    targetUser: "独立设计师",
+    currentEvidence: "少量访谈",
+    biggestUncertainty: "尚未确定他们是否愿意付出切换成本",
+    confidence: 35,
+    createdAt: now,
+    updatedAt: now,
+  };
+  const evidence = Array.from({ length: 5 }, (_, index) => ({
+    id: `evidence-${index}`,
+    enrollmentId: "enrollment",
+    userId: "user",
+    stepKey: "field-action",
+    evidenceType:
+      index === 3 ? "cost" : index === 4 ? "counterexample" : "interview",
+    subjectLabel: `受访者 ${index + 1}`,
+    content: "最近一次报价中实际使用了表格，并为核对范围投入了两个小时。",
+    provenance: `录音 ${index + 1} 的 10:00`,
+    observedAt: now,
+    verificationStatus: "user_attested",
+    createdAt: now,
+    updatedAt: now,
+  }));
+  const artifact = {
+    id: "artifact",
+    userId: "user",
+    enrollmentId: "enrollment",
+    title: "需求证据表",
+    artifactType: "demand_evidence_table",
+    version: 1,
+    content:
+      "已观察到的事实包括五位对象最近真实完成报价的过程。三位对象用表格逐项核对范围，一位直接复用旧报价，一位把报价交给合作伙伴。反例显示一位对象并不需要新工具，而更看重合同模板。当前只能判断报价核对存在重复成本，尚未证明独立工具是最佳替代方案。现有替代方案虽然慢，但已经嵌入交付流程，切换本身也有成本。下一步会用可点击原型观察是否改变现有流程；若没有任何人愿意导入真实项目，或者只愿意围观演示而不输入项目信息，则推翻当前产品形态。仍然不确定用户愿意承担多少迁移成本，也不知道高频与低频接单者是否应被视为同一人群。证据不足的部分不会被写成结论，所有原始记录都保留录音位置，并可回到对应时间点复核。",
+    userContribution: "用户亲自访谈、整理行为证据并写出判断。",
+    agentContribution: "Agent 只协助检查结构和反例。",
+    visibility: "private",
+    createdAt: now,
+    updatedAt: now,
+  };
+  const passing = scoreFalseDemandArtifact({ baseline, evidence, artifact });
+  assert.equal(passing.requiredRevision, false);
+  const failing = scoreFalseDemandArtifact({
+    baseline,
+    evidence: evidence.slice(0, 2),
+    artifact: { ...artifact, content: "只有少量访谈总结，尚无反例。" },
+  });
+  assert.equal(failing.requiredRevision, true);
+  assert.equal(
+    completionProgress({
+      hasBaseline: true,
+      evidenceCount: 5,
+      artifactCount: 2,
+      reviewCount: 2,
+      latestReviewRequiresRevision: false,
+      hasOutcome: true,
+    }),
+    100,
+  );
 });
 
 test("course status distinguishes formally open teaching from planned study paths", () => {

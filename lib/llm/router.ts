@@ -13,6 +13,7 @@ import {
 } from "./cost-tracker";
 import { tokenPriceFor } from "./pricing";
 import { academiaAgentPrompt } from "./prompts/academia-agent-zh-v1";
+import { answerReviewPrompt } from "./prompts/answer-review-zh-v1";
 import { promptForNode } from "./prompts/socratic-zh-v1";
 import { streamAnthropic } from "./providers/anthropic";
 import { streamKimi } from "./providers/kimi";
@@ -28,7 +29,8 @@ export { LlmBudgetError, LlmProviderError } from "./router-errors";
 export type LlmUsage = { inputTokens: number; outputTokens: number };
 export type LlmMode =
   | { type: "course"; nodeSlug: string }
-  | { type: "general-agent" };
+  | { type: "general-agent" }
+  | { type: "answer-review"; rubricContext: string };
 
 type StreamCallbacks = {
   onDelta(text: string): Promise<void>;
@@ -119,7 +121,9 @@ export async function streamAcadPro(input: {
   const systemPrompt =
     input.mode.type === "general-agent"
       ? academiaAgentPrompt(memories)
-      : promptForNode(input.mode.nodeSlug, memories);
+      : input.mode.type === "answer-review"
+        ? answerReviewPrompt(input.mode.rubricContext)
+        : promptForNode(input.mode.nodeSlug, memories);
   const estimatedInput = estimateTokens(
     systemPrompt +
       input.history.map((message) => message.content).join("\n"),

@@ -1,9 +1,14 @@
 import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
+  answerPathArtifacts,
+  answerPathEnrollments,
   authRateLimits,
   agentMessages,
   agentThreads,
+  baselineDiagnoses,
+  capabilityEvidence,
+  evidenceSubmissions,
   guestTrialUsage,
   examAttempts,
   learningNotes,
@@ -14,6 +19,8 @@ import {
   nodeEntitlements,
   orders,
   practiceProjects,
+  realWorldOutcomes,
+  rubricEvaluations,
   userCoursePlans,
   userPrograms,
   users,
@@ -25,6 +32,12 @@ import type {
   AcademiaRepository,
   AgentMessageRecord,
   AgentThreadRecord,
+  AnswerPathArtifactRecord,
+  AnswerPathEnrollmentRecord,
+  AnswerPathSnapshot,
+  BaselineDiagnosisRecord,
+  CapabilityEvidenceRecord,
+  EvidenceSubmissionRecord,
   ExamAttemptRecord,
   LearningSessionRecord,
   MessageRecord,
@@ -32,6 +45,8 @@ import type {
   NoteRecord,
   OrderRecord,
   PracticeProjectRecord,
+  RealWorldOutcomeRecord,
+  RubricEvaluationRecord,
   UserCoursePlanRecord,
   UserProgramRecord,
   UserRecord,
@@ -161,6 +176,61 @@ function asAgentMessage(
 function asMemoryItem(
   row: typeof memoryItems.$inferSelect,
 ): MemoryItemRecord {
+  return row;
+}
+
+function asAnswerPathEnrollment(
+  row: typeof answerPathEnrollments.$inferSelect,
+): AnswerPathEnrollmentRecord {
+  return row;
+}
+
+function asBaselineDiagnosis(
+  row: typeof baselineDiagnoses.$inferSelect,
+): BaselineDiagnosisRecord {
+  return row;
+}
+
+function asEvidenceSubmission(
+  row: typeof evidenceSubmissions.$inferSelect,
+): EvidenceSubmissionRecord {
+  return row;
+}
+
+function asAnswerPathArtifact(
+  row: typeof answerPathArtifacts.$inferSelect,
+): AnswerPathArtifactRecord {
+  return row;
+}
+
+function asRubricEvaluation(
+  row: typeof rubricEvaluations.$inferSelect,
+): RubricEvaluationRecord {
+  return {
+    id: row.id,
+    enrollmentId: row.enrollmentId,
+    artifactId: row.artifactId,
+    rubricVersion: row.rubricVersion,
+    evaluatorType: row.evaluatorType,
+    scoreDetail: JSON.parse(row.scoreDetailJson) as Record<string, number>,
+    strengths: row.strengths,
+    weaknesses: row.weaknesses,
+    feedback: row.feedback,
+    requiredRevision: row.requiredRevision,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+function asRealWorldOutcome(
+  row: typeof realWorldOutcomes.$inferSelect,
+): RealWorldOutcomeRecord {
+  return row;
+}
+
+function asCapabilityEvidence(
+  row: typeof capabilityEvidence.$inferSelect,
+): CapabilityEvidenceRecord {
   return row;
 }
 
@@ -932,6 +1002,435 @@ export class D1AcademiaRepository implements AcademiaRepository {
       )
       .returning({ id: memoryItems.id });
     return Boolean(forgotten);
+  }
+
+  async startAnswerPath(input: {
+    userId: string;
+    pathSlug: string;
+    pathVersion: string;
+    contentVersion: string;
+    evaluationVersion: string;
+  }) {
+    const existing = await this.getAnswerPathEnrollment(
+      input.userId,
+      input.pathSlug,
+    );
+    if (existing) return existing;
+    const now = nowIso();
+    const [created] = await getDb()
+      .insert(answerPathEnrollments)
+      .values({
+        id: newId(),
+        ...input,
+        currentStep: "baseline",
+        status: "active",
+        startedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    return asAnswerPathEnrollment(created);
+  }
+
+  async getAnswerPathEnrollment(userId: string, pathSlug: string) {
+    const [row] = await getDb()
+      .select()
+      .from(answerPathEnrollments)
+      .where(
+        and(
+          eq(answerPathEnrollments.userId, userId),
+          eq(answerPathEnrollments.pathSlug, pathSlug),
+          isNull(answerPathEnrollments.deletedAt),
+        ),
+      )
+      .limit(1);
+    return row ? asAnswerPathEnrollment(row) : null;
+  }
+
+  async getAnswerPathSnapshot(
+    userId: string,
+    pathSlug: string,
+  ): Promise<AnswerPathSnapshot | null> {
+    const enrollment = await this.getAnswerPathEnrollment(userId, pathSlug);
+    if (!enrollment) return null;
+    const [
+      baselineRows,
+      evidenceRows,
+      artifactRows,
+      evaluationRows,
+      outcomeRows,
+      capabilityRows,
+    ] = await Promise.all([
+      getDb()
+        .select()
+        .from(baselineDiagnoses)
+        .where(
+          and(
+            eq(baselineDiagnoses.enrollmentId, enrollment.id),
+            isNull(baselineDiagnoses.deletedAt),
+          ),
+        )
+        .limit(1),
+      getDb()
+        .select()
+        .from(evidenceSubmissions)
+        .where(
+          and(
+            eq(evidenceSubmissions.enrollmentId, enrollment.id),
+            isNull(evidenceSubmissions.deletedAt),
+          ),
+        )
+        .orderBy(asc(evidenceSubmissions.createdAt)),
+      getDb()
+        .select()
+        .from(answerPathArtifacts)
+        .where(
+          and(
+            eq(answerPathArtifacts.enrollmentId, enrollment.id),
+            isNull(answerPathArtifacts.deletedAt),
+          ),
+        )
+        .orderBy(asc(answerPathArtifacts.version)),
+      getDb()
+        .select()
+        .from(rubricEvaluations)
+        .where(
+          and(
+            eq(rubricEvaluations.enrollmentId, enrollment.id),
+            isNull(rubricEvaluations.deletedAt),
+          ),
+        )
+        .orderBy(asc(rubricEvaluations.createdAt)),
+      getDb()
+        .select()
+        .from(realWorldOutcomes)
+        .where(
+          and(
+            eq(realWorldOutcomes.enrollmentId, enrollment.id),
+            isNull(realWorldOutcomes.deletedAt),
+          ),
+        )
+        .limit(1),
+      getDb()
+        .select()
+        .from(capabilityEvidence)
+        .where(
+          and(
+            eq(capabilityEvidence.enrollmentId, enrollment.id),
+            isNull(capabilityEvidence.deletedAt),
+          ),
+        )
+        .orderBy(asc(capabilityEvidence.createdAt)),
+    ]);
+    return {
+      enrollment,
+      baseline: baselineRows[0]
+        ? asBaselineDiagnosis(baselineRows[0])
+        : null,
+      evidence: evidenceRows.map(asEvidenceSubmission),
+      artifacts: artifactRows.map(asAnswerPathArtifact),
+      evaluations: evaluationRows.map(asRubricEvaluation),
+      outcome: outcomeRows[0] ? asRealWorldOutcome(outcomeRows[0]) : null,
+      capabilities: capabilityRows.map(asCapabilityEvidence),
+    };
+  }
+
+  async saveBaselineDiagnosis(input: {
+    enrollmentId: string;
+    userId: string;
+    projectTitle: string;
+    ideaSummary: string;
+    targetUser: string;
+    currentEvidence: string;
+    biggestUncertainty: string;
+    confidence: number;
+  }) {
+    const enrollment = await getDb()
+      .select()
+      .from(answerPathEnrollments)
+      .where(
+        and(
+          eq(answerPathEnrollments.id, input.enrollmentId),
+          eq(answerPathEnrollments.userId, input.userId),
+          isNull(answerPathEnrollments.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (!enrollment[0]) throw new Error("PATH_NOT_FOUND");
+    const now = nowIso();
+    const [record] = await getDb()
+      .insert(baselineDiagnoses)
+      .values({
+        id: newId(),
+        ...input,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: baselineDiagnoses.enrollmentId,
+        set: {
+          projectTitle: input.projectTitle,
+          ideaSummary: input.ideaSummary,
+          targetUser: input.targetUser,
+          currentEvidence: input.currentEvidence,
+          biggestUncertainty: input.biggestUncertainty,
+          confidence: input.confidence,
+          updatedAt: now,
+          deletedAt: null,
+        },
+      })
+      .returning();
+    await getDb()
+      .update(answerPathEnrollments)
+      .set({ currentStep: "action", updatedAt: now })
+      .where(eq(answerPathEnrollments.id, input.enrollmentId));
+    return asBaselineDiagnosis(record);
+  }
+
+  async addEvidenceSubmission(input: {
+    enrollmentId: string;
+    userId: string;
+    stepKey: string;
+    evidenceType: string;
+    subjectLabel: string;
+    content: string;
+    provenance: string;
+    observedAt?: string | null;
+  }) {
+    const [enrollment] = await getDb()
+      .select()
+      .from(answerPathEnrollments)
+      .where(
+        and(
+          eq(answerPathEnrollments.id, input.enrollmentId),
+          eq(answerPathEnrollments.userId, input.userId),
+          isNull(answerPathEnrollments.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (!enrollment) throw new Error("PATH_NOT_FOUND");
+    const now = nowIso();
+    const [record] = await getDb()
+      .insert(evidenceSubmissions)
+      .values({
+        id: newId(),
+        ...input,
+        observedAt: input.observedAt ?? null,
+        verificationStatus: "user_attested",
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    await getDb()
+      .update(answerPathEnrollments)
+      .set({ currentStep: "evidence", updatedAt: now })
+      .where(eq(answerPathEnrollments.id, input.enrollmentId));
+    return asEvidenceSubmission(record);
+  }
+
+  async createAnswerPathArtifact(input: {
+    enrollmentId: string;
+    userId: string;
+    title: string;
+    content: string;
+    userContribution: string;
+    agentContribution: string;
+  }) {
+    const [enrollment] = await getDb()
+      .select()
+      .from(answerPathEnrollments)
+      .where(
+        and(
+          eq(answerPathEnrollments.id, input.enrollmentId),
+          eq(answerPathEnrollments.userId, input.userId),
+          isNull(answerPathEnrollments.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (!enrollment) throw new Error("PATH_NOT_FOUND");
+    const existing = await getDb()
+      .select({ version: answerPathArtifacts.version })
+      .from(answerPathArtifacts)
+      .where(
+        and(
+          eq(answerPathArtifacts.enrollmentId, input.enrollmentId),
+          isNull(answerPathArtifacts.deletedAt),
+        ),
+      );
+    const version = Math.max(0, ...existing.map((item) => item.version)) + 1;
+    const now = nowIso();
+    const [record] = await getDb()
+      .insert(answerPathArtifacts)
+      .values({
+        id: newId(),
+        ...input,
+        artifactType: "demand_evidence_table",
+        version,
+        visibility: "private",
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    await getDb()
+      .update(answerPathEnrollments)
+      .set({
+        currentStep: version > 1 ? "review" : "artifact",
+        updatedAt: now,
+      })
+      .where(eq(answerPathEnrollments.id, input.enrollmentId));
+    return asAnswerPathArtifact(record);
+  }
+
+  async createRubricEvaluation(input: {
+    enrollmentId: string;
+    artifactId: string;
+    rubricVersion: string;
+    scoreDetail: Record<string, number>;
+    strengths: string;
+    weaknesses: string;
+    feedback: string;
+    requiredRevision: boolean;
+  }) {
+    const now = nowIso();
+    const [record] = await getDb()
+      .insert(rubricEvaluations)
+      .values({
+        id: newId(),
+        enrollmentId: input.enrollmentId,
+        artifactId: input.artifactId,
+        rubricVersion: input.rubricVersion,
+        evaluatorType: "agent",
+        scoreDetailJson: JSON.stringify(input.scoreDetail),
+        strengths: input.strengths,
+        weaknesses: input.weaknesses,
+        feedback: input.feedback,
+        requiredRevision: input.requiredRevision,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    await getDb()
+      .update(answerPathEnrollments)
+      .set({
+        currentStep: input.requiredRevision ? "revision" : "outcome",
+        updatedAt: now,
+      })
+      .where(eq(answerPathEnrollments.id, input.enrollmentId));
+    return asRubricEvaluation(record);
+  }
+
+  async recordRealWorldOutcome(input: {
+    enrollmentId: string;
+    userId: string;
+    decision: string;
+    observedResult: string;
+    nextAction: string;
+    uncertainty: string;
+    happenedAt: string;
+    capabilityLevel: number;
+    capabilityConfidence: number;
+  }) {
+    const [enrollment] = await getDb()
+      .select()
+      .from(answerPathEnrollments)
+      .where(
+        and(
+          eq(answerPathEnrollments.id, input.enrollmentId),
+          eq(answerPathEnrollments.userId, input.userId),
+          isNull(answerPathEnrollments.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (!enrollment) throw new Error("PATH_NOT_FOUND");
+    const evaluations = await getDb()
+      .select()
+      .from(rubricEvaluations)
+      .where(
+        and(
+          eq(rubricEvaluations.enrollmentId, input.enrollmentId),
+          isNull(rubricEvaluations.deletedAt),
+        ),
+      )
+      .orderBy(desc(rubricEvaluations.createdAt))
+      .limit(1);
+    if (!evaluations[0] || evaluations[0].requiredRevision) {
+      throw new Error("REVIEW_NOT_PASSED");
+    }
+    const now = nowIso();
+    const [outcome] = await getDb()
+      .insert(realWorldOutcomes)
+      .values({
+        id: newId(),
+        enrollmentId: input.enrollmentId,
+        userId: input.userId,
+        decision: input.decision,
+        observedResult: input.observedResult,
+        nextAction: input.nextAction,
+        uncertainty: input.uncertainty,
+        happenedAt: input.happenedAt,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: realWorldOutcomes.enrollmentId,
+        set: {
+          decision: input.decision,
+          observedResult: input.observedResult,
+          nextAction: input.nextAction,
+          uncertainty: input.uncertainty,
+          happenedAt: input.happenedAt,
+          updatedAt: now,
+          deletedAt: null,
+        },
+      })
+      .returning();
+    const [capability] = await getDb()
+      .insert(capabilityEvidence)
+      .values({
+        id: newId(),
+        userId: input.userId,
+        enrollmentId: input.enrollmentId,
+        capabilityId: "evidence_based_demand_judgment",
+        level: input.capabilityLevel,
+        sourceType: "real_world_outcome",
+        sourceId: outcome.id,
+        confidence: input.capabilityConfidence,
+        verifiedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: [
+          capabilityEvidence.userId,
+          capabilityEvidence.capabilityId,
+          capabilityEvidence.sourceType,
+          capabilityEvidence.sourceId,
+        ],
+        set: {
+          level: input.capabilityLevel,
+          confidence: input.capabilityConfidence,
+          verifiedAt: now,
+          updatedAt: now,
+          deletedAt: null,
+        },
+      })
+      .returning();
+    const [completed] = await getDb()
+      .update(answerPathEnrollments)
+      .set({
+        currentStep: "completed",
+        status: "completed",
+        outcomeStatus: input.decision,
+        completedAt: now,
+        updatedAt: now,
+      })
+      .where(eq(answerPathEnrollments.id, input.enrollmentId))
+      .returning();
+    return {
+      outcome: asRealWorldOutcome(outcome),
+      capability: asCapabilityEvidence(capability),
+      enrollment: asAnswerPathEnrollment(completed),
+    };
   }
 
   async recordExamAttempt(input: {

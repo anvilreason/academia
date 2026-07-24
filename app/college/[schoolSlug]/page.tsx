@@ -63,7 +63,11 @@ export default async function SchoolPage({
               {relatedQuestions.map((topic) => (
                 <Link href={`/answers/${topic.slug}`} key={topic.slug}>
                   <span>
-                    {topic.flagship ? "旗舰路径 · 编制中" : "问题索引"}
+                    {topic.status === "flagship-open"
+                      ? "正式路径 · 已开放"
+                      : topic.flagship
+                        ? "旗舰路径 · 编制中"
+                        : "问题索引"}
                   </span>
                   <strong>{topic.title}</strong>
                   <p>{topic.initialConclusion}</p>

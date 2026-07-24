@@ -65,7 +65,13 @@ export default async function CourseCatalogPage({
             <div>
               {relatedQuestions.map((topic) => (
                 <Link href={`/answers/${topic.slug}`} key={topic.slug}>
-                  <span>{topic.flagship ? "旗舰路径 · 编制中" : "问题索引"}</span>
+                  <span>
+                    {topic.status === "flagship-open"
+                      ? "正式路径 · 已开放"
+                      : topic.flagship
+                        ? "旗舰路径 · 编制中"
+                        : "问题索引"}
+                  </span>
                   <strong>{topic.title}</strong>
                   <p>{topic.artifact}</p>
                   <ArrowRight aria-hidden="true" size={16} />

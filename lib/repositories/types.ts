@@ -151,6 +151,118 @@ export type MemoryItemRecord = {
   updatedAt: string;
 };
 
+export type AnswerPathEnrollmentRecord = {
+  id: string;
+  userId: string;
+  pathSlug: string;
+  pathVersion: string;
+  contentVersion: string;
+  evaluationVersion: string;
+  currentStep: string;
+  status: string;
+  outcomeStatus: string | null;
+  startedAt: string;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type BaselineDiagnosisRecord = {
+  id: string;
+  enrollmentId: string;
+  userId: string;
+  projectTitle: string;
+  ideaSummary: string;
+  targetUser: string;
+  currentEvidence: string;
+  biggestUncertainty: string;
+  confidence: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type EvidenceSubmissionRecord = {
+  id: string;
+  enrollmentId: string;
+  userId: string;
+  stepKey: string;
+  evidenceType: string;
+  subjectLabel: string;
+  content: string;
+  provenance: string;
+  observedAt: string | null;
+  verificationStatus: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AnswerPathArtifactRecord = {
+  id: string;
+  userId: string;
+  enrollmentId: string;
+  title: string;
+  artifactType: string;
+  version: number;
+  content: string;
+  userContribution: string;
+  agentContribution: string;
+  visibility: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type RubricEvaluationRecord = {
+  id: string;
+  enrollmentId: string;
+  artifactId: string;
+  rubricVersion: string;
+  evaluatorType: string;
+  scoreDetail: Record<string, number>;
+  strengths: string;
+  weaknesses: string;
+  feedback: string;
+  requiredRevision: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type RealWorldOutcomeRecord = {
+  id: string;
+  enrollmentId: string;
+  userId: string;
+  decision: string;
+  observedResult: string;
+  nextAction: string;
+  uncertainty: string;
+  happenedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CapabilityEvidenceRecord = {
+  id: string;
+  userId: string;
+  enrollmentId: string;
+  capabilityId: string;
+  level: number;
+  sourceType: string;
+  sourceId: string;
+  confidence: number;
+  verifiedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AnswerPathSnapshot = {
+  enrollment: AnswerPathEnrollmentRecord;
+  baseline: BaselineDiagnosisRecord | null;
+  evidence: EvidenceSubmissionRecord[];
+  artifacts: AnswerPathArtifactRecord[];
+  evaluations: RubricEvaluationRecord[];
+  outcome: RealWorldOutcomeRecord | null;
+  capabilities: CapabilityEvidenceRecord[];
+};
+
 export interface AcademiaRepository {
   findUserByEmail(email: string): Promise<UserRecord | null>;
   createUser(input: {
@@ -291,6 +403,74 @@ export interface AcademiaRepository {
     limit?: number,
   ): Promise<MemoryItemRecord[]>;
   forgetMemory(userId: string, id: string): Promise<boolean>;
+  startAnswerPath(input: {
+    userId: string;
+    pathSlug: string;
+    pathVersion: string;
+    contentVersion: string;
+    evaluationVersion: string;
+  }): Promise<AnswerPathEnrollmentRecord>;
+  getAnswerPathEnrollment(
+    userId: string,
+    pathSlug: string,
+  ): Promise<AnswerPathEnrollmentRecord | null>;
+  getAnswerPathSnapshot(
+    userId: string,
+    pathSlug: string,
+  ): Promise<AnswerPathSnapshot | null>;
+  saveBaselineDiagnosis(input: {
+    enrollmentId: string;
+    userId: string;
+    projectTitle: string;
+    ideaSummary: string;
+    targetUser: string;
+    currentEvidence: string;
+    biggestUncertainty: string;
+    confidence: number;
+  }): Promise<BaselineDiagnosisRecord>;
+  addEvidenceSubmission(input: {
+    enrollmentId: string;
+    userId: string;
+    stepKey: string;
+    evidenceType: string;
+    subjectLabel: string;
+    content: string;
+    provenance: string;
+    observedAt?: string | null;
+  }): Promise<EvidenceSubmissionRecord>;
+  createAnswerPathArtifact(input: {
+    enrollmentId: string;
+    userId: string;
+    title: string;
+    content: string;
+    userContribution: string;
+    agentContribution: string;
+  }): Promise<AnswerPathArtifactRecord>;
+  createRubricEvaluation(input: {
+    enrollmentId: string;
+    artifactId: string;
+    rubricVersion: string;
+    scoreDetail: Record<string, number>;
+    strengths: string;
+    weaknesses: string;
+    feedback: string;
+    requiredRevision: boolean;
+  }): Promise<RubricEvaluationRecord>;
+  recordRealWorldOutcome(input: {
+    enrollmentId: string;
+    userId: string;
+    decision: string;
+    observedResult: string;
+    nextAction: string;
+    uncertainty: string;
+    happenedAt: string;
+    capabilityLevel: number;
+    capabilityConfidence: number;
+  }): Promise<{
+    outcome: RealWorldOutcomeRecord;
+    capability: CapabilityEvidenceRecord;
+    enrollment: AnswerPathEnrollmentRecord;
+  }>;
   recordExamAttempt(input: {
     userId: string;
     sessionId: string;

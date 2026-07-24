@@ -2,12 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
-  ArrowRight,
-  BookOpenText,
   CircleAlert,
   FileCheck2,
 } from "lucide-react";
 import { AnalyticsSignal } from "@/components/analytics/AnalyticsSignal";
+import { TrackedKnowledgeLink } from "@/components/analytics/TrackedKnowledgeLink";
+import { FalseDemandPathWorkspace } from "@/components/features/answers/FalseDemandPathWorkspace";
 import { ProductShell } from "@/components/shared/ProductShell";
 import {
   ANSWER_CONTENT_VERSION,
@@ -56,7 +56,11 @@ export default async function AnswerPathPreviewPage({
         <header className="answer-path-hero">
           <div>
             <p className="eyebrow">
-              {topic.flagship ? "FLAGSHIP PATH · BUILDING" : "QUESTION INDEX"}
+              {topic.status === "flagship-open"
+                ? "FORMAL PATH · OPEN"
+                : topic.flagship
+                  ? "FLAGSHIP PATH · BUILDING"
+                  : "QUESTION INDEX"}
             </p>
             <h1>{topic.title}</h1>
             <p className="answer-first">
@@ -66,7 +70,13 @@ export default async function AnswerPathPreviewPage({
           </div>
           <aside>
             <span>内容状态</span>
-            <strong>{topic.flagship ? "旗舰路径 · 编制中" : "问题索引"}</strong>
+            <strong>
+              {topic.status === "flagship-open"
+                ? "正式路径 · 已开放"
+                : topic.flagship
+                  ? "旗舰路径 · 编制中"
+                  : "问题索引"}
+            </strong>
             <dl>
               <div>
                 <dt>预计时间</dt>
@@ -149,6 +159,10 @@ export default async function AnswerPathPreviewPage({
           </section>
         )}
 
+        {topic.status === "flagship-open" && (
+          <FalseDemandPathWorkspace slug={topic.slug} />
+        )}
+
         <section className="answer-knowledge-links">
           <header>
             <p className="eyebrow">KNOWLEDGE LINKS</p>
@@ -166,13 +180,17 @@ export default async function AnswerPathPreviewPage({
                   ? `/programs/${link.programSlug}`
                   : `/college/${link.schoolSlug}`;
               return (
-                <Link href={href} key={`${link.schoolSlug}-${link.courseSlug ?? ""}`}>
-                  <BookOpenText aria-hidden="true" />
-                  <span>{link.courseSlug ? "课程与学院" : "学院与专业"}</span>
-                  <strong>{link.label}</strong>
-                  <p>{link.reason}</p>
-                  <ArrowRight aria-hidden="true" size={16} />
-                </Link>
+                <TrackedKnowledgeLink
+                  contentVersion={ANSWER_CONTENT_VERSION}
+                  evaluationVersion={ANSWER_EVALUATION_VERSION}
+                  href={href}
+                  key={`${link.schoolSlug}-${link.courseSlug ?? ""}`}
+                  label={link.label}
+                  pathSlug={topic.slug}
+                  pathVersion={topic.version}
+                  reason={link.reason}
+                  targetType={link.courseSlug ? "课程与学院" : "学院与专业"}
+                />
               );
             })}
           </div>
@@ -188,9 +206,11 @@ export default async function AnswerPathPreviewPage({
             <strong>{ANSWER_EVALUATION_VERSION}</strong>
           </div>
           <p>
-            {topic.flagship
-              ? "编制完成前不开放报名。下一版本将逐步加入基线诊断、现实行动、证据提交与修订。"
-              : "该问题已进入编辑索引，尚未进入旗舰路径的正式编制。"}
+            {topic.status === "flagship-open"
+              ? "这条路径已正式开放。完成必须包含现实行动、可追溯证据、Agent 审阅、必要修订与结果回访。"
+              : topic.flagship
+                ? "编制完成前不开放报名。行动步骤、证据标准与评价量规仍在审核。"
+                : "该问题已进入编辑索引，尚未进入旗舰路径的正式编制。"}
           </p>
         </section>
       </article>

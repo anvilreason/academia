@@ -4,7 +4,10 @@ import {
   Building2,
   GraduationCap,
   LibraryBig,
+  Radar,
+  Route,
   UsersRound,
+  FilePenLine,
 } from "lucide-react";
 import { AdminDenied } from "@/components/admin/AdminStates";
 import { InteractiveBar } from "@/components/admin/InteractiveBar";
@@ -13,6 +16,7 @@ import {
   AdminPageHeader,
   EmptyState,
   formatNumber,
+  formatPercent,
 } from "@/components/admin/AdminPrimitives";
 import { loadAdminSection } from "@/lib/analytics/admin-page";
 import { getAcademicsReport } from "@/lib/analytics/reports";
@@ -33,6 +37,10 @@ export default async function AcademicsPage() {
   const maxSchool = Math.max(
     1,
     ...report.schools.map((school) => school.enrolled),
+  );
+  const maxPathFunnel = Math.max(
+    1,
+    ...report.answerPaths.funnel.map((item) => item.value),
   );
 
   return (
@@ -79,6 +87,78 @@ export default async function AcademicsPage() {
           note="通过课程考试"
           value={formatNumber(report.metrics.creditsEarned)}
         />
+      </section>
+
+      <section className="observatory-grid observatory-half-grid">
+        <article className="observatory-panel">
+          <header>
+            <div>
+              <span>答案路径 · 全周期</span>
+              <h2>从开始到现实结果</h2>
+            </div>
+          </header>
+          <div className="funnel-list large">
+            {report.answerPaths.funnel.map((item, index) => (
+              <div key={item.label}>
+                <span>{item.label}</span>
+                <InteractiveBar
+                  label={`答案路径 · ${item.label}`}
+                  orientation="horizontal"
+                  percent={Math.max(4, item.value / maxPathFunnel * 100)}
+                  value={item.value}
+                />
+                <strong>{formatNumber(item.value)}</strong>
+                <small>
+                  {index === 0
+                    ? "基线"
+                    : formatPercent(
+                        report.answerPaths.funnel[index - 1].value
+                          ? Math.round(
+                              item.value /
+                                report.answerPaths.funnel[index - 1].value *
+                                100,
+                            )
+                          : null,
+                      )}
+                </small>
+              </div>
+            ))}
+          </div>
+        </article>
+        <article className="observatory-panel">
+          <header>
+            <div>
+              <span>结果质量</span>
+              <h2>证据、修订与回访</h2>
+            </div>
+          </header>
+          <div className="observatory-metrics four embedded">
+            <AdminMetric
+              icon={Radar}
+              label="现实证据"
+              note="带来源的提交"
+              value={formatNumber(report.answerPaths.evidenceCount)}
+            />
+            <AdminMetric
+              icon={FilePenLine}
+              label="产物版本"
+              note={`${report.answerPaths.revisions} 个修订版本`}
+              value={formatNumber(report.answerPaths.artifacts)}
+            />
+            <AdminMetric
+              icon={Route}
+              label="要求修订"
+              note={`${report.answerPaths.reviews} 次 Agent 审阅`}
+              value={formatNumber(report.answerPaths.revisionRequired)}
+            />
+            <AdminMetric
+              icon={Award}
+              label="现实结果"
+              note="完成结果回访"
+              value={formatNumber(report.answerPaths.completed)}
+            />
+          </div>
+        </article>
       </section>
 
       <section className="observatory-grid observatory-half-grid">

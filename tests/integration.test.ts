@@ -70,6 +70,72 @@ async function registerAndSignIn(jar: CookieJar, email: string) {
 }
 
 test(
+  "answer path persists baseline and traceable evidence behind account ownership",
+  { skip: !baseUrl },
+  async () => {
+    const anonymous = new CookieJar();
+    assert.equal(
+      (
+        await anonymous.request(
+          "/api/answer-paths/is-this-a-false-demand",
+        )
+      ).status,
+      401,
+    );
+    const jar = new CookieJar();
+    await registerAndSignIn(
+      jar,
+      `answer.path.${Date.now()}@example.com`,
+    );
+    const path = "/api/answer-paths/is-this-a-false-demand";
+    assert.equal((await jar.request(path, { method: "POST" })).status, 201);
+    assert.equal((await jar.request(path, { method: "POST" })).status, 200);
+    assert.equal(
+      (
+        await jar.request(`${path}/baseline`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            projectTitle: "独立设计师报价助手",
+            ideaSummary: "帮助独立设计师核对项目范围并生成报价草稿。",
+            targetUser: "最近三个月至少完成一次商业报价的独立设计师。",
+            currentEvidence: "两位设计师描述过手工整理报价表的过程。",
+            biggestUncertainty: "是否愿意把真实项目信息交给一个新工具处理。",
+            confidence: 32,
+          }),
+        })
+      ).status,
+      200,
+    );
+    assert.equal(
+      (
+        await jar.request(`${path}/evidence`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            evidenceType: "interview",
+            subjectLabel: "受访者 01",
+            content: "上周为一个品牌项目逐项核对范围，前后投入了两个小时。",
+            provenance: "集成测试访谈记录 01:10",
+            observedAt: "2026-07-24",
+          }),
+        })
+      ).status,
+      201,
+    );
+    const snapshot = await json<{
+      data: {
+        baseline: { projectTitle: string };
+        evidence: Array<{ provenance: string }>;
+      };
+    }>(await jar.request(path));
+    assert.equal(snapshot.data.baseline.projectTitle, "独立设计师报价助手");
+    assert.equal(snapshot.data.evidence.length, 1);
+    assert.match(snapshot.data.evidence[0].provenance, /访谈记录/);
+  },
+);
+
+test(
   "guest claim, paid access, idempotent test payment, authorization and completion",
   { skip: !baseUrl },
   async () => {

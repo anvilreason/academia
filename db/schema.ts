@@ -313,6 +313,172 @@ export const memoryItems = sqliteTable(
   ],
 );
 
+export const answerPathEnrollments = sqliteTable(
+  "answer_path_enrollments",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    pathSlug: text("path_slug").notNull(),
+    pathVersion: text("path_version").notNull(),
+    contentVersion: text("content_version").notNull(),
+    evaluationVersion: text("evaluation_version").notNull(),
+    currentStep: text("current_step").notNull().default("baseline"),
+    status: text("status").notNull().default("active"),
+    outcomeStatus: text("outcome_status"),
+    startedAt: text("started_at").notNull(),
+    completedAt: text("completed_at"),
+    ...lifecycle,
+  },
+  (table) => [
+    uniqueIndex("answer_path_enrollments_user_path_unique").on(
+      table.userId,
+      table.pathSlug,
+    ),
+    index("answer_path_enrollments_user_updated_idx").on(
+      table.userId,
+      table.updatedAt,
+    ),
+  ],
+);
+
+export const baselineDiagnoses = sqliteTable(
+  "baseline_diagnoses",
+  {
+    id: text("id").primaryKey(),
+    enrollmentId: text("enrollment_id").notNull(),
+    userId: text("user_id").notNull(),
+    projectTitle: text("project_title").notNull(),
+    ideaSummary: text("idea_summary").notNull(),
+    targetUser: text("target_user").notNull(),
+    currentEvidence: text("current_evidence").notNull(),
+    biggestUncertainty: text("biggest_uncertainty").notNull(),
+    confidence: integer("confidence").notNull(),
+    ...lifecycle,
+  },
+  (table) => [
+    uniqueIndex("baseline_diagnoses_enrollment_unique").on(
+      table.enrollmentId,
+    ),
+  ],
+);
+
+export const evidenceSubmissions = sqliteTable(
+  "evidence_submissions",
+  {
+    id: text("id").primaryKey(),
+    enrollmentId: text("enrollment_id").notNull(),
+    userId: text("user_id").notNull(),
+    stepKey: text("step_key").notNull(),
+    evidenceType: text("evidence_type").notNull(),
+    subjectLabel: text("subject_label").notNull(),
+    content: text("content").notNull(),
+    provenance: text("provenance").notNull(),
+    observedAt: text("observed_at"),
+    verificationStatus: text("verification_status")
+      .notNull()
+      .default("user_attested"),
+    ...lifecycle,
+  },
+  (table) => [
+    index("evidence_submissions_enrollment_created_idx").on(
+      table.enrollmentId,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const answerPathArtifacts = sqliteTable(
+  "answer_path_artifacts",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    enrollmentId: text("enrollment_id").notNull(),
+    title: text("title").notNull(),
+    artifactType: text("artifact_type").notNull(),
+    version: integer("version").notNull().default(1),
+    content: text("content").notNull(),
+    userContribution: text("user_contribution").notNull(),
+    agentContribution: text("agent_contribution").notNull(),
+    visibility: text("visibility").notNull().default("private"),
+    ...lifecycle,
+  },
+  (table) => [
+    uniqueIndex("answer_path_artifacts_enrollment_version_unique").on(
+      table.enrollmentId,
+      table.version,
+    ),
+  ],
+);
+
+export const rubricEvaluations = sqliteTable(
+  "rubric_evaluations",
+  {
+    id: text("id").primaryKey(),
+    enrollmentId: text("enrollment_id").notNull(),
+    artifactId: text("artifact_id").notNull(),
+    rubricVersion: text("rubric_version").notNull(),
+    evaluatorType: text("evaluator_type").notNull().default("agent"),
+    scoreDetailJson: text("score_detail_json").notNull(),
+    strengths: text("strengths").notNull(),
+    weaknesses: text("weaknesses").notNull(),
+    feedback: text("feedback").notNull(),
+    requiredRevision: integer("required_revision", { mode: "boolean" })
+      .notNull()
+      .default(true),
+    ...lifecycle,
+  },
+  (table) => [
+    index("rubric_evaluations_enrollment_created_idx").on(
+      table.enrollmentId,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const realWorldOutcomes = sqliteTable(
+  "real_world_outcomes",
+  {
+    id: text("id").primaryKey(),
+    enrollmentId: text("enrollment_id").notNull(),
+    userId: text("user_id").notNull(),
+    decision: text("decision").notNull(),
+    observedResult: text("observed_result").notNull(),
+    nextAction: text("next_action").notNull(),
+    uncertainty: text("uncertainty").notNull(),
+    happenedAt: text("happened_at").notNull(),
+    ...lifecycle,
+  },
+  (table) => [
+    uniqueIndex("real_world_outcomes_enrollment_unique").on(
+      table.enrollmentId,
+    ),
+  ],
+);
+
+export const capabilityEvidence = sqliteTable(
+  "capability_evidence",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    enrollmentId: text("enrollment_id").notNull(),
+    capabilityId: text("capability_id").notNull(),
+    level: integer("level").notNull(),
+    sourceType: text("source_type").notNull(),
+    sourceId: text("source_id").notNull(),
+    confidence: integer("confidence").notNull(),
+    verifiedAt: text("verified_at").notNull(),
+    ...lifecycle,
+  },
+  (table) => [
+    uniqueIndex("capability_evidence_source_unique").on(
+      table.userId,
+      table.capabilityId,
+      table.sourceType,
+      table.sourceId,
+    ),
+  ],
+);
+
 export const examAttempts = sqliteTable("exam_attempts", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull(),

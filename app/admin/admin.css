@@ -240,6 +240,10 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.observatory-metrics.embedded {
+  margin: 22px 0 0;
+}
+
 .observatory-metric,
 .observatory-panel {
   border: 1px solid var(--obs-line);
