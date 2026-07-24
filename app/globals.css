@@ -2000,6 +2000,99 @@ a {
   text-align: right;
 }
 
+.curriculum-audit {
+  min-height: 82px;
+  display: flex;
+  align-items: baseline;
+  gap: 13px;
+  margin-bottom: 28px;
+  padding: 20px 24px;
+  border: 1px solid #cdd4bf;
+  border-radius: 14px;
+  background: #edf0e5;
+}
+
+.curriculum-audit span {
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.curriculum-audit strong {
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 500;
+}
+
+.curriculum-audit i {
+  color: var(--ink-faint);
+  font-style: normal;
+}
+
+.curriculum-audit b {
+  margin-left: auto;
+  color: var(--olive);
+  font-size: 11px;
+}
+
+.course-groups {
+  display: grid;
+  gap: 32px;
+}
+
+.course-group {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.course-group > header {
+  min-height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line-strong);
+  background: #f2efe8;
+}
+
+.course-group > header > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.course-group > header span {
+  color: var(--accent);
+  font-family: var(--serif);
+  font-size: 20px;
+}
+
+.course-group > header strong {
+  color: var(--ink-faint);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.course-group > header > div:last-child {
+  display: flex;
+  gap: 8px;
+}
+
+.course-group > header b {
+  padding: 6px 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.course-group .course-table {
+  padding: 0 24px;
+  border-top: 0;
+}
+
 .course-table {
   border-top: 1px solid var(--line-strong);
 }
@@ -2892,6 +2985,28 @@ a {
   .credit-band-bar {
     grid-column: 1 / -1;
     grid-row: 2;
+  }
+
+  .curriculum-audit {
+    flex-wrap: wrap;
+    gap: 7px 10px;
+    padding: 18px;
+  }
+
+  .curriculum-audit b {
+    width: 100%;
+    margin: 5px 0 0;
+  }
+
+  .course-group > header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .course-group .course-table {
+    padding: 0 18px;
   }
 
   .course-table-row {

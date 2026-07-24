@@ -4,10 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  getUniversityCourse,
-  getUniversityProgram,
-} from "@/lib/content/university";
 
 type ProductShellProps = {
   children: React.ReactNode;
@@ -35,8 +31,12 @@ export function ProductShell({
       if (!response.ok) return { programs: [], courses: [] };
       const payload = (await response.json()) as {
         data: {
-          programs: Array<{ programSlug: string }>;
-          courses: Array<{ courseSlug: string; programSlug: string }>;
+          programs: Array<{ programSlug: string; name: string }>;
+          courses: Array<{
+            courseSlug: string;
+            programSlug: string;
+            title: string;
+          }>;
         };
       };
       return payload.data;
@@ -68,33 +68,36 @@ export function ProductShell({
       {!!academicPlan.data?.programs.length && (
         <div className="sidebar-section sidebar-projects">
           <span className="sidebar-label">我的专业</span>
-          {academicPlan.data.programs.slice(0, 5).map(({ programSlug }) => {
-            const program = getUniversityProgram(programSlug);
-            if (!program) return null;
-            const courses = academicPlan.data.courses.filter(
-              (course) => course.programSlug === programSlug,
-            );
-            return (
-              <div className="sidebar-project" key={programSlug}>
-                <Link className="sidebar-link" href={`/programs/${programSlug}`}>
-                  <span aria-hidden="true">▱</span>
-                  {program.name}
-                </Link>
-                {courses.slice(0, 4).map(({ courseSlug }) => (
+          {academicPlan.data.programs
+            .slice(0, 5)
+            .map(({ programSlug, name }) => {
+              const courses = academicPlan.data.courses.filter(
+                (course) => course.programSlug === programSlug,
+              );
+              return (
+                <div className="sidebar-project" key={programSlug}>
                   <Link
-                    className="sidebar-task"
-                    href={`/courses/${courseSlug}`}
-                    key={courseSlug}
+                    className="sidebar-link"
+                    href={`/programs/${programSlug}`}
                   >
-                    {getUniversityCourse(courseSlug)?.course.title ?? courseSlug}
+                    <span aria-hidden="true">▱</span>
+                    {name}
                   </Link>
-                ))}
-                {!courses.length && (
-                  <span className="sidebar-empty-task">尚未新增课程</span>
-                )}
-              </div>
-            );
-          })}
+                  {courses.slice(0, 4).map(({ courseSlug, title }) => (
+                    <Link
+                      className="sidebar-task"
+                      href={`/courses/${courseSlug}`}
+                      key={courseSlug}
+                    >
+                      {title}
+                    </Link>
+                  ))}
+                  {!courses.length && (
+                    <span className="sidebar-empty-task">尚未新增课程</span>
+                  )}
+                </div>
+              );
+            })}
         </div>
       )}
       <div className="sidebar-section">

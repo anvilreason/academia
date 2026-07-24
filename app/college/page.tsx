@@ -29,7 +29,7 @@ export default function UniversityMapPage() {
             </div>
             <div>
               <strong>{universityStats.courses}</strong>
-              <span>核心课程</span>
+              <span>培养课程</span>
             </div>
           </div>
         </header>

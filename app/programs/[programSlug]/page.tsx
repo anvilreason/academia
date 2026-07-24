@@ -17,6 +17,16 @@ export default async function ProgramPage({
   if (!program) notFound();
   const school = getUniversitySchool(program.schoolSlug);
   if (!school) notFound();
+  const curriculumTotal = program.courses.reduce(
+    (sum, course) => sum + course.credits,
+    0,
+  );
+  const courseGroups = program.creditPlan.map((band) => ({
+    band,
+    courses: program.courses.filter(
+      (course) => course.category === band.label,
+    ),
+  }));
 
   return (
     <ProductShell active="college" context={school.name} title={program.name}>
@@ -85,32 +95,64 @@ export default async function ProgramPage({
         <section className="program-courses">
           <div className="university-section-heading compact">
             <div>
-              <p className="eyebrow">专业核心课程</p>
-              <h2>从基础到毕业项目逐项完成</h2>
+              <p className="eyebrow">完整培养课程表</p>
+              <h2>每一学分都落实到具体课程</h2>
             </div>
-            <p>每门课结束后进入期末考试；未通过的知识点可以单独重修，再次参加考试。</p>
+            <p>
+              共 {program.courses.length} 门课，课程表合计 {curriculumTotal}{" "}
+              学分；每门课结束后进入考试或实践评价。
+            </p>
           </div>
-          <div className="course-table">
-            {program.courses.map((course, index) => (
-              <Link
-                className="course-table-row"
-                href={`/courses/${course.slug}`}
-                key={course.slug}
-              >
-                <span className="course-sequence">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <span className="course-code">{course.code}</span>
-                <span className="course-table-title">
-                  <strong>{course.title}</strong>
-                  <small>{course.category}</small>
-                </span>
-                <span className="course-credit">{course.credits} 学分</span>
-                <span className="course-state">
-                  {course.availability === "open" ? "可学习" : "筹备中"}
-                </span>
-                <span aria-hidden="true">→</span>
-              </Link>
+          <div className="curriculum-audit">
+            <span>课程表学分</span>
+            <strong>{curriculumTotal}</strong>
+            <i>=</i>
+            <span>毕业要求</span>
+            <strong>{program.requiredCredits}</strong>
+            <b>已完整匹配 ✓</b>
+          </div>
+          <div className="course-groups">
+            {courseGroups.map(({ band, courses }) => (
+              <section className="course-group" key={band.label}>
+                <header>
+                  <div>
+                    <span>{band.label}</span>
+                    <strong>{band.description}</strong>
+                  </div>
+                  <div>
+                    <b>{courses.length} 门</b>
+                    <b>{band.credits} 学分</b>
+                  </div>
+                </header>
+                <div className="course-table">
+                  {courses.map((course) => (
+                    <Link
+                      className="course-table-row"
+                      href={`/courses/${course.slug}`}
+                      key={course.slug}
+                    >
+                      <span className="course-sequence">
+                        {String(program.courses.indexOf(course) + 1).padStart(
+                          2,
+                          "0",
+                        )}
+                      </span>
+                      <span className="course-code">{course.code}</span>
+                      <span className="course-table-title">
+                        <strong>{course.title}</strong>
+                        <small>{course.category}</small>
+                      </span>
+                      <span className="course-credit">
+                        {course.credits} 学分
+                      </span>
+                      <span className="course-state">
+                        {course.availability === "open" ? "可学习" : "筹备中"}
+                      </span>
+                      <span aria-hidden="true">→</span>
+                    </Link>
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         </section>

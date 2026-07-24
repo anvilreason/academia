@@ -1,4 +1,7 @@
-import { getUniversityProgram } from "@/lib/content/university";
+import {
+  getUniversityCourse,
+  getUniversityProgram,
+} from "@/lib/content/university";
 import { getRepository } from "@/lib/repositories";
 import { getActor } from "@/lib/server/actor";
 import { apiData, apiError } from "@/lib/server/api";
@@ -6,7 +9,20 @@ import { apiData, apiError } from "@/lib/server/api";
 export async function GET(request: Request) {
   const actor = await getActor(request);
   if (!actor.userId) return apiError("UNAUTHORIZED", "请先登录查看学籍", 401);
-  return apiData(await getRepository().getAcademicPlan(actor.userId));
+  const plan = await getRepository().getAcademicPlan(actor.userId);
+  return apiData({
+    programs: plan.programs.map((record) => ({
+      ...record,
+      name:
+        getUniversityProgram(record.programSlug)?.name ?? record.programSlug,
+    })),
+    courses: plan.courses.map((record) => ({
+      ...record,
+      title:
+        getUniversityCourse(record.courseSlug)?.course.title ??
+        record.courseSlug,
+    })),
+  });
 }
 
 export async function POST(request: Request) {

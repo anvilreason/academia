@@ -137,7 +137,7 @@ test("membership is activated by completed-course spend, never wallet top-up", (
 test("university catalog has broad, unique and credit-complete programs", () => {
   assert.equal(universityStats.schools, 17);
   assert.equal(universityStats.programs, 95);
-  assert.equal(universityStats.courses, 760);
+  assert.equal(universityStats.courses, 4192);
   assert.equal(universityStats.minCredits, 146);
   assert.equal(universityStats.maxCredits, 200);
 
@@ -162,6 +162,20 @@ test("university catalog has broad, unique and credit-complete programs", () => 
         program.courses.every((course) => course.credits > 0),
         true,
       );
+      assert.equal(
+        program.courses.reduce((sum, course) => sum + course.credits, 0),
+        program.requiredCredits,
+      );
+      for (const band of program.creditPlan) {
+        const courses = program.courses.filter(
+          (course) => course.category === band.label,
+        );
+        assert.equal(courses.length > 0, true);
+        assert.equal(
+          courses.reduce((sum, course) => sum + course.credits, 0),
+          band.credits,
+        );
+      }
     }
   }
 });

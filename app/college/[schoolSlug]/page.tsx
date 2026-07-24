@@ -39,7 +39,7 @@ export default async function SchoolPage({
               <dd>{school.programs.length}</dd>
             </div>
             <div>
-              <dt>核心课程</dt>
+              <dt>培养课程</dt>
               <dd>{courses}</dd>
             </div>
             <div>

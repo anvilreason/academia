@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { ProductShell } from "@/components/shared/ProductShell";
-import { getUniversityCourse } from "@/lib/content/university";
 
 type TranscriptData = {
   earnedCredits: number;
@@ -11,6 +10,8 @@ type TranscriptData = {
   records: Array<{
     id: string;
     nodeSlug: string;
+    courseTitle: string;
+    courseCode: string;
     score: number;
     gradePoint: number;
     creditsEarned: number;
@@ -62,37 +63,34 @@ export default function TranscriptPage() {
           </div>
         ) : transcript.data?.records.length ? (
           <div className="transcript-records">
-            {transcript.data.records.map((record) => {
-              const academic = getUniversityCourse(record.nodeSlug);
-              return (
-                <article key={record.id}>
+            {transcript.data.records.map((record) => (
+              <article key={record.id}>
+                <div>
+                  <span>{record.courseCode}</span>
+                  <h2>{record.courseTitle}</h2>
+                  <p>
+                    第 {record.attemptNumber} 次考试 ·{" "}
+                    {record.weakTopics.length
+                      ? `建议重修：${record.weakTopics.join("、")}`
+                      : "知识点掌握良好"}
+                  </p>
+                </div>
+                <dl>
                   <div>
-                    <span>{academic?.course.code ?? record.nodeSlug}</span>
-                    <h2>{academic?.course.title ?? record.nodeSlug}</h2>
-                    <p>
-                      第 {record.attemptNumber} 次考试 ·{" "}
-                      {record.weakTopics.length
-                        ? `建议重修：${record.weakTopics.join("、")}`
-                        : "知识点掌握良好"}
-                    </p>
+                    <dt>成绩</dt>
+                    <dd>{record.score}</dd>
                   </div>
-                  <dl>
-                    <div>
-                      <dt>成绩</dt>
-                      <dd>{record.score}</dd>
-                    </div>
-                    <div>
-                      <dt>绩点</dt>
-                      <dd>{record.gradePoint.toFixed(1)}</dd>
-                    </div>
-                    <div>
-                      <dt>学分</dt>
-                      <dd>{record.creditsEarned}</dd>
-                    </div>
-                  </dl>
-                </article>
-              );
-            })}
+                  <div>
+                    <dt>绩点</dt>
+                    <dd>{record.gradePoint.toFixed(1)}</dd>
+                  </div>
+                  <div>
+                    <dt>学分</dt>
+                    <dd>{record.creditsEarned}</dd>
+                  </div>
+                </dl>
+              </article>
+            ))}
           </div>
         ) : (
           <div className="wallet-state">

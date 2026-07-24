@@ -1,15 +1,22 @@
 export type CreditBand = {
-  label: string;
+  label: CreditBandLabel;
   credits: number;
   description: string;
 };
+
+export type CreditBandLabel =
+  | "大学通识"
+  | "学院基础"
+  | "专业核心"
+  | "方向选修"
+  | "实践与毕业";
 
 export type UniversityCourse = {
   slug: string;
   code: string;
   title: string;
   credits: number;
-  category: "基础必修" | "专业核心" | "专题研讨" | "毕业项目";
+  category: CreditBandLabel;
   summary: string;
   examWeight: number;
   availability: "open" | "planned";
@@ -51,7 +58,180 @@ type SchoolSeed = Omit<UniversitySchool, "programs"> & {
   programs: ProgramSeed[];
 };
 
-const courseCredits = [3, 3, 4, 4, 4, 4, 4, 6] as const;
+const generalEducationCourses = [
+  { title: "学术写作与论证", credits: 3 },
+  { title: "中国文明与经典", credits: 3 },
+  { title: "世界文明与全球史", credits: 3 },
+  { title: "哲学、伦理与人生", credits: 3 },
+  { title: "定量推理与数学基础", credits: 4 },
+  { title: "科学探究与实验方法", credits: 3 },
+  { title: "数据、计算与编程基础", credits: 3 },
+  { title: "人工智能素养", credits: 2 },
+  { title: "经济、组织与社会", credits: 3 },
+  { title: "法律、公民与公共责任", credits: 2 },
+  { title: "艺术与审美实践", credits: 2 },
+  { title: "外语与跨文化沟通", credits: 4 },
+  { title: "体育与身心健康", credits: 3 },
+  { title: "气候变化与可持续发展", credits: 2 },
+  { title: "创新、设计与创业", credits: 2 },
+] as const;
+
+const foundationTitlesByDiscipline: Record<string, string[]> = {
+  文学: [
+    "人文学研究导论",
+    "文献阅读与考证",
+    "语言与文本分析",
+    "中国思想文化基础",
+    "世界文学与文化",
+    "历史研究方法",
+    "逻辑与批判性思维",
+    "古典语言基础",
+    "数字人文方法",
+    "田野调查与口述史",
+    "比较文明研究",
+  ],
+  法学: [
+    "社会科学研究导论",
+    "政治与社会理论",
+    "法学与制度分析",
+    "微观经济学基础",
+    "宏观经济学基础",
+    "社会统计学",
+    "定量社会研究方法",
+    "质性社会研究方法",
+    "公共伦理",
+    "全球化与国际秩序",
+    "因果推断基础",
+  ],
+  管理学: [
+    "管理学原理",
+    "微观经济学",
+    "宏观经济学",
+    "会计与财务基础",
+    "组织行为学",
+    "商业统计",
+    "管理信息系统",
+    "运营管理基础",
+    "商法与商业伦理",
+    "市场与顾客分析",
+    "管理决策模型",
+  ],
+  教育学: [
+    "教育学原理",
+    "教育心理学",
+    "学习与认知",
+    "课程与教学基础",
+    "教育研究方法",
+    "教育统计与测量",
+    "教育史",
+    "教育社会学",
+    "儿童与青少年发展",
+    "教育技术基础",
+    "比较教育",
+  ],
+  理学: [
+    "数学分析",
+    "高等代数",
+    "概率论",
+    "数理统计",
+    "普通物理学",
+    "基础化学",
+    "生命科学导论",
+    "计算科学基础",
+    "科学计算与建模",
+    "实验设计与数据处理",
+    "现代科学前沿",
+  ],
+  医学: [
+    "人体解剖学",
+    "组织学与胚胎学",
+    "生物化学",
+    "生理学",
+    "医学遗传学",
+    "医学微生物学",
+    "免疫学",
+    "病理学",
+    "药理学",
+    "流行病学",
+    "医学统计学",
+  ],
+  工学: [
+    "工程数学",
+    "大学物理",
+    "工程化学",
+    "工程制图",
+    "理论力学",
+    "材料力学",
+    "电工与电子技术",
+    "程序设计基础",
+    "工程计算与建模",
+    "工程实验方法",
+    "工程伦理与安全",
+  ],
+  艺术学: [
+    "艺术史基础",
+    "造型与构成",
+    "色彩与视觉语言",
+    "设计史",
+    "创作方法",
+    "数字媒介基础",
+    "材料与工艺",
+    "叙事与传播",
+    "艺术批评",
+    "田野与用户研究",
+    "公共艺术与社会",
+  ],
+  交叉学科: [
+    "复杂系统导论",
+    "跨学科研究方法",
+    "数学与统计基础",
+    "计算与数据基础",
+    "生命科学基础",
+    "物质科学基础",
+    "社会科学基础",
+    "设计思维",
+    "系统建模",
+    "科技伦理",
+    "协作式问题解决",
+  ],
+};
+
+const genericPracticeTitles = [
+  "专业认知与场域观察",
+  "实验、田野与工作坊实践",
+  "社会调查与公共服务",
+  "行业实习与职业实践",
+  "科研训练Ⅰ",
+  "科研训练Ⅱ",
+  "创新创业实践",
+  "跨学科联合项目",
+  "国际与跨文化实践",
+  "毕业研究开题",
+  "毕业成果制作",
+];
+
+const medicalPracticeTitles = [
+  "基础医学综合实验",
+  "临床技能训练",
+  "内科见习",
+  "外科见习",
+  "妇产与儿科见习",
+  "社区与全科医学实践",
+  "临床轮转Ⅰ",
+  "临床轮转Ⅱ",
+  "临床轮转Ⅲ",
+  "临床轮转Ⅳ",
+  "医学科研训练",
+];
+
+function splitCredits(total: number, count: number) {
+  const base = Math.floor(total / count);
+  const remainder = total % count;
+  return Array.from(
+    { length: count },
+    (_, index) => base + (index < remainder ? 1 : 0),
+  );
+}
 
 function makeCreditPlan(total: number, discipline: string): CreditBand[] {
   const engineering = ["工学", "理学", "医学"].includes(discipline);
@@ -93,36 +273,110 @@ function makeCourses(
   schoolIndex: number,
   programIndex: number,
   program: ProgramSeed,
+  discipline: string,
 ): UniversityCourse[] {
-  const number = (courseIndex: number) =>
-    `${String(schoolIndex + 1).padStart(2, "0")}${String(
-      programIndex + 1,
-    ).padStart(2, "0")}${courseIndex + 1}`;
-  const definitions = [
+  const plan = makeCreditPlan(program.credits, discipline);
+  const definitions: Array<
+    Omit<UniversityCourse, "code" | "availability">
+  > = [];
+  const pushCourses = (
+    category: CreditBandLabel,
+    slugPrefix: string,
+    items: Array<{ title: string; credits: number }>,
+    examWeight = 60,
+  ) => {
+    items.forEach((item, index) => {
+      definitions.push({
+        slug: `${program.slug}-${slugPrefix}-${index + 1}`,
+        title: item.title,
+        credits: item.credits,
+        category,
+        summary: `通过对话、案例与练习掌握“${item.title}”，并将其纳入${program.name}培养路径。`,
+        examWeight,
+      });
+    });
+  };
+
+  pushCourses(
+    "大学通识",
+    "general",
+    generalEducationCourses.map((course) => ({ ...course })),
+  );
+
+  const foundationCredits =
+    plan.find((band) => band.label === "学院基础")?.credits ?? 0;
+  const foundationCount = foundationCredits === 42 ? 11 : 10;
+  const foundationTitles =
+    foundationTitlesByDiscipline[discipline] ??
+    foundationTitlesByDiscipline["交叉学科"];
+  pushCourses(
+    "学院基础",
+    "foundation",
+    foundationTitles.slice(0, foundationCount).map((title, index) => ({
+      title,
+      credits: splitCredits(foundationCredits, foundationCount)[index],
+    })),
+  );
+
+  const coreTitles = [
     `${program.name}导论`,
     `${program.name}研究方法`,
     ...program.topics,
     `${program.name}前沿专题研讨`,
-    `${program.name}毕业研究项目`,
+    `${program.name}综合研究`,
   ];
-  return definitions.map((title, index) => ({
-    slug: `${program.slug}-${index + 1}`,
-    code: `AC${number(index)}`,
-    title,
-    credits: courseCredits[index],
-    category:
-      index < 2
-        ? "基础必修"
-        : index < 6
-          ? "专业核心"
-          : index === 6
-            ? "专题研讨"
-            : "毕业项目",
-    summary:
-      index === 7
-        ? `围绕真实问题完成一项可答辩、可复盘的${program.name}研究。`
-        : `通过对话、案例与练习建立“${title}”的可迁移判断框架。`,
-    examWeight: index === 7 ? 40 : 60,
+  const coreCredits = [3, 3, 4, 4, 4, 4, 4, 6];
+  coreTitles.forEach((title, index) => {
+    definitions.push({
+      slug: `${program.slug}-${index + 1}`,
+      title,
+      credits: coreCredits[index],
+      category: "专业核心",
+      summary: `通过对话、案例与练习建立“${title}”的可迁移专业判断框架。`,
+      examWeight: 60,
+    });
+  });
+
+  const electiveCredits =
+    plan.find((band) => band.label === "方向选修")?.credits ?? 0;
+  const electiveTitles = [
+    ...program.topics.map((topic) => `${topic}进阶专题`),
+    `${program.name}跨学科联合专题`,
+    `${program.name}国际前沿专题`,
+  ];
+  pushCourses(
+    "方向选修",
+    "elective",
+    electiveTitles.map((title, index) => ({
+      title,
+      credits: splitCredits(electiveCredits, electiveTitles.length)[index],
+    })),
+  );
+
+  const practiceCredits =
+    plan.find((band) => band.label === "实践与毕业")?.credits ?? 0;
+  const practiceCount = Math.max(4, Math.ceil(practiceCredits / 6));
+  const practiceTemplates =
+    discipline === "医学" ? medicalPracticeTitles : genericPracticeTitles;
+  const practiceTitles = [
+    ...practiceTemplates.slice(0, practiceCount - 1),
+    `${program.name}毕业论文（设计）与答辩`,
+  ];
+  pushCourses(
+    "实践与毕业",
+    "practice",
+    practiceTitles.map((title, index) => ({
+      title,
+      credits: splitCredits(practiceCredits, practiceCount)[index],
+    })),
+    40,
+  );
+
+  return definitions.map((course, courseIndex) => ({
+    ...course,
+    code: `AC${String(schoolIndex + 1).padStart(2, "0")}${String(
+      programIndex + 1,
+    ).padStart(2, "0")}${String(courseIndex + 1).padStart(2, "0")}`,
     availability: "planned",
   }));
 }
@@ -1111,7 +1365,12 @@ export const universitySchools: UniversitySchool[] = schoolSeeds.map(
       requiredCredits: program.credits,
       description: program.description,
       creditPlan: makeCreditPlan(program.credits, school.discipline),
-      courses: makeCourses(schoolIndex, programIndex, program),
+      courses: makeCourses(
+        schoolIndex,
+        programIndex,
+        program,
+        school.discipline,
+      ),
     })),
   }),
 );
@@ -1121,8 +1380,17 @@ const marketing = universitySchools
   ?.programs.find((program) => program.slug === "marketing");
 
 if (marketing) {
-  marketing.courses[0] = {
-    ...marketing.courses[0],
+  const marketingPrinciples = marketing.courses.findIndex(
+    (course) => course.slug === "marketing-1",
+  );
+  const marketingStrategy = marketing.courses.findIndex(
+    (course) => course.slug === "marketing-3",
+  );
+  const marketingInnovation = marketing.courses.findIndex(
+    (course) => course.slug === "marketing-5",
+  );
+  marketing.courses[marketingPrinciples] = {
+    ...marketing.courses[marketingPrinciples],
     slug: "4p-stp",
     code: "AC030201",
     title: "市场营销原理：4P 与 STP",
@@ -1130,8 +1398,8 @@ if (marketing) {
     availability: "open",
     summary: "从一个真实增长问题出发，辨认 Product、Price、Place 与 Promotion。",
   };
-  marketing.courses[2] = {
-    ...marketing.courses[2],
+  marketing.courses[marketingStrategy] = {
+    ...marketing.courses[marketingStrategy],
     slug: "porter-five-forces",
     code: "AC030203",
     title: "竞争战略：Porter 五力",
@@ -1139,8 +1407,8 @@ if (marketing) {
     availability: "open",
     summary: "判断产业结构如何分配利润，以及真正的竞争压力来自哪里。",
   };
-  marketing.courses[4] = {
-    ...marketing.courses[4],
+  marketing.courses[marketingInnovation] = {
+    ...marketing.courses[marketingInnovation],
     slug: "disruptive-innovation",
     code: "AC030205",
     title: "创新管理：颠覆式创新",

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Academia｜用对话长出自己的认知地图",
     description:
-      "17 个学院、95 个专业与 760 门课程。和 AI 导师学习，用考试、学分和定向重修检验真正掌握。",
+      "17 个学院、95 个专业与 4,192 门完整培养课程。每一学分落实到课程，用考试和定向重修检验真正掌握。",
     type: "website",
     locale: "zh_CN",
     images: [{ url: "/og.png", width: 1731, height: 909, alt: "Academia" }],

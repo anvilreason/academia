@@ -1,4 +1,5 @@
 import { weightedGpa } from "@/lib/domain/grading";
+import { getUniversityCourse } from "@/lib/content/university";
 import { getRepository } from "@/lib/repositories";
 import { getActor } from "@/lib/server/actor";
 import { apiData, apiError } from "@/lib/server/api";
@@ -12,7 +13,14 @@ export async function GET(request: Request) {
     const current = best.get(attempt.nodeSlug);
     if (!current || attempt.score > current.score) best.set(attempt.nodeSlug, attempt);
   }
-  const records = [...best.values()];
+  const records = [...best.values()].map((record) => {
+    const academic = getUniversityCourse(record.nodeSlug);
+    return {
+      ...record,
+      courseTitle: academic?.course.title ?? record.nodeSlug,
+      courseCode: academic?.course.code ?? record.nodeSlug,
+    };
+  });
   return apiData({
     attempts,
     records,
