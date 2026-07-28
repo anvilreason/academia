@@ -8,6 +8,8 @@ import {
   Route,
   UsersRound,
   FilePenLine,
+  Link2,
+  Share2,
 } from "lucide-react";
 import { AdminDenied } from "@/components/admin/AdminStates";
 import { InteractiveBar } from "@/components/admin/InteractiveBar";
@@ -132,7 +134,7 @@ export default async function AcademicsPage() {
               <h2>证据、修订与回访</h2>
             </div>
           </header>
-          <div className="observatory-metrics four embedded">
+          <div className="observatory-metrics six embedded">
             <AdminMetric
               icon={Radar}
               label="现实证据"
@@ -156,6 +158,18 @@ export default async function AcademicsPage() {
               label="现实结果"
               note="完成结果回访"
               value={formatNumber(report.answerPaths.completed)}
+            />
+            <AdminMetric
+              icon={Link2}
+              label="成果互认"
+              note={`${report.answerPaths.recognizedCredits} 学分已写入`}
+              value={formatNumber(report.answerPaths.recognitions)}
+            />
+            <AdminMetric
+              icon={Share2}
+              label="公开证明"
+              note="当前仍可访问"
+              value={formatNumber(report.answerPaths.publicShares)}
             />
           </div>
         </article>

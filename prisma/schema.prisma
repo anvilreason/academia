@@ -545,3 +545,44 @@ model CapabilityEvidence {
   @@unique([userId, capabilityId, sourceType, sourceId])
   @@map("capability_evidence")
 }
+
+model ResultRecognition {
+  id                String    @id @default(uuid())
+  userId            String    @map("user_id")
+  enrollmentId      String    @map("enrollment_id")
+  pathSlug          String    @map("path_slug")
+  artifactId        String    @map("artifact_id")
+  courseSlug        String    @map("course_slug")
+  programSlug       String    @map("program_slug")
+  capabilityId      String    @map("capability_id")
+  scope             String    @default("practice")
+  status            String    @default("validated")
+  recognizedCredits Int       @map("recognized_credits")
+  graphVersion      String    @map("graph_version")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  @@unique([userId, enrollmentId])
+  @@index([userId, courseSlug])
+  @@map("result_recognitions")
+}
+
+model ArtifactShare {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  artifactId   String    @unique @map("artifact_id")
+  enrollmentId String    @map("enrollment_id")
+  publicSlug   String    @unique @map("public_slug")
+  shareTitle   String    @map("share_title")
+  shareSummary String    @map("share_summary")
+  status       String    @default("active")
+  publishedAt  DateTime  @map("published_at")
+  revokedAt    DateTime? @map("revoked_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  @@index([userId, updatedAt])
+  @@map("artifact_shares")
+}

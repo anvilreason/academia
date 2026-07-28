@@ -3,8 +3,13 @@ import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { CourseApplicationExplorer } from "@/components/features/university/CourseApplicationExplorer";
 import { CourseRecognitionPanel } from "@/components/features/university/CourseRecognitionPanel";
+import { ResultRecognitionPanel } from "@/components/features/university/ResultRecognitionPanel";
 import { ProductShell } from "@/components/shared/ProductShell";
 import { answerTopicsForCourse } from "@/lib/content/answer-paths";
+import {
+  getResultKnowledgeNode,
+  resultRelationsForCourse,
+} from "@/lib/content/result-knowledge-graph";
 import {
   contentStatusLabels,
   courseContentStatus,
@@ -22,6 +27,7 @@ export default async function CourseCatalogPage({
   const { course, program, school } = result;
   const contentStatus = courseContentStatus(course);
   const relatedQuestions = answerTopicsForCourse(course.slug);
+  const resultRelations = resultRelationsForCourse(course.slug);
 
   return (
     <ProductShell active="college" context={`${course.credits} 学分`} title={course.title}>
@@ -76,6 +82,45 @@ export default async function CourseCatalogPage({
                   <p>{topic.artifact}</p>
                   <ArrowRight aria-hidden="true" size={16} />
                 </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {!!resultRelations.length && (
+          <section className="course-result-links">
+            <header>
+              <p className="eyebrow">COURSE ↔ RESULT ↔ KNOWLEDGE</p>
+              <h2>哪些现实成果可以证明这门课的一部分能力</h2>
+              <p>
+                这里只建立可追溯关系。正式开放课程可认定经过审阅的实践学分；
+                编制中课程只显示知识连接，不提前承诺学分。
+              </p>
+            </header>
+            <div>
+              {resultRelations.map((relation) => (
+                <article key={relation.pathSlug}>
+                  <span>
+                    {relation.course.practiceCredits > 0
+                      ? `可认定 ${relation.course.practiceCredits} 学分实践`
+                      : "知识连接 · 暂不认定学分"}
+                  </span>
+                  <h3>{relation.course.role}</h3>
+                  <Link href={`/answers/${relation.pathSlug}`}>
+                    进入现实问题
+                    <ArrowRight aria-hidden="true" size={14} />
+                  </Link>
+                  <div>
+                    {relation.course.knowledgeNodeSlugs.map((nodeSlug) => {
+                      const node = getResultKnowledgeNode(nodeSlug);
+                      return node ? (
+                        <Link href={`/knowledge/${node.slug}`} key={node.slug}>
+                          {node.title}
+                        </Link>
+                      ) : null;
+                    })}
+                  </div>
+                </article>
               ))}
             </div>
           </section>
@@ -167,6 +212,9 @@ export default async function CourseCatalogPage({
             )}
           </aside>
         </div>
+        {course.availability === "open" && (
+          <ResultRecognitionPanel courseSlug={course.slug} />
+        )}
         <CourseRecognitionPanel courseSlug={course.slug} />
       </section>
     </ProductShell>

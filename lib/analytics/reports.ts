@@ -7,6 +7,7 @@ import {
   analyticsIdentityLinks,
   answerPathArtifacts,
   answerPathEnrollments,
+  artifactShares,
   baselineDiagnoses,
   evidenceSubmissions,
   examAttempts,
@@ -15,6 +16,7 @@ import {
   memoryItems,
   orders,
   realWorldOutcomes,
+  resultRecognitions,
   rubricEvaluations,
   trackingLinks,
   userCoursePlans,
@@ -433,6 +435,8 @@ export async function getAcademicsReport() {
     pathArtifacts,
     pathEvaluations,
     outcomes,
+    recognitions,
+    shares,
   ] =
     await Promise.all([
       identityContext(),
@@ -486,6 +490,24 @@ export async function getAcademicsReport() {
         .select()
         .from(realWorldOutcomes)
         .where(isNull(realWorldOutcomes.deletedAt)),
+      getDb()
+        .select()
+        .from(resultRecognitions)
+        .where(
+          and(
+            eq(resultRecognitions.status, "validated"),
+            isNull(resultRecognitions.deletedAt),
+          ),
+        ),
+      getDb()
+        .select()
+        .from(artifactShares)
+        .where(
+          and(
+            eq(artifactShares.status, "active"),
+            isNull(artifactShares.deletedAt),
+          ),
+        ),
     ]);
   const realPrograms = programs.filter(
     (row) => !testUserIds.has(row.userId),
@@ -510,6 +532,12 @@ export async function getAcademicsReport() {
     (row) => !testUserIds.has(row.userId),
   );
   const realOutcomes = outcomes.filter(
+    (row) => !testUserIds.has(row.userId),
+  );
+  const realRecognitions = recognitions.filter(
+    (row) => !testUserIds.has(row.userId),
+  );
+  const realShares = shares.filter(
     (row) => !testUserIds.has(row.userId),
   );
   const realArtifactIds = new Set(realPathArtifacts.map((row) => row.id));
@@ -788,6 +816,12 @@ export async function getAcademicsReport() {
         (row) => row.requiredRevision,
       ).length,
       completed: realOutcomes.length,
+      recognitions: realRecognitions.length,
+      recognizedCredits: realRecognitions.reduce(
+        (sum, row) => sum + row.recognizedCredits,
+        0,
+      ),
+      publicShares: realShares.length,
     },
   };
 }

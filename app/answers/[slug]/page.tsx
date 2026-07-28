@@ -16,6 +16,12 @@ import {
   creationStages,
   getAnswerTopic,
 } from "@/lib/content/answer-paths";
+import {
+  getResultKnowledgeNode,
+  KNOWLEDGE_GRAPH_VERSION,
+  resultRelationForPath,
+} from "@/lib/content/result-knowledge-graph";
+import { getUniversityCourse, getUniversityProgram } from "@/lib/content/university";
 
 export function generateStaticParams() {
   return answerTopics.map((topic) => ({ slug: topic.slug }));
@@ -30,6 +36,7 @@ export default async function AnswerPathPreviewPage({
   const topic = getAnswerTopic(slug);
   if (!topic) notFound();
   const stage = creationStages.find((item) => item.slug === topic.stage)!;
+  const resultRelation = resultRelationForPath(topic.slug);
 
   return (
     <ProductShell active="answers" context={stage.name} title="答案路径">
@@ -195,6 +202,72 @@ export default async function AnswerPathPreviewPage({
             })}
           </div>
         </section>
+
+        {resultRelation && (
+          <section className="answer-result-graph">
+            <header>
+              <p className="eyebrow">BIDIRECTIONAL KNOWLEDGE GRAPH</p>
+              <h2>这份成果将被哪些专业和课程理解</h2>
+              <p>
+                同一份作品可以同时成为能力证明和课程实践证据，
+                但只能在一门正式课程中抵扣一次。
+              </p>
+            </header>
+            <div className="answer-result-graph-columns">
+              <article>
+                <span>专业能力</span>
+                {resultRelation.programs.map((programRelation) => {
+                  const program = getUniversityProgram(programRelation.slug);
+                  return (
+                    <Link
+                      href={`/programs/${programRelation.slug}`}
+                      key={programRelation.slug}
+                    >
+                      <strong>{program?.name ?? programRelation.slug}</strong>
+                      <p>{programRelation.capability}</p>
+                      <small>{programRelation.resultUse}</small>
+                    </Link>
+                  );
+                })}
+              </article>
+              <article>
+                <span>课程与知识节点</span>
+                {resultRelation.courses.map((courseRelation) => {
+                  const course = getUniversityCourse(courseRelation.slug);
+                  return (
+                    <div key={courseRelation.slug}>
+                      <Link href={`/courses/${courseRelation.slug}`}>
+                        <strong>
+                          {course?.course.title ?? courseRelation.slug}
+                        </strong>
+                        <small>
+                          {courseRelation.practiceCredits > 0
+                            ? `正式课程 · 可认定 ${courseRelation.practiceCredits} 学分实践`
+                            : "课程编制中 · 仅建立知识关系"}
+                        </small>
+                      </Link>
+                      <p>{courseRelation.role}</p>
+                      <div>
+                        {courseRelation.knowledgeNodeSlugs.map((nodeSlug) => {
+                          const node = getResultKnowledgeNode(nodeSlug);
+                          return node ? (
+                            <Link
+                              href={`/knowledge/${node.slug}`}
+                              key={node.slug}
+                            >
+                              {node.title}
+                            </Link>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </article>
+            </div>
+            <footer>知识关系图版本 {KNOWLEDGE_GRAPH_VERSION}</footer>
+          </section>
+        )}
 
         <section className="answer-path-status">
           <div>

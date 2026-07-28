@@ -44,7 +44,8 @@ async function getOwnedExam(request: Request, id: string) {
     session.nodeSlug,
   );
   const assessmentCredits =
-    recognition?.status === "bridge_required"
+    recognition?.status === "bridge_required" ||
+    recognition?.status === "result_recognized"
       ? recognition.remainingCredits
       : academic.course.credits;
   return {

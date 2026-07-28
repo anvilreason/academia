@@ -27,6 +27,7 @@ export const CLIENT_ANALYTICS_EVENTS = new Set([
   "answer_map_viewed",
   "answer_path_viewed",
   "knowledge_node_opened",
+  "artifact_share_viewed",
 ]);
 
 export type AnalyticsEventName =
@@ -45,6 +46,10 @@ export type AnalyticsEventName =
   | "milestone_validated"
   | "real_world_outcome_recorded"
   | "capability_updated"
+  | "result_recognition_created"
+  | "artifact_published"
+  | "artifact_unpublished"
+  | "artifact_share_viewed"
   | "next_path_started"
   | "tracking_link_clicked"
   | "signup_completed"

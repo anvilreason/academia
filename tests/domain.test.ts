@@ -31,7 +31,14 @@ import {
 import {
   universitySchools,
   universityStats,
+  getUniversityCourse,
+  getUniversityProgram,
 } from "../lib/content/university.ts";
+import {
+  resultKnowledgeNodes,
+  resultKnowledgeRelations,
+} from "../lib/content/result-knowledge-graph.ts";
+import { calculateResultRecognitionCredits } from "../lib/domain/result-recognition.ts";
 import { rankMemories } from "../lib/memory/retrieve.ts";
 import {
   CREDIT_PRICE_FEN,
@@ -573,6 +580,39 @@ test("false-demand path requires traceable reality evidence and can demand revis
 test("course status distinguishes formally open teaching from planned study paths", () => {
   assert.equal(courseContentStatus({ availability: "open" }), "formally-open");
   assert.equal(courseContentStatus({ availability: "planned" }), "study-path");
+});
+
+test("v1.3 knowledge graph connects every formal path to valid programs, courses and nodes", () => {
+  assert.equal(resultKnowledgeRelations.length, 6);
+  assert.deepEqual(
+    new Set(resultKnowledgeRelations.map((relation) => relation.pathSlug)),
+    new Set(formalAnswerPathConfigs.map((path) => path.slug)),
+  );
+  const nodeSlugs = new Set(resultKnowledgeNodes.map((node) => node.slug));
+  assert.equal(nodeSlugs.size, resultKnowledgeNodes.length);
+  for (const relation of resultKnowledgeRelations) {
+    assert.ok(relation.programs.length >= 3);
+    for (const program of relation.programs) {
+      assert.ok(getUniversityProgram(program.slug), program.slug);
+    }
+    for (const course of relation.courses) {
+      const academic = getUniversityCourse(course.slug);
+      assert.ok(academic, course.slug);
+      assert.ok(
+        course.knowledgeNodeSlugs.every((slug) => nodeSlugs.has(slug)),
+      );
+      if (course.practiceCredits > 0) {
+        assert.equal(academic?.course.availability, "open");
+      }
+    }
+  }
+});
+
+test("real-result recognition always leaves core course credit for learning and examination", () => {
+  assert.equal(calculateResultRecognitionCredits(4, 0, 2), 2);
+  assert.equal(calculateResultRecognitionCredits(4, 2, 3), 1);
+  assert.equal(calculateResultRecognitionCredits(4, 3, 2), 0);
+  assert.equal(calculateResultRecognitionCredits(1, 0, 1), 0);
 });
 
 test("long-term memory retrieval favors relevant and recent user evidence", () => {

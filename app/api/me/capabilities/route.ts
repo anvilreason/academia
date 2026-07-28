@@ -20,9 +20,21 @@ export async function GET(request: Request) {
       repository.getAnswerPathSnapshot(actor.userId!, config.slug),
     ),
   );
-  const paths = formalAnswerPathConfigs.map((config, index) => {
+  const paths = await Promise.all(formalAnswerPathConfigs.map(async (config, index) => {
     const snapshot = snapshots[index];
     const latestEvaluation = snapshot?.evaluations.at(-1) ?? null;
+    const latestArtifact = snapshot?.artifacts.at(-1) ?? null;
+    const publishable =
+      latestArtifact &&
+      latestEvaluation?.artifactId === latestArtifact.id &&
+      !latestEvaluation.requiredRevision;
+    const share =
+      publishable && latestArtifact
+        ? await repository.getArtifactShareForArtifact(
+            actor.userId!,
+            latestArtifact.id,
+          )
+        : null;
     const evidenceLevel =
       snapshot?.capabilities.at(-1)?.level ??
       (snapshot?.outcome
@@ -56,6 +68,15 @@ export async function GET(request: Request) {
         : null,
       latestReviewRequiredRevision:
         latestEvaluation?.requiredRevision ?? null,
+      publishableArtifact:
+        publishable && latestArtifact
+          ? {
+              id: latestArtifact.id,
+              title: latestArtifact.title,
+              version: latestArtifact.version,
+              share,
+            }
+          : null,
       outcome: snapshot?.outcome ?? null,
       sources: [
         ...(snapshot?.evidence.map((item) => ({
@@ -76,7 +97,7 @@ export async function GET(request: Request) {
       ].slice(-6),
       nextStep: answerPathNextStep(snapshot?.enrollment ?? null, config),
     };
-  });
+  }));
   const recommended = recommendNextAnswerPath(enrollments);
   return apiData({
     paths,

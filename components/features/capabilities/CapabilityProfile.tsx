@@ -9,6 +9,7 @@ import {
   FileCheck2,
   RotateCcw,
 } from "lucide-react";
+import { ArtifactShareControl } from "@/components/features/capabilities/ArtifactShareControl";
 
 type CapabilityData = {
   paths: Array<{
@@ -24,6 +25,15 @@ type CapabilityData = {
     revisionCount: number;
     latestScore: number | null;
     latestReviewRequiredRevision: boolean | null;
+    publishableArtifact: null | {
+      id: string;
+      title: string;
+      version: number;
+      share: null | {
+        publicSlug: string;
+        status: string;
+      };
+    };
     sources: Array<{
       type: string;
       label: string;
@@ -165,6 +175,14 @@ export function CapabilityProfile() {
                     </p>
                   ))}
                 </div>
+              )}
+              {path.publishableArtifact && (
+                <ArtifactShareControl
+                  artifactId={path.publishableArtifact.id}
+                  artifactTitle={path.publishableArtifact.title}
+                  artifactVersion={path.publishableArtifact.version}
+                  initialShare={path.publishableArtifact.share}
+                />
               )}
               <footer>
                 <div>

@@ -20,8 +20,11 @@ type RecognitionQuote = {
     | "completed"
     | "recognized"
     | "bridge_required"
+    | "result_recognized"
     | "eligible"
     | "unavailable";
+  resultRecognizedCredits: number;
+  resultRecognitionCount: number;
 };
 
 async function getQuote(courseSlug: string) {
@@ -133,7 +136,10 @@ export function CourseRecognitionPanel({
     );
   }
 
-  if (data.status === "bridge_required") {
+  if (
+    data.status === "bridge_required" ||
+    data.status === "result_recognized"
+  ) {
     return (
       <aside className="recognition-panel recognition-panel-bridge">
         <div className="recognition-heading">
@@ -141,8 +147,16 @@ export function CourseRecognitionPanel({
             <Layers3 aria-hidden="true" />
           </span>
           <div>
-            <small>差异学习路径已经建立</small>
-            <h3>不从头重学，只补足不同部分</h3>
+            <small>
+              {data.status === "result_recognized"
+                ? "真实作品已计入课程"
+                : "差异学习路径已经建立"}
+            </small>
+            <h3>
+              {data.status === "result_recognized"
+                ? "实践无需重做，核心理解仍需检验"
+                : "不从头重学，只补足不同部分"}
+            </h3>
           </div>
         </div>
         <p>{data.reason}</p>

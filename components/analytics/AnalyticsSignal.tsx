@@ -4,7 +4,11 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 type AnalyticsSignalProps = {
-  eventName: "answer_map_viewed" | "answer_path_viewed";
+  eventName:
+    | "answer_map_viewed"
+    | "answer_path_viewed"
+    | "knowledge_node_opened"
+    | "artifact_share_viewed";
   properties: Record<string, string | number | boolean>;
 };
 

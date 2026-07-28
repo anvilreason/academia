@@ -253,6 +253,46 @@ export type CapabilityEvidenceRecord = {
   updatedAt: string;
 };
 
+export type ResultRecognitionRecord = {
+  id: string;
+  userId: string;
+  enrollmentId: string;
+  pathSlug: string;
+  artifactId: string;
+  courseSlug: string;
+  programSlug: string;
+  capabilityId: string;
+  scope: string;
+  status: string;
+  recognizedCredits: number;
+  graphVersion: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ArtifactShareRecord = {
+  id: string;
+  userId: string;
+  artifactId: string;
+  enrollmentId: string;
+  publicSlug: string;
+  shareTitle: string;
+  shareSummary: string;
+  status: string;
+  publishedAt: string;
+  revokedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PublicArtifactProof = {
+  share: ArtifactShareRecord;
+  artifact: AnswerPathArtifactRecord;
+  enrollment: AnswerPathEnrollmentRecord;
+  evaluation: RubricEvaluationRecord;
+  outcome: RealWorldOutcomeRecord | null;
+};
+
 export type AnswerPathSnapshot = {
   enrollment: AnswerPathEnrollmentRecord;
   baseline: BaselineDiagnosisRecord | null;
@@ -476,6 +516,35 @@ export interface AcademiaRepository {
     capability: CapabilityEvidenceRecord;
     enrollment: AnswerPathEnrollmentRecord;
   }>;
+  listResultRecognitions(
+    userId: string,
+    courseSlug?: string,
+  ): Promise<ResultRecognitionRecord[]>;
+  createResultRecognition(input: {
+    userId: string;
+    enrollmentId: string;
+    courseSlug: string;
+    programSlug: string;
+    recognizedCredits: number;
+    graphVersion: string;
+  }): Promise<ResultRecognitionRecord>;
+  getArtifactShareForArtifact(
+    userId: string,
+    artifactId: string,
+  ): Promise<ArtifactShareRecord | null>;
+  publishArtifactShare(input: {
+    userId: string;
+    artifactId: string;
+    shareTitle: string;
+    shareSummary: string;
+  }): Promise<ArtifactShareRecord>;
+  revokeArtifactShare(
+    userId: string,
+    artifactId: string,
+  ): Promise<ArtifactShareRecord | null>;
+  getPublicArtifactProof(
+    publicSlug: string,
+  ): Promise<PublicArtifactProof | null>;
   recordExamAttempt(input: {
     userId: string;
     sessionId: string;

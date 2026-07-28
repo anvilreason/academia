@@ -12,6 +12,7 @@ import type {
   AcademiaRepository,
   UserCoursePlanRecord,
 } from "@/lib/repositories/types";
+import { getCourseResultRecognitionState } from "@/lib/server/result-recognition";
 
 export type CourseRecognitionQuote = TransferDecision & {
   targetCourseSlug: string;
@@ -22,9 +23,12 @@ export type CourseRecognitionQuote = TransferDecision & {
     | "completed"
     | "recognized"
     | "bridge_required"
+    | "result_recognized"
     | "eligible"
     | "unavailable";
   existingPlan: UserCoursePlanRecord | null;
+  resultRecognizedCredits: number;
+  resultRecognitionCount: number;
 };
 
 async function completedCourseSlugs(
@@ -46,10 +50,13 @@ export async function getCourseRecognitionQuote(
 ): Promise<CourseRecognitionQuote | null> {
   const target = getUniversityCourse(targetCourseSlug);
   if (!target) return null;
-  const [completedSlugs, plan] = await Promise.all([
+  const [completedSlugs, plan, resultState] = await Promise.all([
     completedCourseSlugs(repository, userId),
     repository.getAcademicPlan(userId),
+    getCourseResultRecognitionState(repository, userId, targetCourseSlug),
   ]);
+  const resultRecognizedCredits = resultState?.recognizedCredits ?? 0;
+  const resultRecognitionCount = resultState?.recognitions.length ?? 0;
   const existingPlan =
     plan.courses.find((course) => course.courseSlug === targetCourseSlug) ??
     null;
@@ -69,6 +76,8 @@ export async function getCourseRecognitionQuote(
       targetRigorLevel: target.course.rigorLevel,
       status: "completed",
       existingPlan,
+      resultRecognizedCredits: 0,
+      resultRecognitionCount,
     };
   }
 
@@ -76,6 +85,18 @@ export async function getCourseRecognitionQuote(
     existingPlan?.status === "recognized" ||
     existingPlan?.status === "bridge_required"
   ) {
+    const baseRecognizedCredits = existingPlan.recognizedCredits;
+    const totalRecognizedCredits =
+      existingPlan.status === "recognized"
+        ? target.course.credits
+        : Math.min(
+            target.course.credits - 1,
+            baseRecognizedCredits + resultRecognizedCredits,
+          );
+    const remainingCredits = Math.max(
+      0,
+      target.course.credits - totalRecognizedCredits,
+    );
     return {
       type: existingPlan.recognitionType === "full" ? "full" : "bridge",
       sourceCourseSlug: existingPlan.sourceCourseSlug,
@@ -83,9 +104,9 @@ export async function getCourseRecognitionQuote(
         ? getUniversityCourse(existingPlan.sourceCourseSlug)?.course.title ??
           existingPlan.sourceCourseSlug
         : null,
-      recognizedCredits: existingPlan.recognizedCredits,
-      remainingCredits: existingPlan.remainingCredits,
-      priceFen: existingPlan.remainingCredits * CREDIT_PRICE_FEN,
+      recognizedCredits: totalRecognizedCredits,
+      remainingCredits,
+      priceFen: remainingCredits * CREDIT_PRICE_FEN,
       reason:
         existingPlan.status === "recognized"
           ? "课程互认已写入当前专业的培养方案"
@@ -96,6 +117,9 @@ export async function getCourseRecognitionQuote(
       targetRigorLevel: target.course.rigorLevel,
       status: existingPlan.status,
       existingPlan,
+      resultRecognizedCredits:
+        existingPlan.status === "recognized" ? 0 : resultRecognizedCredits,
+      resultRecognitionCount,
     };
   }
 
@@ -103,14 +127,40 @@ export async function getCourseRecognitionQuote(
     .filter(({ course }) => completedSlugs.has(course.slug))
     .map(({ course }) => course);
   const decision = evaluateCourseTransfer(target.course, completedCourses);
+  const transferRecognizedCredits = decision.recognizedCredits;
+  const combinedRecognizedCredits =
+    decision.type === "full"
+      ? target.course.credits
+      : Math.min(
+          target.course.credits - 1,
+          transferRecognizedCredits + resultRecognizedCredits,
+        );
+  const remainingCredits = Math.max(
+    0,
+    target.course.credits - combinedRecognizedCredits,
+  );
   return {
     ...decision,
+    recognizedCredits: combinedRecognizedCredits,
+    remainingCredits,
+    priceFen: remainingCredits * CREDIT_PRICE_FEN,
+    reason:
+      resultRecognizedCredits > 0
+        ? `${decision.reason}；另有 ${resultRecognizedCredits} 学分来自已验证的真实作品`
+        : decision.reason,
     targetCourseSlug,
     targetCourseTitle: target.course.title,
     targetCredits: target.course.credits,
     targetRigorLevel: target.course.rigorLevel,
-    status: decision.type === "none" ? "unavailable" : "eligible",
+    status:
+      decision.type === "none" && resultRecognizedCredits > 0
+        ? "result_recognized"
+        : decision.type === "none"
+          ? "unavailable"
+          : "eligible",
     existingPlan,
+    resultRecognizedCredits,
+    resultRecognitionCount,
   };
 }
 

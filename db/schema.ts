@@ -479,6 +479,60 @@ export const capabilityEvidence = sqliteTable(
   ],
 );
 
+export const resultRecognitions = sqliteTable(
+  "result_recognitions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    enrollmentId: text("enrollment_id").notNull(),
+    pathSlug: text("path_slug").notNull(),
+    artifactId: text("artifact_id").notNull(),
+    courseSlug: text("course_slug").notNull(),
+    programSlug: text("program_slug").notNull(),
+    capabilityId: text("capability_id").notNull(),
+    scope: text("scope").notNull().default("practice"),
+    status: text("status").notNull().default("validated"),
+    recognizedCredits: integer("recognized_credits").notNull(),
+    graphVersion: text("graph_version").notNull(),
+    ...lifecycle,
+  },
+  (table) => [
+    uniqueIndex("result_recognitions_user_enrollment_unique").on(
+      table.userId,
+      table.enrollmentId,
+    ),
+    index("result_recognitions_user_course_idx").on(
+      table.userId,
+      table.courseSlug,
+    ),
+  ],
+);
+
+export const artifactShares = sqliteTable(
+  "artifact_shares",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    artifactId: text("artifact_id").notNull(),
+    enrollmentId: text("enrollment_id").notNull(),
+    publicSlug: text("public_slug").notNull(),
+    shareTitle: text("share_title").notNull(),
+    shareSummary: text("share_summary").notNull(),
+    status: text("status").notNull().default("active"),
+    publishedAt: text("published_at").notNull(),
+    revokedAt: text("revoked_at"),
+    ...lifecycle,
+  },
+  (table) => [
+    uniqueIndex("artifact_shares_artifact_unique").on(table.artifactId),
+    uniqueIndex("artifact_shares_public_slug_unique").on(table.publicSlug),
+    index("artifact_shares_user_updated_idx").on(
+      table.userId,
+      table.updatedAt,
+    ),
+  ],
+);
+
 export const examAttempts = sqliteTable("exam_attempts", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull(),

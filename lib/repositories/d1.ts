@@ -3,6 +3,7 @@ import { getDb } from "@/db";
 import {
   answerPathArtifacts,
   answerPathEnrollments,
+  artifactShares,
   authRateLimits,
   agentMessages,
   agentThreads,
@@ -20,6 +21,7 @@ import {
   orders,
   practiceProjects,
   realWorldOutcomes,
+  resultRecognitions,
   rubricEvaluations,
   userCoursePlans,
   userPrograms,
@@ -35,6 +37,7 @@ import type {
   AnswerPathArtifactRecord,
   AnswerPathEnrollmentRecord,
   AnswerPathSnapshot,
+  ArtifactShareRecord,
   BaselineDiagnosisRecord,
   CapabilityEvidenceRecord,
   EvidenceSubmissionRecord,
@@ -46,6 +49,7 @@ import type {
   OrderRecord,
   PracticeProjectRecord,
   RealWorldOutcomeRecord,
+  ResultRecognitionRecord,
   RubricEvaluationRecord,
   UserCoursePlanRecord,
   UserProgramRecord,
@@ -231,6 +235,18 @@ function asRealWorldOutcome(
 function asCapabilityEvidence(
   row: typeof capabilityEvidence.$inferSelect,
 ): CapabilityEvidenceRecord {
+  return row;
+}
+
+function asResultRecognition(
+  row: typeof resultRecognitions.$inferSelect,
+): ResultRecognitionRecord {
+  return row;
+}
+
+function asArtifactShare(
+  row: typeof artifactShares.$inferSelect,
+): ArtifactShareRecord {
   return row;
 }
 
@@ -1445,6 +1461,306 @@ export class D1AcademiaRepository implements AcademiaRepository {
       outcome: asRealWorldOutcome(outcome),
       capability: asCapabilityEvidence(capability),
       enrollment: asAnswerPathEnrollment(completed),
+    };
+  }
+
+  async listResultRecognitions(userId: string, courseSlug?: string) {
+    const rows = await getDb()
+      .select()
+      .from(resultRecognitions)
+      .where(
+        and(
+          eq(resultRecognitions.userId, userId),
+          courseSlug
+            ? eq(resultRecognitions.courseSlug, courseSlug)
+            : undefined,
+          eq(resultRecognitions.status, "validated"),
+          isNull(resultRecognitions.deletedAt),
+        ),
+      )
+      .orderBy(desc(resultRecognitions.createdAt));
+    return rows.map(asResultRecognition);
+  }
+
+  async createResultRecognition(input: {
+    userId: string;
+    enrollmentId: string;
+    courseSlug: string;
+    programSlug: string;
+    recognizedCredits: number;
+    graphVersion: string;
+  }) {
+    const [enrollment] = await getDb()
+      .select()
+      .from(answerPathEnrollments)
+      .where(
+        and(
+          eq(answerPathEnrollments.id, input.enrollmentId),
+          eq(answerPathEnrollments.userId, input.userId),
+          eq(answerPathEnrollments.status, "completed"),
+          isNull(answerPathEnrollments.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (!enrollment) throw new Error("PATH_NOT_COMPLETED");
+    const [outcome] = await getDb()
+      .select()
+      .from(realWorldOutcomes)
+      .where(
+        and(
+          eq(realWorldOutcomes.enrollmentId, input.enrollmentId),
+          eq(realWorldOutcomes.userId, input.userId),
+          isNull(realWorldOutcomes.deletedAt),
+        ),
+      )
+      .limit(1);
+    const [artifact] = await getDb()
+      .select()
+      .from(answerPathArtifacts)
+      .where(
+        and(
+          eq(answerPathArtifacts.enrollmentId, input.enrollmentId),
+          eq(answerPathArtifacts.userId, input.userId),
+          isNull(answerPathArtifacts.deletedAt),
+        ),
+      )
+      .orderBy(desc(answerPathArtifacts.version))
+      .limit(1);
+    if (!outcome || !artifact) throw new Error("RESULT_EVIDENCE_MISSING");
+    const [evaluation] = await getDb()
+      .select()
+      .from(rubricEvaluations)
+      .where(
+        and(
+          eq(rubricEvaluations.artifactId, artifact.id),
+          eq(rubricEvaluations.requiredRevision, false),
+          isNull(rubricEvaluations.deletedAt),
+        ),
+      )
+      .orderBy(desc(rubricEvaluations.createdAt))
+      .limit(1);
+    if (!evaluation) throw new Error("REVIEW_NOT_PASSED");
+    const [capability] = await getDb()
+      .select()
+      .from(capabilityEvidence)
+      .where(
+        and(
+          eq(capabilityEvidence.enrollmentId, input.enrollmentId),
+          eq(capabilityEvidence.userId, input.userId),
+          isNull(capabilityEvidence.deletedAt),
+        ),
+      )
+      .orderBy(desc(capabilityEvidence.createdAt))
+      .limit(1);
+    if (!capability) throw new Error("CAPABILITY_EVIDENCE_MISSING");
+    const now = nowIso();
+    const [record] = await getDb()
+      .insert(resultRecognitions)
+      .values({
+        id: newId(),
+        ...input,
+        pathSlug: enrollment.pathSlug,
+        artifactId: artifact.id,
+        capabilityId: capability.capabilityId,
+        scope: "practice",
+        status: "validated",
+        createdAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: [
+          resultRecognitions.userId,
+          resultRecognitions.enrollmentId,
+        ],
+        set: {
+          courseSlug: input.courseSlug,
+          programSlug: input.programSlug,
+          recognizedCredits: input.recognizedCredits,
+          graphVersion: input.graphVersion,
+          status: "validated",
+          updatedAt: now,
+          deletedAt: null,
+        },
+      })
+      .returning();
+    return asResultRecognition(record);
+  }
+
+  async getArtifactShareForArtifact(userId: string, artifactId: string) {
+    const [record] = await getDb()
+      .select()
+      .from(artifactShares)
+      .where(
+        and(
+          eq(artifactShares.userId, userId),
+          eq(artifactShares.artifactId, artifactId),
+          isNull(artifactShares.deletedAt),
+        ),
+      )
+      .limit(1);
+    return record ? asArtifactShare(record) : null;
+  }
+
+  async publishArtifactShare(input: {
+    userId: string;
+    artifactId: string;
+    shareTitle: string;
+    shareSummary: string;
+  }) {
+    const [artifact] = await getDb()
+      .select()
+      .from(answerPathArtifacts)
+      .where(
+        and(
+          eq(answerPathArtifacts.id, input.artifactId),
+          eq(answerPathArtifacts.userId, input.userId),
+          isNull(answerPathArtifacts.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (!artifact) throw new Error("ARTIFACT_NOT_FOUND");
+    const [enrollment] = await getDb()
+      .select()
+      .from(answerPathEnrollments)
+      .where(
+        and(
+          eq(answerPathEnrollments.id, artifact.enrollmentId),
+          eq(answerPathEnrollments.userId, input.userId),
+          isNull(answerPathEnrollments.deletedAt),
+        ),
+      )
+      .limit(1);
+    const [evaluation] = await getDb()
+      .select()
+      .from(rubricEvaluations)
+      .where(
+        and(
+          eq(rubricEvaluations.artifactId, artifact.id),
+          eq(rubricEvaluations.requiredRevision, false),
+          isNull(rubricEvaluations.deletedAt),
+        ),
+      )
+      .orderBy(desc(rubricEvaluations.createdAt))
+      .limit(1);
+    if (!enrollment || !evaluation) throw new Error("REVIEW_NOT_PASSED");
+    const existing = await this.getArtifactShareForArtifact(
+      input.userId,
+      input.artifactId,
+    );
+    const now = nowIso();
+    const publicSlug =
+      existing?.publicSlug ??
+      `${enrollment.pathSlug.slice(0, 38)}-${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
+    const [record] = await getDb()
+      .insert(artifactShares)
+      .values({
+        id: existing?.id ?? newId(),
+        userId: input.userId,
+        artifactId: input.artifactId,
+        enrollmentId: artifact.enrollmentId,
+        publicSlug,
+        shareTitle: input.shareTitle,
+        shareSummary: input.shareSummary,
+        status: "active",
+        publishedAt: now,
+        revokedAt: null,
+        createdAt: existing?.createdAt ?? now,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: artifactShares.artifactId,
+        set: {
+          shareTitle: input.shareTitle,
+          shareSummary: input.shareSummary,
+          status: "active",
+          publishedAt: now,
+          revokedAt: null,
+          updatedAt: now,
+          deletedAt: null,
+        },
+      })
+      .returning();
+    return asArtifactShare(record);
+  }
+
+  async revokeArtifactShare(userId: string, artifactId: string) {
+    const now = nowIso();
+    const [record] = await getDb()
+      .update(artifactShares)
+      .set({ status: "revoked", revokedAt: now, updatedAt: now })
+      .where(
+        and(
+          eq(artifactShares.userId, userId),
+          eq(artifactShares.artifactId, artifactId),
+          isNull(artifactShares.deletedAt),
+        ),
+      )
+      .returning();
+    return record ? asArtifactShare(record) : null;
+  }
+
+  async getPublicArtifactProof(publicSlug: string) {
+    const [share] = await getDb()
+      .select()
+      .from(artifactShares)
+      .where(
+        and(
+          eq(artifactShares.publicSlug, publicSlug),
+          eq(artifactShares.status, "active"),
+          isNull(artifactShares.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (!share) return null;
+    const [artifact] = await getDb()
+      .select()
+      .from(answerPathArtifacts)
+      .where(
+        and(
+          eq(answerPathArtifacts.id, share.artifactId),
+          isNull(answerPathArtifacts.deletedAt),
+        ),
+      )
+      .limit(1);
+    const [enrollment] = await getDb()
+      .select()
+      .from(answerPathEnrollments)
+      .where(
+        and(
+          eq(answerPathEnrollments.id, share.enrollmentId),
+          isNull(answerPathEnrollments.deletedAt),
+        ),
+      )
+      .limit(1);
+    const [evaluation] = await getDb()
+      .select()
+      .from(rubricEvaluations)
+      .where(
+        and(
+          eq(rubricEvaluations.artifactId, share.artifactId),
+          eq(rubricEvaluations.requiredRevision, false),
+          isNull(rubricEvaluations.deletedAt),
+        ),
+      )
+      .orderBy(desc(rubricEvaluations.createdAt))
+      .limit(1);
+    const [outcome] = await getDb()
+      .select()
+      .from(realWorldOutcomes)
+      .where(
+        and(
+          eq(realWorldOutcomes.enrollmentId, share.enrollmentId),
+          isNull(realWorldOutcomes.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (!artifact || !enrollment || !evaluation) return null;
+    return {
+      share: asArtifactShare(share),
+      artifact: asAnswerPathArtifact(artifact),
+      enrollment: asAnswerPathEnrollment(enrollment),
+      evaluation: asRubricEvaluation(evaluation),
+      outcome: outcome ? asRealWorldOutcome(outcome) : null,
     };
   }
 

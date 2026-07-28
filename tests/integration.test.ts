@@ -69,6 +69,24 @@ async function registerAndSignIn(jar: CookieJar, email: string) {
   return registered.data.id;
 }
 
+function executeLocalSql(sql: string) {
+  execFileSync(
+    "npx",
+    [
+      "wrangler",
+      "d1",
+      "execute",
+      "DB",
+      "--local",
+      "--persist-to",
+      ".wrangler/state",
+      "--command",
+      sql,
+    ],
+    { cwd: process.cwd(), stdio: "ignore" },
+  );
+}
+
 test(
   "answer path persists baseline and traceable evidence behind account ownership",
   { skip: !baseUrl },
@@ -190,6 +208,89 @@ test(
     assert.equal(
       capabilityPayload.data.recommendation?.slug,
       "non-leading-user-interviews",
+    );
+  },
+);
+
+test(
+  "validated real result can be recognized once and shared without exposing account data",
+  { skip: !baseUrl },
+  async () => {
+    const jar = new CookieJar();
+    const email = `result.recognition.${Date.now()}@example.com`;
+    const userId = await registerAndSignIn(jar, email);
+    const enrollmentId = crypto.randomUUID();
+    const artifactId = crypto.randomUUID();
+    const outcomeId = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const sql = [
+      `INSERT INTO answer_path_enrollments (id,user_id,path_slug,path_version,content_version,evaluation_version,current_step,status,outcome_status,started_at,completed_at,created_at,updated_at,deleted_at) VALUES ('${enrollmentId}','${userId}','is-this-a-false-demand','false-demand-v1.2','2026.07-v1','rubric-v1','completed','completed','continue','${now}','${now}','${now}','${now}',NULL)`,
+      `INSERT INTO answer_path_artifacts (id,user_id,enrollment_id,title,artifact_type,version,content,user_contribution,agent_contribution,visibility,created_at,updated_at,deleted_at) VALUES ('${artifactId}','${userId}','${enrollmentId}','需求证据表','demand_evidence_table',1,'行为、成本、反例、来源和推翻条件均已记录。','学习者完成访谈、证据判断和最终取舍。','Agent 只整理结构并提出反方问题。','private','${now}','${now}',NULL)`,
+      `INSERT INTO rubric_evaluations (id,enrollment_id,artifact_id,rubric_version,evaluator_type,score_detail_json,strengths,weaknesses,feedback,required_revision,created_at,updated_at,deleted_at) VALUES ('${crypto.randomUUID()}','${enrollmentId}','${artifactId}','false-demand-rubric-v2','agent','{"evidence":4,"boundary":4,"counterexample":4,"decision":4,"provenance":4,"contribution":4}','证据来源完整，判断边界明确。','单一情境不能外推全部市场。','通过公开量规审阅。',0,'${now}','${now}',NULL)`,
+      `INSERT INTO real_world_outcomes (id,enrollment_id,user_id,decision,observed_result,next_action,uncertainty,happened_at,created_at,updated_at,deleted_at) VALUES ('${outcomeId}','${enrollmentId}','${userId}','continue','五位目标用户中两位愿意导入真实项目，团队因此缩小到高频报价场景。','继续观察两周内的真实复用次数。','尚未确认不同客单价人群是否共享同一决策链。','${now}','${now}','${now}',NULL)`,
+      `INSERT INTO capability_evidence (id,user_id,enrollment_id,capability_id,level,source_type,source_id,confidence,verified_at,created_at,updated_at,deleted_at) VALUES ('${crypto.randomUUID()}','${userId}','${enrollmentId}','evidence_based_demand_judgment',2,'real_world_outcome','${outcomeId}',72,'${now}','${now}','${now}',NULL)`,
+    ].join(";");
+    executeLocalSql(sql);
+
+    const stateResponse = await jar.request(
+      "/api/me/courses/4p-stp/result-recognition",
+    );
+    assert.equal(stateResponse.status, 200);
+    const state = await json<{
+      data: {
+        eligible: Array<{ enrollmentId: string }>;
+        recognizedCredits: number;
+      };
+    }>(stateResponse);
+    assert.equal(state.data.eligible[0]?.enrollmentId, enrollmentId);
+    assert.equal(state.data.recognizedCredits, 0);
+
+    const recognize = () =>
+      jar.request("/api/me/courses/4p-stp/result-recognition", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ enrollmentId }),
+      });
+    assert.equal((await recognize()).status, 201);
+    assert.equal((await recognize()).status, 201, "recognition is idempotent");
+    const quote = await json<{
+      data: {
+        resultRecognizedCredits: number;
+        remainingCredits: number;
+      };
+    }>(await jar.request("/api/me/courses/4p-stp/recognition"));
+    assert.equal(quote.data.resultRecognizedCredits, 1);
+    assert.equal(quote.data.remainingCredits, 2);
+
+    const shareResponse = await jar.request(
+      `/api/me/artifacts/${artifactId}/share`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          title: "需求证据表 · 公开证明",
+          summary: "这份作品记录了从真实行为、成本和反例形成需求判断的过程。",
+        }),
+      },
+    );
+    assert.equal(shareResponse.status, 201);
+    const share = await json<{ data: { publicSlug: string } }>(shareResponse);
+    const proof = await jar.request(`/proof/${share.data.publicSlug}`);
+    assert.equal(proof.status, 200);
+    const html = await proof.text();
+    assert.match(html, /需求证据表 · 公开证明/);
+    assert.doesNotMatch(html, new RegExp(email.replace(".", "\\.")));
+    assert.equal(
+      (
+        await jar.request(`/api/me/artifacts/${artifactId}/share`, {
+          method: "DELETE",
+        })
+      ).status,
+      200,
+    );
+    assert.equal(
+      (await jar.request(`/proof/${share.data.publicSlug}`)).status,
+      404,
     );
   },
 );

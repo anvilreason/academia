@@ -198,6 +198,31 @@ export const metricDefinitions: MetricDefinition[] = [
     caveat: "用于观察考试难度，不等于学生最终成绩平均值。",
   },
   {
+    id: "result-recognition",
+    section: "教务",
+    label: "现实成果互认",
+    definition:
+      "答案路径已完成、最新作品通过量规审阅且记录现实结果后，由学习者主动指定到一门正式开放课程的实践学分。",
+    source:
+      "result_recognitions + answer_path_enrollments + rubric_evaluations + real_world_outcomes",
+    window: "累计",
+    status: "可靠",
+    caveat:
+      "同一份路径成果只能用于一门课程；每门课至少保留 1 学分核心理解与期末检验。",
+  },
+  {
+    id: "public-artifact-proof",
+    section: "教务",
+    label: "公开作品证明",
+    definition:
+      "学习者主动发布、当前状态为 active 且对应作品已通过量规审阅的公开证明数。",
+    source: "artifact_shares + answer_path_artifacts + rubric_evaluations",
+    window: "累计",
+    status: "可靠",
+    caveat:
+      "撤回后立即停止公开；不包含原始证据、账户信息或未通过审阅的作品。",
+  },
+  {
     id: "geo",
     section: "地域",
     label: "国家 / 省份 / 城市",

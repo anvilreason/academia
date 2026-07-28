@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { AddProgramButton } from "@/components/features/university/AddProgramButton";
 import { ProgramCreditAudit } from "@/components/features/university/ProgramCreditAudit";
+import { ProgramResultMap } from "@/components/features/university/ProgramResultMap";
 import { ProductShell } from "@/components/shared/ProductShell";
 import {
   contentStatusLabels,
@@ -77,6 +78,8 @@ export default async function ProgramPage({
         </header>
 
         <ProgramCreditAudit programSlug={program.slug} />
+
+        <ProgramResultMap programSlug={program.slug} />
 
         <section className="application-section program-application">
           <div className="university-section-heading compact">
